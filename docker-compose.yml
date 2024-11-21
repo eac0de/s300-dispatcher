@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+
+  dispatcher:
+    build:
+      context: app
+      dockerfile: Dockerfile
+    image: hub.eis24.me/rs
+    ports:
+      - "8003:8003"
+    command: [ "python", "main.py" ]
+    restart: always
+    env_file:
+      - .env.docker
+
+  dispatcher_celery_worker:
+    build:
+      context: app
+      dockerfile: Dockerfile
+    command: [ "celery", "-A", "celery_app", "worker", "--loglevel=info" ]
+    depends_on:
+      - dispatcher_redis
+    env_file:
+      - .env.docker
+
+  dispatcher_celery_beat:
+    build:
+      context: app
+      dockerfile: Dockerfile
+    command: [ "celery", "-A", "celery_app", "beat", "--loglevel=info" ]
+    depends_on:
+      - dispatcher_redis
+    env_file:
+      - .env.docker
+
+  dispatcher_flower:
+    build:
+      context: app
+      dockerfile: Dockerfile
+    ports:
+      - "5555:5555"
+    command: [ "celery", "-A", "celery_app", "flower", "--port=5555" ]
+    depends_on:
+      - dispatcher_redis
+    env_file:
+      - .env.docker
+
+  dispatcher_redis:
+    image: hub.eis24.me/redis:3.2.4
+    restart: always
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env.docker
+

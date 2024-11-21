@@ -1,0 +1,20 @@
+     - name: pull main image
+       docker_image:
+         name: dockerhub.timeweb.cloud/redis
+         state: present
+         force_source: yes
+         source: pull
+       tags: redis
+
+     - name: ensure gpb_redis container is running
+       docker_container:
+         name: gpb_redis
+         image: dockerhub.timeweb.cloud/redis
+         recreate: yes
+         env_file: "~/{{env_file}}"
+         ports:
+           - "{{ inventory_hostname }}:6380:6379"
+         log_driver: syslog
+         log_options:
+           tag: gpb_redis
+       tags: redis

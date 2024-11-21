@@ -1,0 +1,6 @@
+- name: Copy environment file to the target host
+  copy:
+    src: "{{env_path}}/{{env_file}}"  # путь к файлу на локальной машине
+    dest: "~/{{env_file}}"  # путь, куда скопировать файл на удаленном хосте
+  tags:
+    - env

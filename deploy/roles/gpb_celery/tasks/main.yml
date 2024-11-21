@@ -1,0 +1,31 @@
+     - name: pull main image
+       docker_image:
+         name: hub.eis24.me/gpb_main:latest
+         state: present
+         force_source: yes
+         source: pull
+       tags: celery
+
+     - name: ensure gpb_celery_worker container is running
+       docker_container:
+         name: gpb_celery_worker
+         image: hub.eis24.me/gpb_main:latest
+         recreate: yes
+         command: celery -A celery_app worker --loglevel=info --concurrency=1
+         log_driver: syslog
+         env_file: "~/{{env_file}}"
+         log_options:
+           tag: celery_worker
+       tags: celery
+
+     - name: ensure gpb_celery_beat container is running
+       docker_container:
+         name: gpb_celery_beat
+         image: hub.eis24.me/gpb_main:latest
+         recreate: yes
+         command: celery -A celery_app beat -s /tmp/schedule --pidfile=/run/celerybeat.pid
+         log_driver: syslog
+         env_file: "~/{{env_file}}"
+         log_options:
+           tag: celery_beat
+       tags: celery

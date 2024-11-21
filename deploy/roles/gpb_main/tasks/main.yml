@@ -1,0 +1,24 @@
+---
+
+- name: pull gpb_main
+  docker_image:
+    name: hub.eis24.me/gpb_main:latest
+    state: present
+    force_source: yes
+    source: pull
+  tags: main
+
+- name: ensure gpb_main container is running
+  docker_container:
+    name: gpb_main
+    image: hub.eis24.me/gpb_main:latest
+    recreate: yes
+    command: python main.py
+    log_driver: syslog
+    ports:
+      - "{{ inventory_hostname }}:8002:8002"
+    env_file: "~/{{env_file}}"
+    log_options:
+      tag: main
+    restart_policy: unless-stopped
+  tags: main

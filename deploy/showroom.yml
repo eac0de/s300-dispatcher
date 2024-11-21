@@ -1,0 +1,10 @@
+---
+
+- hosts: main
+  roles:
+    - gpb_env
+    - gpb_redis
+    - gpb_main
+    - gpb_celery
+    - gpb_flower
+  serial: 1

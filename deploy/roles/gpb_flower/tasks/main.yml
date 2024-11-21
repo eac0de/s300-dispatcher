@@ -1,0 +1,35 @@
+---
+
+- name: pull main image
+  docker_image:
+    name: hub.eis24.me/gpb_main:latest
+    state: present
+    force_source: yes
+    source: pull
+  tags: flower
+
+- name: Check is flower dir exists
+  stat: path=/opt/flower
+  register: flower_dir
+  tags: flower
+
+- name: Create flower dir
+  file: path=/opt/flower state=directory
+  when: not flower_dir.stat.exists
+  tags: flower
+
+- name: ensure flower container is running
+  docker_container:
+    name: gpb_flower
+    image: hub.eis24.me/gpb_main:latest
+    volumes:
+      - "/opt/flower:/data:rw"
+    ports:
+      - "{{ inventory_hostname }}:5557:5557"
+    command: celery -A celery_app flower --port=5557 --persistent=True --db=/data/flower.db --basic_auth=flower:flower
+    recreate: yes
+    env_file: "~/{{env_file}}"
+    log_driver: syslog
+    log_options:
+      tag: flower
+  tags: flower
