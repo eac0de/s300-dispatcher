@@ -11,6 +11,7 @@
 
 import json
 from datetime import datetime
+from enum import Enum
 from typing import Any
 
 from beanie import PydanticObjectId
@@ -34,8 +35,11 @@ class ObjectIdEncoder(json.JSONEncoder):
             return str(o)
         if isinstance(o, datetime):
             return o.isoformat()
+        if isinstance(o, Enum):
+            return o.value
         if hasattr(o, "__iter__"):
             return list(o)
+
         # Let the base class default method raise the TypeError
         return super().default(o)
 

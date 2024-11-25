@@ -267,7 +267,7 @@ CATEGORY_SUBCATEGORY_WORK_AREA_TREE = {
         },
         RequestCategory.VANDALISM.value: {
             "name": "Вандализм",
-            "inheritors": {
+            "subcategories": {
                 RequestSubcategory.WINDOWS.value: {
                     "name": "Окна",
                     "parent": RequestCategory.VANDALISM.value,

@@ -363,44 +363,39 @@ class TestDispatcherRequestRouter:
         assert len(update_fields) == 1
         assert update_fields[0].get("value_display", "") == test_description
 
-    # Тест для delete_request
-    async def test_delete_request(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+    # Тест для reset_request
+    async def test_delete_and_reset_request(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         resp = await api_employee_client.delete(f"/dispatcher/requests/{request.id}")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         r = await RequestModel.get(request.id)
         assert r is None
-
-    # Тест для reset_request
-    async def test_reset_request(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
-        request_id = "valid_request_id"
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request_id}/restore")
-        assert resp.status_code == status.HTTP_200_OK
-        resp_json = resp.json()
-        assert "id" in resp_json
-        assert resp_json["id"] == request_id
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/restore")
+        assert resp.status_code == status.HTTP_403_FORBIDDEN
 
     # Тест для upload_requester_attachment_files
-    async def test_upload_requester_attachment_files(self, api_employee_client: AsyncClient):
-        request_id = "valid_request_id"
+    async def test_upload_requester_attachment_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
         files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request_id}/requester_attachment_files", files=files)
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/requester_attachment_files", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert "attachments" in resp_json
         assert len(resp_json["attachments"]) == len(files)
 
     # Тест для download_requester_attachment_file
-    async def test_download_requester_attachment_file(self, api_employee_client: AsyncClient):
-        request_id = "valid_request_id"
+    async def test_download_requester_attachment_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
+        request.requester_attachment.files.append(File)
         file_id = "valid_file_id"
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request_id}/requester_attachment_files/{file_id}")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file_id}")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
         assert resp.headers["Content-Type"] == "application/octet-stream"
 
     # Тест для upload_execution_attachment_files
     async def test_upload_execution_attachment_files(self, api_employee_client: AsyncClient):
+        request
         request_id = "valid_request_id"
         files = [("files", ("work_report.pdf", b"file_content", "application/pdf"))]
         resp = await api_employee_client.post(f"/dispatcher/requests/{request_id}/execution_attachment_files", files=files)

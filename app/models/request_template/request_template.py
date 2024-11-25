@@ -7,7 +7,7 @@ from pydantic import Field
 from pymongo import IndexModel
 
 from models.request.categories_tree import RequestCategory, RequestSubcategory
-from models.request_template.constants import TemplateType
+from models.request_template.constants import RequestTemplateType
 
 
 class RequestTemplate(Document):
@@ -33,7 +33,7 @@ class RequestTemplate(Document):
         default=None,
         title="Подкатегория заявки",
     )
-    type: TemplateType = Field(
+    type: RequestTemplateType = Field(
         alias="_type",
         title="Тип шаблона",
     )

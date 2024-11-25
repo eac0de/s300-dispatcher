@@ -14,6 +14,12 @@ class RequestType(str, Enum):
     AREA = "area"
 
 
+REQUEST_TYPE_EN_RU = {
+    RequestType.HOUSE: "Общедомовая заявка",
+    RequestType.AREA: "Квартирная заявка",
+}
+
+
 class RequestStatus(str, Enum):
     """
     Статусы заявки
@@ -70,7 +76,7 @@ class RequestTag(str, Enum):
     PROPHYLAXIS = "prophylaxis"
 
 
-TAG_EN_RU = {
+REQUEST_TAG_EN_RU = {
     RequestTag.URGENT: "Срочная",
     RequestTag.CURRENT: "Текущая",
     RequestTag.PLANNED: "Плановая",

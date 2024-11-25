@@ -14,7 +14,7 @@ from models.request.categories_tree import (
     RequestSubcategory,
 )
 from models.request.request import RequestModel
-from models.request_template.constants import TemplateType
+from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
 from schemes.request_template_scheme import RequestTemplateCUScheme
 
@@ -52,7 +52,7 @@ class RequestTemplateService:
         Returns:
             RequestTemplate: Созданный шаблон заявок
         """
-        if scheme.type == TemplateType.REQUEST:
+        if scheme.type == RequestTemplateType.REQUEST:
             if not scheme.category:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -98,7 +98,7 @@ class RequestTemplateService:
             RequestTemplate: Созданный шаблон заявок
         """
         request_template = await self._get_template(request_template_id)
-        is_request_type = scheme.type == TemplateType.REQUEST
+        is_request_type = scheme.type == RequestTemplateType.REQUEST
         if is_request_type:
             if not scheme.category:
                 raise HTTPException(

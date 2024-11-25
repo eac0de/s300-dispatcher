@@ -5,7 +5,7 @@
 from pydantic import BaseModel, Field
 
 from models.request.categories_tree import RequestCategory, RequestSubcategory
-from models.request_template.constants import TemplateType
+from models.request_template.constants import RequestTemplateType
 
 
 class RequestTemplateCUScheme(BaseModel):
@@ -22,7 +22,7 @@ class RequestTemplateCUScheme(BaseModel):
     subcategory: RequestSubcategory | None = Field(
         title="Подкатегория заявки",
     )
-    type: TemplateType = Field(
+    type: RequestTemplateType = Field(
         alias="_type",
         title="Тип шаблона",
     )

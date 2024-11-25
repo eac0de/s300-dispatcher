@@ -23,7 +23,7 @@ from models.request.categories_tree import (
 )
 from models.request.constants import (
     REQUEST_STATUS_EN_RU,
-    TAG_EN_RU,
+    REQUEST_TAG_EN_RU,
     RequestStatus,
     RequestTag,
 )
@@ -49,7 +49,7 @@ from models.request_history.request_history import (
     UpdateUser,
     UpdateUserType,
 )
-from models.request_template.constants import TemplateType
+from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
 from schemes.only_id import OnlyIdScheme
 from schemes.request.dispatcher_request import (
@@ -431,7 +431,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                 name="tag",
                 value=tag,
                 name_display="Тег",
-                value_display=TAG_EN_RU[tag],
+                value_display=REQUEST_TAG_EN_RU[tag],
             )
         )
 
@@ -443,7 +443,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             template = await RequestTemplate.find_one(
                 {
                     "_id": relations.template_id,
-                    "_type": TemplateType.REQUEST,
+                    "_type": RequestTemplateType.REQUEST,
                     "provider_id": self.employee.provider.id,
                 }
             )

@@ -8,7 +8,6 @@ from fastapi.responses import StreamingResponse
 
 from api.dependencies.auth import EmployeeDep
 from api.filters.request_filter import DispatcherRequestFilter
-from models.request.categories_tree import CATEGORY_SUBCATEGORY_WORK_AREA_TREE
 from models.request.request import RequestModel
 from schemes.request.dispatcher_request import (
     RequestDCScheme,
@@ -23,7 +22,6 @@ from services.request.dispatcher_request_update_service import (
     DispatcherRequestUpdateService,
 )
 from services.request_history_service import RequestHistoryService
-from utils.responses import JSONResponse
 
 dispatcher_request_router = APIRouter(
     tags=["dispatcher_requests"],
@@ -328,14 +326,3 @@ async def download_execution_act_file(
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
     response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
     return response
-
-
-@dispatcher_request_router.get(
-    path="/constants/categories_tree",
-    status_code=status.HTTP_200_OK,
-)
-async def get_requests_categories_tree():
-    """
-    Получение дерева категорий, подкатегорий, областей работ и действий
-    """
-    return JSONResponse(content=CATEGORY_SUBCATEGORY_WORK_AREA_TREE)

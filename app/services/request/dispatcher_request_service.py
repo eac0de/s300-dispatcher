@@ -27,7 +27,7 @@ from models.request.embs.house import HouseRS
 from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS, RequestRelationsRS
 from models.request.request import RequestModel
-from models.request_template.constants import TemplateType
+from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
 from schemes.request.dispatcher_request import RequestDCScheme
 from schemes.request_employee_schedule import (
@@ -199,7 +199,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
                 template = await RequestTemplate.find_one(
                     {
                         "_id": scheme.relations.template_id,
-                        "_type": TemplateType.REQUEST,
+                        "_type": RequestTemplateType.REQUEST,
                         "provider_id": self.employee.provider.id,
                     }
                 )
