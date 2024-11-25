@@ -27,7 +27,7 @@ async def get_catalog_item_groups(
     """
     Получение возможных групп позиций каталога
     """
-    
+
     service = TenantCatalogItemService(tenant)
     catalog_item_groups = await service.get_catalog_item_groups()
     return catalog_item_groups

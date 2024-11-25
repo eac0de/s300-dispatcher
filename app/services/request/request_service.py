@@ -301,7 +301,7 @@ class RequestService:
         Returns:
             str: Тег
         """
-        return f"REQUESTER_ATTACHMENT {str(request_id)}"
+        return f"requester_attachment {str(request_id)}"
 
     @staticmethod
     async def get_filetag_for_execution_attachment(request_id: PydanticObjectId) -> str:
@@ -314,7 +314,7 @@ class RequestService:
         Returns:
             str: Тег
         """
-        return f"EXECUTION_ATTACHMENT {str(request_id)}"
+        return f"execution_attachment {str(request_id)}"
 
     @staticmethod
     async def get_filetag_for_execution_act(request_id: PydanticObjectId) -> str:
@@ -327,4 +327,4 @@ class RequestService:
         Returns:
             str: Тег
         """
-        return f"EXECUTION_ACT {str(request_id)}"
+        return f"execution_act {str(request_id)}"

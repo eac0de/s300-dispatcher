@@ -22,6 +22,7 @@ from services.request.dispatcher_request_update_service import (
     DispatcherRequestUpdateService,
 )
 from services.request_history_service import RequestHistoryService
+from utils.grid_fs.file import File
 
 dispatcher_request_router = APIRouter(
     tags=["dispatcher_requests"],
@@ -193,7 +194,7 @@ async def reset_request(
 @dispatcher_request_router.post(
     path="/{request_id}/requester_attachment_files",
     status_code=status.HTTP_200_OK,
-    response_model=RequestDRScheme,
+    response_model=list[File],
 )
 async def upload_requester_attachment_files(
     employee: EmployeeDep,
@@ -239,7 +240,7 @@ async def download_requester_attachment_file(
 @dispatcher_request_router.post(
     path="/{request_id}/execution_attachment_files",
     status_code=status.HTTP_200_OK,
-    response_model=RequestDRScheme,
+    response_model=list[File],
 )
 async def upload_execution_attachment_files(
     employee: EmployeeDep,
@@ -285,7 +286,7 @@ async def download_execution_attachment_file(
 @dispatcher_request_router.post(
     path="/{request_id}/execution_act_files",
     status_code=status.HTTP_200_OK,
-    response_model=RequestDRScheme,
+    response_model=list[File],
 )
 async def upload_execution_act_files(
     employee: EmployeeDep,

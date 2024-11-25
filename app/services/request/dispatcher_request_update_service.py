@@ -228,7 +228,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
     async def upload_requester_attachment_files(
         self,
         files: list[UploadFile],
-    ) -> RequestModel:
+    ) -> list[File]:
         """
         Загрузка файлов вложения заявителя
 
@@ -271,12 +271,12 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             await self.rollback()
             raise
         await self._update_request_history()
-        return self.request
+        return self.request.requester_attachment.files
 
     async def upload_execution_attachment_files(
         self,
         files: list[UploadFile],
-    ) -> RequestModel:
+    ) -> list[File]:
         """
         Загрузка файлов вложения сотрудников
 
@@ -319,12 +319,12 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             await self.rollback()
             raise
         await self._update_request_history()
-        return self.request
+        return self.request.execution.attachment.files
 
     async def upload_execution_act_files(
         self,
         files: list[UploadFile],
-    ) -> RequestModel:
+    ) -> list[File]:
         """
         Загрузка файлов вложения сотрудников
 
@@ -368,7 +368,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             await self.rollback()
             raise
         await self._update_request_history()
-        return self.request
+        return self.request.execution.act.files
 
     async def _update_request_history(self, tag: str | None = None) -> None:
         if not self.updated_fields:

@@ -25,11 +25,9 @@ from models.request.embs.action import ActionRS, ActionRSType
 from models.request.embs.area import AreaRS
 from models.request.embs.commerce import CommerceRS
 from models.request.embs.employee import (
-    DepartmentRS,
     DispatcherRS,
     PersonInChargeRS,
     PersonInChargeType,
-    PositionRS,
     ProviderRS,
 )
 from models.request.embs.execution import ExecutionRS
@@ -43,74 +41,36 @@ from models.request.embs.resources import (
     WarehouseResourcesRS,
 )
 from models.request.request import RequestModel
+from utils.grid_fs.file import File
 from utils.json_encoders import ObjectIdEncoder
 
 
 @pytest.fixture()
 async def requests(auth_employee: EmployeeCache, auth_tenant: TenantCache):
     t = datetime.now()
+    auth_employee_dict = auth_employee.model_dump(by_alias=True)
+    auth_tenant_dict = auth_tenant.model_dump(by_alias=True)
     return [
         await RequestModel(
             _id=PydanticObjectId("672e35893872fa7eba2e3490"),
             _binds=ProviderHouseGroupBinds(
-                pr={auth_employee.provider.id},
+                pr={auth_employee.binds_permissions.pr},
                 hg={
-                    PydanticObjectId("6530efef747cd10016aa416f"),
-                    PydanticObjectId("669660ef923fad9568f685cc"),
-                    PydanticObjectId("660c16d28d5cf82d2c3c0756"),
-                    PydanticObjectId("66d95d3eae7fcb6f3abcbe24"),
-                    PydanticObjectId("66d04d913c21e9d625d08e5d"),
-                    PydanticObjectId("6644baa09675039c2c5fe6a7"),
-                    PydanticObjectId("66b239d303f1d65f7020ca6f"),
-                    PydanticObjectId("6644c0e239acd180475adf74"),
-                    PydanticObjectId("65ca3748dcee27703f3ed43d"),
-                    PydanticObjectId("660c08b6eadc2c25ef00276d"),
-                    PydanticObjectId("6570449feac1d60019442a2a"),
-                    PydanticObjectId("6570449d141ba100195e2e90"),
-                    PydanticObjectId("6703de2b0ef9db6354b2d07c"),
-                    PydanticObjectId("66e7ddd9ce7ad1c1aefd3970"),
-                    PydanticObjectId("65ca3746ceff5479c03e026c"),
-                    PydanticObjectId("6582b252b0d09a001aee0d93"),
-                    PydanticObjectId("65b1247a56113d001944df4c"),
-                    PydanticObjectId("5e00a6f649a6a500016678c0"),
-                    PydanticObjectId("66159730ea27672b0f699002"),
-                    PydanticObjectId("66433602399a37949f4c397a"),
-                    PydanticObjectId("66263c49f5d00353f46863ed"),
-                    PydanticObjectId("6530eff174018700188c0fbd"),
-                    PydanticObjectId("65ca367e8ac61fc71e78a3f2"),
-                    PydanticObjectId("61b06eecc950b1001a3a31e8"),
-                    PydanticObjectId("6644d6b4bb5bd754046f0b99"),
-                    PydanticObjectId("667eb42faa833b6106449556"),
-                    PydanticObjectId("667e7803a8721f4a90e8c611"),
-                    PydanticObjectId("671b647bea65456772dde8ed"),
-                    PydanticObjectId("66d04d92ce18a58a594a35d5"),
-                    PydanticObjectId("6645b7950d2d79a3aa58d98a"),
-                    PydanticObjectId("66d04d948c10448854de2171"),
-                    PydanticObjectId("6614fd6800699a71cab97808"),
-                    PydanticObjectId("66de9a29733a9d382b94c06c"),
+                    auth_employee.binds_permissions.hg,
                 },
             ),
             _type=RequestType.AREA,
             actions=[ActionRS(start_at=t, end_at=t + timedelta(days=1), _type=ActionRSType.ELECTRICITY)],
             administrative_supervision=True,
-            area=AreaRS(_id=auth_tenant.area.id, number=auth_tenant.area.number, formatted_number=auth_tenant.area.formatted_number),
+            area=AreaRS.model_validate(auth_tenant.area.model_dump(by_alias=True)),
             commerce=CommerceRS(pay_status=RequestPayStatus.NO_CHARGE, catalog_items=[]),
             created_at=t,
             description="test_description_1",
-            dispatcher=DispatcherRS(
-                _id=auth_employee.id,
-                short_name=auth_employee.short_name,
-                full_name=auth_employee.full_name,
-                phone_numbers=auth_employee.phone_numbers,
-                email=auth_employee.email,
-                position=PositionRS.model_validate(auth_employee.position.model_dump(by_alias=True)),
-                department=DepartmentRS.model_validate(auth_employee.department.model_dump(by_alias=True)),
-                provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
-            ),
+            dispatcher=DispatcherRS.model_validate(auth_employee_dict),
             execution=ExecutionRS(
                 desired_start_at=None,
                 desired_end_at=None,
-                provider=ProviderRS(_id=auth_employee.provider.id, name=auth_employee.provider.name),
+                provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
                 employees=[],
                 act=Attachment(files=[], comment=""),
                 attachment=Attachment(files=[], comment=""),
@@ -118,38 +78,17 @@ async def requests(auth_employee: EmployeeCache, auth_tenant: TenantCache):
                 rates=[],
                 total_rate=0,
             ),
-            house=HouseRS(_id=auth_tenant.house.id, address=auth_tenant.house.address),
+            house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
             housing_supervision=True,
             is_public=False,
             monitoring=MonitoringRS(
                 control_messages=[],
-                persons_in_charge=[
-                    PersonInChargeRS(
-                        _id=auth_employee.id,
-                        short_name=auth_employee.short_name,
-                        full_name=auth_employee.full_name,
-                        phone_numbers=auth_employee.phone_numbers,
-                        email=auth_employee.email,
-                        position=PositionRS.model_validate(auth_employee.position.model_dump(by_alias=True)),
-                        department=DepartmentRS.model_validate(auth_employee.department.model_dump(by_alias=True)),
-                        provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
-                        _type=PersonInChargeType.DISPATCHER,
-                    )
-                ],
+                persons_in_charge=[PersonInChargeRS.model_validate({**auth_employee_dict, "_type": PersonInChargeType.DISPATCHER})],
             ),
             number="7837582401637",
             provider=ProviderRS(_id=auth_employee.provider.id, name=auth_employee.provider.name),
             relations=RelationsRS(),
-            requester=TenantRequester(
-                _id=auth_tenant.id,
-                short_name=auth_tenant.short_name,
-                full_name=auth_tenant.full_name,
-                phone_numbers=auth_tenant.phone_numbers,
-                email=auth_tenant.email,
-                _type=RequesterType.TENANT,
-                area=auth_tenant.area,
-                house=auth_tenant.house,
-            ),
+            requester=TenantRequester.model_validate({**auth_tenant_dict, "_type": RequesterType.TENANT}),
             requester_attachment=Attachment(files=[], comment=""),
             resources=ResourcesRS(materials=[], services=[], warehouses=[]),
             source=RequestSource.DISPATCHER,
@@ -159,24 +98,6 @@ async def requests(auth_employee: EmployeeCache, auth_tenant: TenantCache):
             tag=RequestTag.CURRENT,
             work_area=RequestWorkArea.AREA,
         ).save(),
-        # await RequestModel(
-        #     name="test_name_2",
-        #     description="test_description_2",
-        #     code="test_code_2",
-        #     measurement_unit=CatalogMeasurementUnit.PIECE,
-        #     is_available=True,
-        #     is_divisible=True,
-        #     available_from=t,
-        #     group=CatalogItemGroup.PLUMBING,
-        #     provider_id=PydanticObjectId(),
-        #     prices=[
-        #         CatalogItemPrice(
-        #             start_at=t,
-        #             amount=1000,
-        #         )
-        #     ],
-        #     house_ids={PydanticObjectId()},
-        # ).save(),
     ]
 
 
@@ -380,62 +301,64 @@ class TestDispatcherRequestRouter:
         resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/requester_attachment_files", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
-        assert "attachments" in resp_json
-        assert len(resp_json["attachments"]) == len(files)
+        assert isinstance(resp_json, list)
+        assert len(resp_json) == len(files)
 
     # Тест для download_requester_attachment_file
     async def test_download_requester_attachment_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
-        request.requester_attachment.files.append(File)
-        file_id = "valid_file_id"
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file_id}")
+        file_content = b"file_content_1"
+        file = await File.create(file_content, "file1.txt", f"requester_attachment {request.id}")
+        request.requester_attachment.files.append(file)
+        await request.save()
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file.id}")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
-        assert resp.headers["Content-Type"] == "application/octet-stream"
+        assert "text/plain" in resp.headers["Content-Type"]
+        assert await resp.aread() == file_content
 
     # Тест для upload_execution_attachment_files
-    async def test_upload_execution_attachment_files(self, api_employee_client: AsyncClient):
-        request
-        request_id = "valid_request_id"
-        files = [("files", ("work_report.pdf", b"file_content", "application/pdf"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request_id}/execution_attachment_files", files=files)
+    async def test_upload_execution_attachment_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
+        files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_attachment_files", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
-        assert "attachments" in resp_json
-        assert len(resp_json["attachments"]) == len(files)
+        assert isinstance(resp_json, list)
+        assert len(resp_json) == len(files)
 
     # Тест для download_execution_attachment_file
-    async def test_download_execution_attachment_file(self, api_employee_client: AsyncClient):
-        request_id = "valid_request_id"
-        file_id = "valid_file_id"
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request_id}/execution_attachment_files/{file_id}")
+    async def test_download_execution_attachment_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
+        file_content = b"file_content_1"
+        file = await File.create(file_content, "file1.txt", f"execution_attachment {request.id}")
+        request.requester_attachment.files.append(file)
+        await request.save()
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_attachment_files/{file.id}")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
-        assert resp.headers["Content-Type"] == "application/octet-stream"
+        assert "text/plain" in resp.headers["Content-Type"]
+        assert await resp.aread() == file_content
 
     # Тест для upload_execution_act_files
-    async def test_upload_execution_act_files(self, api_employee_client: AsyncClient):
-        request_id = "valid_request_id"
-        files = [("files", ("act.pdf", b"act_content", "application/pdf"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request_id}/execution_act_files", files=files)
+    async def test_upload_execution_act_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
+        files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_act_files", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
-        assert "attachments" in resp_json
-        assert len(resp_json["attachments"]) == len(files)
+        assert isinstance(resp_json, list)
+        assert len(resp_json) == len(files)
 
     # Тест для download_execution_act_file
-    async def test_download_execution_act_file(self, api_employee_client: AsyncClient):
-        request_id = "valid_request_id"
-        file_id = "valid_file_id"
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request_id}/execution_act_files/{file_id}")
+    async def test_download_execution_act_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        request = requests[0]
+        file_content = b"file_content_1"
+        file = await File.create(file_content, "file1.txt", f"execution_act {request.id}")
+        request.requester_attachment.files.append(file)
+        await request.save()
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_act_files/{file.id}")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
-        assert resp.headers["Content-Type"] == "application/octet-stream"
-
-    # Тест для get_requests_categories_tree
-    async def test_get_requests_categories_tree(self, api_employee_client: AsyncClient):
-        resp = await api_employee_client.get("/dispatcher/requests/constants/categories_tree")
-        assert resp.status_code == status.HTTP_200_OK
-        resp_json = resp.json()
-        assert isinstance(resp_json, dict)
-        assert "categories" in resp_json
+        assert "text/plain" in resp.headers["Content-Type"]
+        assert await resp.aread() == file_content

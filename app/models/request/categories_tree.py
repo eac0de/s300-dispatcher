@@ -103,209 +103,209 @@ REQUEST_WORK_AREA_EN_RU = {
 
 CATEGORY_SUBCATEGORY_WORK_AREA_TREE = {
     "categories": {
-        RequestCategory.BUILDING_RENOVATION.value: {
+        RequestCategory.BUILDING_RENOVATION: {
             "name": "Ремонт строения/дома",
             "subcategories": {
-                RequestSubcategory.GENERAL_PROPERTY.value: {
+                RequestSubcategory.GENERAL_PROPERTY: {
                     "name": "Общее имущество",
-                    "parent": RequestCategory.BUILDING_RENOVATION.value,
+                    "parent": RequestCategory.BUILDING_RENOVATION,
                 },
-                RequestSubcategory.CURRENT_REPAIR.value: {
+                RequestSubcategory.CURRENT_REPAIR: {
                     "name": "Текущий ремонт",
-                    "parent": RequestCategory.BUILDING_RENOVATION.value,
+                    "parent": RequestCategory.BUILDING_RENOVATION,
                 },
             },
         },
-        RequestCategory.TERRITORY.value: {
+        RequestCategory.TERRITORY: {
             "name": "Территория",
             "subcategories": {
-                RequestSubcategory.SANITATION.value: {
+                RequestSubcategory.SANITATION: {
                     "name": "Сан.содержание",
-                    "parent": RequestCategory.TERRITORY.value,
+                    "parent": RequestCategory.TERRITORY,
                 },
-                RequestSubcategory.IMPROVEMENT.value: {
+                RequestSubcategory.IMPROVEMENT: {
                     "name": "Благоустройство",
-                    "parent": RequestCategory.TERRITORY.value,
+                    "parent": RequestCategory.TERRITORY,
                 },
             },
         },
-        RequestCategory.COMMERCIAL.value: {
+        RequestCategory.COMMERCIAL: {
             "name": "Коммерческая",
             "subcategories": {
-                RequestSubcategory.CHARGEABLE.value: {
+                RequestSubcategory.CHARGEABLE: {
                     "name": "Платная",
-                    "parent": RequestCategory.COMMERCIAL.value,
+                    "parent": RequestCategory.COMMERCIAL,
                     "work_areas": {
-                        RequestWorkArea.AREA.value: {
+                        RequestWorkArea.AREA: {
                             "name": "В квартире",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.CELLAR.value: {
+                        RequestWorkArea.CELLAR: {
                             "name": "В подвале",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.STANDPIPE.value: {
+                        RequestWorkArea.STANDPIPE: {
                             "name": "Стояк",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
                     },
                 },
-                RequestSubcategory.WARRANTY.value: {
+                RequestSubcategory.WARRANTY: {
                     "name": "Гарантийная",
-                    "parent": RequestCategory.COMMERCIAL.value,
+                    "parent": RequestCategory.COMMERCIAL,
                     "work_areas": {
-                        RequestWorkArea.AREA.value: {
+                        RequestWorkArea.AREA: {
                             "name": "В квартире",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.CELLAR.value: {
+                        RequestWorkArea.CELLAR: {
                             "name": "В подвале",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.STANDPIPE.value: {
+                        RequestWorkArea.STANDPIPE: {
                             "name": "Стояк",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
                     },
                 },
             },
         },
-        RequestCategory.EMERGENCY.value: {
+        RequestCategory.EMERGENCY: {
             "name": "Аварийная",
             "subcategories": {
-                RequestSubcategory.LIFT.value: {
+                RequestSubcategory.LIFT: {
                     "name": "Лифт",
-                    "parent": RequestCategory.EMERGENCY.value,
+                    "parent": RequestCategory.EMERGENCY,
                     "work_areas": {
-                        RequestWorkArea.HOUSE.value: {
+                        RequestWorkArea.HOUSE: {
                             "name": "В доме",
                             "actions": {
-                                ActionRSType.LIFT.value: {"name": "Отключить лифт", "notify_title": "Лифт отключен"},
+                                ActionRSType.LIFT: {"name": "Отключить лифт", "notify_title": "Лифт отключен"},
                             },
                         },
-                        RequestWorkArea.PORCH.value: {
+                        RequestWorkArea.PORCH: {
                             "name": "В подъезде",
                             "actions": {
-                                ActionRSType.LIFT.value: {"name": "Отключить лифт", "notify_title": "Лифт отключен"},
+                                ActionRSType.LIFT: {"name": "Отключить лифт", "notify_title": "Лифт отключен"},
                             },
                         },
                     },
                 },
-                RequestSubcategory.ELECTRICITY.value: {
+                RequestSubcategory.ELECTRICITY: {
                     "name": "Электроснабжение",
-                    "parent": RequestCategory.EMERGENCY.value,
+                    "parent": RequestCategory.EMERGENCY,
                     "work_areas": {
-                        RequestWorkArea.HOUSE.value: {
+                        RequestWorkArea.HOUSE: {
                             "name": "В доме",
                             "actions": {
-                                ActionRSType.ELECTRICITY.value: {"name": "Отключить Электроснабжение", "notify_title": "Электроснабжение отключено"},
+                                ActionRSType.ELECTRICITY: {"name": "Отключить Электроснабжение", "notify_title": "Электроснабжение отключено"},
                             },
                         },
-                        RequestWorkArea.AREA.value: {
+                        RequestWorkArea.AREA: {
                             "name": "В квартире",
                             "actions": {
-                                ActionRSType.ELECTRICITY.value: {"name": "Отключить Электроснабжение", "notify_title": "Электроснабжение отключено"},
+                                ActionRSType.ELECTRICITY: {"name": "Отключить Электроснабжение", "notify_title": "Электроснабжение отключено"},
                             },
                         },
                     },
                 },
-                RequestSubcategory.LEAK.value: {
+                RequestSubcategory.LEAK: {
                     "name": "Протечка",
-                    "parent": RequestCategory.EMERGENCY.value,
+                    "parent": RequestCategory.EMERGENCY,
                     "work_areas": {
-                        RequestWorkArea.AREA.value: {
+                        RequestWorkArea.AREA: {
                             "name": "В квартире",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.CELLAR.value: {
+                        RequestWorkArea.CELLAR: {
                             "name": "В подвале",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
-                        RequestWorkArea.STANDPIPE.value: {
+                        RequestWorkArea.STANDPIPE: {
                             "name": "Стояк",
                             "actions": {
-                                ActionRSType.CWS.value: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
-                                ActionRSType.HWS.value: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
-                                ActionRSType.CENTRAL_HEATING.value: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
+                                ActionRSType.CWS: {"name": "Отключить стояк ХВС", "notify_title": "Стояк ХВС отключен"},
+                                ActionRSType.HWS: {"name": "Отключить стояк ГВС", "notify_title": "Стояк ГВС отключен"},
+                                ActionRSType.CENTRAL_HEATING: {"name": "Отключить стояк ЦО", "notify_title": "Стояк ЦО отключен"},
                             },
                         },
                     },
                 },
             },
         },
-        RequestCategory.VANDALISM.value: {
+        RequestCategory.VANDALISM: {
             "name": "Вандализм",
             "subcategories": {
-                RequestSubcategory.WINDOWS.value: {
+                RequestSubcategory.WINDOWS: {
                     "name": "Окна",
-                    "parent": RequestCategory.VANDALISM.value,
+                    "parent": RequestCategory.VANDALISM,
                 },
-                RequestSubcategory.SANITARY_WARE.value: {
+                RequestSubcategory.SANITARY_WARE: {
                     "name": "Сантехника",
-                    "parent": RequestCategory.VANDALISM.value,
+                    "parent": RequestCategory.VANDALISM,
                 },
-                RequestSubcategory.ELECTRICS.value: {
+                RequestSubcategory.ELECTRICS: {
                     "name": "Электрика",
-                    "parent": RequestCategory.VANDALISM.value,
+                    "parent": RequestCategory.VANDALISM,
                 },
-                RequestSubcategory.STAINED_GLASS.value: {
+                RequestSubcategory.STAINED_GLASS: {
                     "name": "Витражи ГО",
-                    "parent": RequestCategory.VANDALISM.value,
+                    "parent": RequestCategory.VANDALISM,
                 },
-                RequestSubcategory.DECORATION.value: {
+                RequestSubcategory.DECORATION: {
                     "name": "Отделка",
-                    "parent": RequestCategory.VANDALISM.value,
+                    "parent": RequestCategory.VANDALISM,
                 },
             },
         },
-        RequestCategory.VENTILATION.value: {
+        RequestCategory.VENTILATION: {
             "name": "Вентиляция",
         },
-        RequestCategory.WATER_DISPOSAL.value: {
+        RequestCategory.WATER_DISPOSAL: {
             "name": "Водоотведение",
         },
-        RequestCategory.ROOF.value: {
+        RequestCategory.ROOF: {
             "name": "Кровля",
         },
-        RequestCategory.SEALING.value: {
+        RequestCategory.SEALING: {
             "name": "Опломбирование",
         },
-        RequestCategory.LEGAL_ISSUES.value: {
+        RequestCategory.LEGAL_ISSUES: {
             "name": "Орг.-правовые вопросы ЖКХ",
         },
-        RequestCategory.FACADES.value: {
+        RequestCategory.FACADES: {
             "name": "Фасады",
         },
     },
