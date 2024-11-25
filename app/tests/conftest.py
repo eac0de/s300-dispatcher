@@ -4,14 +4,14 @@ import pytest
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, AsyncClient
 
+from client.c300.models.area import AreaC300
+from client.c300.models.employee import EmployeeC300
+from client.c300.models.house import HouseC300
+from client.c300.models.provider import ProviderC300
+from client.c300.models.tenant import TenantC300
 from config import settings
 from database import init_db
 from main import app
-from models.cache.area import AreaCache
-from models.cache.employee import EmployeeCache
-from models.cache.house import HouseCache
-from models.cache.provider import ProviderCache
-from models.cache.tenant import TenantCache
 from models.catalog_item.catalog_item import CatalogItem
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
@@ -25,7 +25,9 @@ from models.request_template.request_template import RequestTemplate
 @pytest.fixture(scope="session", autouse=True)
 def check_mode():
     if settings.MODE != "TEST":
-        raise PermissionError("Для проведения тестов параметр MODE должен быть равен TEST")
+        raise PermissionError(
+            f"Для проведения тестов параметр MODE должен быть равен TEST. Текущий MODE = {settings.MODE}. Внимание! Запрещено менять MODE вручную. Он должен автоматически измениться из среды окружения созданной для тестов!"
+        )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -61,11 +63,11 @@ async def setup_db():
     models = [
         RequestModel,
         ArchivedRequestModel,
-        TenantCache,
-        EmployeeCache,
-        HouseCache,
-        AreaCache,
-        ProviderCache,
+        TenantC300,
+        EmployeeC300,
+        HouseC300,
+        AreaC300,
+        ProviderC300,
         RequestHistory,
         CatalogItem,
         RequestTemplate,
@@ -81,7 +83,7 @@ async def setup_db():
 @pytest.fixture()
 async def auth_employee(setup_db: None):
     _ = setup_db
-    worker = EmployeeCache.model_validate(
+    worker = EmployeeC300.model_validate(
         {
             "_id": "6343c35a80fa3d001a9a4c9e",
             "binds_permissions": {"pr": "61b06a693b6d6e0019260942", "hg": "61b06eecc950b1001a3a31e8"},
@@ -101,7 +103,7 @@ async def auth_employee(setup_db: None):
 
 
 @pytest.fixture()
-async def auth_employee_cookie(auth_employee: EmployeeCache):
+async def auth_employee_cookie(auth_employee: EmployeeC300):
     token = jwt.encode(
         payload={
             "profile": auth_employee.number,
@@ -126,7 +128,7 @@ async def api_employee_client(auth_employee_cookie: dict[str, str]):
 @pytest.fixture()
 async def auth_tenant(setup_db: None):
     _ = setup_db
-    tenant = TenantCache.model_validate(
+    tenant = TenantC300.model_validate(
         {
             "_id": "64bf8629a236cf0019a7b473",
             "binds_permissions": {"pr": "61b06a693b6d6e0019260942", "hg": "61b06eecc950b1001a3a31e8"},

@@ -3,8 +3,8 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
+from client.c300.models.employee import EmployeeC300
 from models.base.binds import ProviderBinds
-from models.cache.employee import EmployeeCache
 from models.extra.phone_number import PhoneNumber, PhoneType
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
@@ -13,7 +13,7 @@ from utils.json_encoders import ObjectIdEncoder
 
 
 @pytest.fixture()
-async def other_persons(auth_employee: EmployeeCache):
+async def other_persons(auth_employee: EmployeeC300):
     return [
         await OtherPerson(
             short_name="short_`1",
@@ -37,7 +37,7 @@ async def other_persons(auth_employee: EmployeeCache):
 
 
 @pytest.fixture()
-async def other_providers(auth_employee: EmployeeCache):
+async def other_providers(auth_employee: EmployeeC300):
     return [
         await OtherProvider(
             name="name_1",

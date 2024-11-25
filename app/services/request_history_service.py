@@ -2,8 +2,8 @@
  Модуль с сервисом для работы с историей изменения заявок
 """
 
-from client.c300_api import C300API
-from models.cache.employee import EmployeeCache
+from client.c300.api import C300API
+from client.c300.models.employee import EmployeeC300
 from models.request.request import RequestModel
 from models.request_history.request_history import RequestHistory
 from schemes.request_history import UpdateRequestHistoryRScheme
@@ -16,14 +16,14 @@ class RequestHistoryService:
 
     def __init__(
         self,
-        employee: EmployeeCache,
+        employee: EmployeeC300,
         request: RequestModel,
     ):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeCache): Сотрудник работающий с историей заявки
+            employee (EmployeeC300): Сотрудник работающий с историей заявки
             request (RequestModel): Заявка для отображения истории
         """
         self.employee = employee

@@ -5,9 +5,9 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
+from client.c300.models.employee import EmployeeC300
+from client.c300.models.tenant import TenantC300
 from models.base.binds import ProviderHouseGroupBinds
-from models.cache.employee import EmployeeCache
-from models.cache.tenant import TenantCache
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
     RequestCategory,
@@ -46,7 +46,7 @@ from utils.json_encoders import ObjectIdEncoder
 
 
 @pytest.fixture()
-async def requests(auth_employee: EmployeeCache, auth_tenant: TenantCache):
+async def requests(auth_employee: EmployeeC300, auth_tenant: TenantC300):
     t = datetime.now()
     auth_employee_dict = auth_employee.model_dump(by_alias=True)
     auth_tenant_dict = auth_tenant.model_dump(by_alias=True)
@@ -103,7 +103,7 @@ async def requests(auth_employee: EmployeeCache, auth_tenant: TenantCache):
 
 class TestDispatcherRequestRouter:
 
-    async def test_create_request(self, api_employee_client: AsyncClient, auth_tenant: TenantCache, requests: list[RequestModel]):
+    async def test_create_request(self, api_employee_client: AsyncClient, auth_tenant: TenantC300, requests: list[RequestModel]):
         data = {
             "_type": "area",
             "area": {"_id": str(auth_tenant.area.id)},
@@ -199,7 +199,7 @@ class TestDispatcherRequestRouter:
         assert request.administrative_supervision == test_bool
         assert request.housing_supervision == test_bool
 
-    async def test_update_request_status(self, mocker, api_employee_client: AsyncClient, auth_employee: EmployeeCache, requests: list[RequestModel]):
+    async def test_update_request_status(self, mocker, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel]):
         request = requests[0]
         test_execution_description = "test_execution_description"
         data = {
@@ -238,7 +238,7 @@ class TestDispatcherRequestRouter:
                 items=[ItemWarehouseResourcesRS(_id=warehouse_item_id, name=test_warehouse_item_name, price=test_price, quantity=test_quantity)],
             )
         ]
-        mocker.patch("client.c300_api.C300API.upsert_storage_docs_out", return_value=mock_return)
+        mocker.patch("client.c300.api.C300API.upsert_storage_docs_out", return_value=mock_return)
         data["resources"]["warehouses"] = [
             {"_id": warehouse_id, "items": [{"_id": warehouse_item_id, "quantity": test_quantity}]},
         ]
@@ -257,7 +257,7 @@ class TestDispatcherRequestRouter:
         assert warehouse_item.quantity == test_quantity
         assert warehouse_item.price == test_price
 
-    async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeCache, requests: list[RequestModel]):
+    async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel]):
         request = requests[0]
         request.created_at = datetime.now() - timedelta(days=1)  # Заявка если только создана не создает историю а просто перезаписывает поля
         await request.save()

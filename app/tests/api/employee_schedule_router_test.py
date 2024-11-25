@@ -5,9 +5,9 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
+from client.c300.models.employee import EmployeeC300
+from client.c300.models.tenant import TenantC300
 from models.base.binds import ProviderHouseGroupBinds
-from models.cache.employee import EmployeeCache
-from models.cache.tenant import TenantCache
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
     RequestCategory,
@@ -41,7 +41,7 @@ from models.request.request import RequestModel
 
 
 @pytest.fixture()
-async def requests_for_employee_schedule(auth_employee: EmployeeCache, auth_tenant: TenantCache):
+async def requests_for_employee_schedule(auth_employee: EmployeeC300, auth_tenant: TenantC300):
     t = datetime.now()
     auth_employee_dict = auth_employee.model_dump(by_alias=True)
     auth_tenant_dict = auth_tenant.model_dump(by_alias=True)
@@ -102,7 +102,7 @@ async def requests_for_employee_schedule(auth_employee: EmployeeCache, auth_tena
 class TestDispatcherRequestRouter:
 
     @pytest.mark.usefixtures("requests_for_employee_schedule")
-    async def test_get_request_employee_weekly_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeCache):
+    async def test_get_request_employee_weekly_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300):
         resp = await api_employee_client.get("/dispatcher/employee_schedules/weekly", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
@@ -113,7 +113,7 @@ class TestDispatcherRequestRouter:
         assert len(schedule["workload"]) == 7
         assert schedule["workload"] == [1, 1, 1, 0, 0, 0, 0]
 
-    async def test_get_request_employee_daily_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeCache, requests_for_employee_schedule: list[RequestModel]):
+    async def test_get_request_employee_daily_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests_for_employee_schedule: list[RequestModel]):
         resp = await api_employee_client.get("/dispatcher/employee_schedules/daily", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()

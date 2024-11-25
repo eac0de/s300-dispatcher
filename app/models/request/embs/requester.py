@@ -8,10 +8,11 @@ from typing import Literal
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
-from models.cache.tenant import AreaTCS, HouseTCS
 from models.extra.phone_number import PhoneNumber
 from models.other.other_provider import OtherProvider
+from models.request.embs.area import AreaRS
 from models.request.embs.employee import ProviderRS
+from models.request.embs.house import HouseRS
 
 
 class RequesterType(str, Enum):
@@ -72,10 +73,10 @@ class TenantRequester(Requester):
         default=RequesterType.TENANT,
         title="Тип заявителя - жителя",
     )
-    area: AreaTCS = Field(
+    area: AreaRS = Field(
         title="Квартира жителя",
     )
-    house: HouseTCS = Field(
+    house: HouseRS = Field(
         title="Дом жителя",
     )
 

@@ -12,14 +12,14 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300_client import ClientC300
+from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from models.extra.phone_number import PhoneNumber
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class HouseTCS(BaseModel):
+class HouseTC300S(BaseModel):
     """
     Модель дома жителя
     """
@@ -33,7 +33,7 @@ class HouseTCS(BaseModel):
     )
 
 
-class AreaTCS(BaseModel):
+class AreaTC300S(BaseModel):
     """
     Модель помещения жителя
     """
@@ -50,7 +50,7 @@ class AreaTCS(BaseModel):
     )
 
 
-class TenantCache(DocumentCache):
+class TenantC300(DocumentCache):
     """
     Модель закешированного жителя
     """
@@ -72,10 +72,10 @@ class TenantCache(DocumentCache):
         default=None,
         title="Email жителя",
     )
-    area: AreaTCS = Field(
+    area: AreaTC300S = Field(
         title="Квартира жителя",
     )
-    house: HouseTCS = Field(
+    house: HouseTC300S = Field(
         title="Дом жителя",
     )
 

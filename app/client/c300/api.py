@@ -10,7 +10,7 @@ from fastapi import HTTPException
 from pydantic import UUID4, TypeAdapter
 from starlette import status
 
-from client.c300_client import ClientC300
+from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from models.request.embs.resources import WarehouseResourcesRS
 from utils.request.constants import RequestMethod

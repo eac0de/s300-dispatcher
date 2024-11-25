@@ -11,13 +11,13 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300_client import ClientC300
+from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class ServiceBindHCS(BaseModel):
+class ServiceBindHC300S(BaseModel):
     """
     Модель привязок дома к организациям
     """
@@ -49,7 +49,7 @@ class ServiceBindHCS(BaseModel):
     )
 
 
-class StandpipeHCS(BaseModel):
+class StandpipeHC300S(BaseModel):
     """
     Модель стояка подЪезда
     """
@@ -60,7 +60,7 @@ class StandpipeHCS(BaseModel):
     )
 
 
-class LiftHCS(BaseModel):
+class LiftHC300S(BaseModel):
     """
     Модель лифта подЪезда
     """
@@ -71,22 +71,22 @@ class LiftHCS(BaseModel):
     )
 
 
-class PorchHCS(BaseModel):
+class PorchHC300S(BaseModel):
     """
     Модель подЪезда дома
     """
 
-    standpipes: list[StandpipeHCS] = Field(
+    standpipes: list[StandpipeHC300S] = Field(
         default_factory=list,
         title="Стояки крыльца",
     )
-    lifts: list[LiftHCS] = Field(
+    lifts: list[LiftHC300S] = Field(
         default_factory=list,
         title="Лифты крыльца",
     )
 
 
-class SettingsHCS(BaseModel):
+class SettingsHC300S(BaseModel):
     """
     Модель настроек дома
     """
@@ -96,7 +96,7 @@ class SettingsHCS(BaseModel):
     )
 
 
-class HouseCache(DocumentCache):
+class HouseC300(DocumentCache):
     """
     Модель закешированного дома
     """
@@ -104,19 +104,19 @@ class HouseCache(DocumentCache):
     address: str = Field(
         title="Адрес дома",
     )
-    service_binds: list[ServiceBindHCS] = Field(
+    service_binds: list[ServiceBindHC300S] = Field(
         default_factory=list,
         title="Вид деятельности в отношении к дому",
     )
-    porches: list[PorchHCS] = Field(
+    porches: list[PorchHC300S] = Field(
         default_factory=list,
         title="Крыльца",
     )
-    settings: SettingsHCS = Field(
+    settings: SettingsHC300S = Field(
         title="настройки дома",
     )
 
-    async def get_lift(self, lift_id: PydanticObjectId) -> LiftHCS | None:
+    async def get_lift(self, lift_id: PydanticObjectId) -> LiftHC300S | None:
         """
         Получение лифта дома по его идентификатору
 
@@ -132,7 +132,7 @@ class HouseCache(DocumentCache):
                 if l.id == lift_id:
                     return l
 
-    async def get_standpipe(self, standpipe_id: PydanticObjectId) -> StandpipeHCS | None:
+    async def get_standpipe(self, standpipe_id: PydanticObjectId) -> StandpipeHC300S | None:
         """
         Получение стояка дома по его идентификатору
 

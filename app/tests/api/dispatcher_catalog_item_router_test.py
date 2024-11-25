@@ -5,9 +5,9 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
+from client.c300.models.employee import EmployeeC300
+from client.c300.models.tenant import TenantC300
 from config import settings
-from models.cache.employee import EmployeeCache
-from models.cache.tenant import TenantCache
 from models.catalog_item.catalog_item import CatalogItem, CatalogItemPrice
 from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
 
@@ -16,7 +16,7 @@ TEST_FILENAME = "test_image.jpeg"
 
 
 @pytest.fixture()
-async def catalog_items(auth_employee: EmployeeCache, auth_tenant: TenantCache):
+async def catalog_items(auth_employee: EmployeeC300, auth_tenant: TenantC300):
     t = datetime.now()
     return [
         await CatalogItem(
@@ -103,7 +103,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(resp_json) == 1
         assert resp_json[0] == catalog_items[0].group.value
 
-    async def test_create_catalog_item(self, api_employee_client: AsyncClient, auth_employee: EmployeeCache, auth_tenant: TenantCache):
+    async def test_create_catalog_item(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, auth_tenant: TenantC300):
         test_name = "test_name"
         test_code = "test_code"
         tenant_house_id = auth_tenant.house.id

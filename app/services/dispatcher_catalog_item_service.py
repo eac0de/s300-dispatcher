@@ -10,8 +10,8 @@ from beanie.exceptions import RevisionIdWasChanged
 from fastapi import HTTPException, UploadFile
 from starlette import status
 
-from client.c300_api import C300API
-from models.cache.employee import EmployeeCache
+from client.c300.api import C300API
+from client.c300.models.employee import EmployeeC300
 from models.catalog_item.catalog_item import CatalogItem
 from schemes.catalog_item import CatalogItemCScheme, CatalogItemUScheme
 from utils.grid_fs.constants import FileExtensionGroup
@@ -27,13 +27,13 @@ class DispatcherCatalogItemService:
 
     def __init__(
         self,
-        employee: EmployeeCache,
+        employee: EmployeeC300,
     ):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeCache): Модель работника осуществляющего работу с позициями каталога
+            employee (EmployeeC300): Модель работника осуществляющего работу с позициями каталога
         """
         self.employee = employee
 

@@ -1,5 +1,5 @@
 """
-Модуль с моделью закешированного помещения
+Модуль с моделью закешированной организации
 """
 
 from collections.abc import Mapping
@@ -9,22 +9,19 @@ import pydantic_core
 from pydantic import Field
 from starlette import status
 
-from client.c300_client import ClientC300
+from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class AreaCache(DocumentCache):
+class ProviderC300(DocumentCache):
     """
-    Модель закешированного помещения
+    Модель закешированной организации
     """
 
-    number: str = Field(
-        title="Номер квартиры",
-    )
-    formatted_number: str = Field(
-        title="Номер квартиры с приставкой и доп информацией",
+    name: str = Field(
+        title="Название организации",
     )
 
     @classmethod
@@ -33,20 +30,20 @@ class AreaCache(DocumentCache):
         query: Mapping[str, Any],
     ):
         """
-        Метод для подгрузки из C300 помещения
+        Метод для подгрузки из C300 организации
 
         Args:
             query (Mapping[str, Any]): Параметры запроса
 
         Notes:
-            Будет подгружено первое, соответствующий запросу помещение
+            Будет подгружен первый, соответствующий запросу дом
         """
 
-        path = "areas/get/"
+        path = "providers/get/"
         status_code, data = await ClientC300.send_request(
             path=path,
             method=RequestMethod.GET,
-            tag="load_area",
+            tag="load_provider",
             query_params=query,
             res_json=True,
         )
@@ -58,14 +55,14 @@ class AreaCache(DocumentCache):
                 status_code=status_code,
                 body=str(data)[:200],
             )
-        if not isinstance(data, dict) or data.get("area") is None:
+        if not isinstance(data, dict) or data.get("provider") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an «area» key",
+                description="The data transmitted from the C300 does not contain an «provider» key",
             )
         try:
-            await cls(**data["area"]).save()
+            await cls(**data["provider"]).save()
         except pydantic_core.ValidationError as e:
             raise FailedDependencyError(
-                description="Area data does not correspond to expected values",
+                description="Provider data does not correspond to expected values",
                 error=str(e),
             ) from e

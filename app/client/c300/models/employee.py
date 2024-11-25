@@ -10,7 +10,7 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300_client import ClientC300
+from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from models.extra.external_control import ExternalControl
 from models.extra.phone_number import PhoneNumber
@@ -18,7 +18,7 @@ from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class PositionECS(BaseModel):
+class PositionEC300S(BaseModel):
     """
     Модель должности сотрудника
     """
@@ -32,7 +32,7 @@ class PositionECS(BaseModel):
     )
 
 
-class DepartmentECS(BaseModel):
+class DepartmentEC300S(BaseModel):
     """
     Модель отдела сотрудника
     """
@@ -46,7 +46,7 @@ class DepartmentECS(BaseModel):
     )
 
 
-class ProviderECS(BaseModel):
+class ProviderEC300S(BaseModel):
     """
     Модель организации сотрудника
     """
@@ -60,7 +60,7 @@ class ProviderECS(BaseModel):
     )
 
 
-class BindsPermissionsECS(BaseModel):
+class BindsPermissionsEC300S(BaseModel):
     """
     Модель разрешений сотрудника
     """
@@ -73,7 +73,7 @@ class BindsPermissionsECS(BaseModel):
     )
 
 
-class EmployeeCache(DocumentCache):
+class EmployeeC300(DocumentCache):
     """
     Модель закешированного сотрудника
     """
@@ -95,16 +95,16 @@ class EmployeeCache(DocumentCache):
         default=None,
         title="Email сотрудника",
     )
-    position: PositionECS = Field(
+    position: PositionEC300S = Field(
         title="Должность сотрудника",
     )
-    department: DepartmentECS = Field(
+    department: DepartmentEC300S = Field(
         title="Отдел сотрудника",
     )
-    provider: ProviderECS = Field(
+    provider: ProviderEC300S = Field(
         title="Организация сотрудника",
     )
-    binds_permissions: BindsPermissionsECS = Field(
+    binds_permissions: BindsPermissionsEC300S = Field(
         title="Доступ сотрудника",
     )
     external_control: ExternalControl | None = Field(

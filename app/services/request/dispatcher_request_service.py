@@ -9,10 +9,10 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300_api import C300API
-from models.cache.area import AreaCache
-from models.cache.employee import EmployeeCache
-from models.cache.house import HouseCache
+from client.c300.api import C300API
+from client.c300.models.area import AreaC300
+from client.c300.models.employee import EmployeeC300
+from client.c300.models.house import HouseC300
 from models.request.archived_request import ArchivedRequestModel, ArchiverType
 from models.request.constants import RequestSource, RequestType
 from models.request.embs.area import AreaRS
@@ -48,12 +48,12 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         RollbackMixin (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
     """
 
-    def __init__(self, employee: EmployeeCache):
+    def __init__(self, employee: EmployeeC300):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeCache): Модель работника осуществляющего работу с позициями каталога
+            employee (EmployeeC300): Модель работника осуществляющего работу с позициями каталога
         """
 
         super().__init__()
@@ -138,7 +138,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
             RequestModel: Созданная заявка
         """
         try:
-            house = await HouseCache.get(scheme.house.id)
+            house = await HouseC300.get(scheme.house.id)
             if not house:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -158,7 +158,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Request with the type 'area' must have an area field",
                     )
-                area = await AreaCache.get(scheme.area.id)
+                area = await AreaC300.get(scheme.area.id)
                 if not area:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
