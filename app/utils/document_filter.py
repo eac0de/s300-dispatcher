@@ -54,7 +54,7 @@ class Filter(BaseModel, Generic[T]):
         title="Функция, возвращающая словарь для запроса к базе данных",
     )
     t_parser: Callable[[str], T | list[T]] = Field(
-        default=str,
+        default=lambda x: x,
         title="Функция для преобразования строки в нужный тип данных",
     )
     many: bool = Field(

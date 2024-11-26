@@ -41,7 +41,7 @@ class WarehouseResourcesRS(BaseModel):
         title="Название склада",
     )
     items: list[ItemWarehouseResourcesRS] = Field(
-        default=list,
+        default_factory=list,
         min_length=1,
         title="Позиции со склада",
     )

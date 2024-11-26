@@ -68,7 +68,7 @@ class WarehouseResourcesRequestDStatusUScheme(BaseModel):
         title="Идентификатор позиции со склада",
     )
     items: list[ItemWarehouseResourcesRequestDStatusUScheme] = Field(
-        default=list,
+        default_factory=list,
         min_length=1,
         title="Позиции со склада",
     )

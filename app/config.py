@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     """
 
     # common
-    PROJECT_NAME: str = "system300-request-service"
+    PROJECT_NAME: str = "s300-dispatcher"
     MODE: Literal["TEST", "DEV", "PROD"] = "DEV"
     TZ: str = "Europe/Moscow"
     PROJECT_DIR: str = os.path.dirname(os.path.abspath(__file__))

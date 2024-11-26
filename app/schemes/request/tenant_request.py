@@ -203,7 +203,7 @@ class RequestTRScheme(RequestModel):
         title="Ссылка на связанный с заявкой звонок",
         exclude=True,
     )
-    relations: RelationsRS = Field(
+    relations: RelationsRS | None = Field(
         default=None,
         title="Связанные заявки",
         exclude=True,
@@ -257,7 +257,7 @@ class RequestTLScheme(RequestModel):
         default_factory=list,
         title="Вложения заявителя",
     )
-    relations: RelationsRS = Field(
+    relations: RelationsRS | None = Field(
         default=None,
         title="Связанные заявки",
         exclude=True,
