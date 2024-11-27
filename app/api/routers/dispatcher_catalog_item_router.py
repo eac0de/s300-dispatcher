@@ -78,7 +78,7 @@ async def get_catalog_item_groups(
     return catalog_item_groups
 
 
-@dispatcher_catalog_item_router.put(
+@dispatcher_catalog_item_router.patch(
     path="/{catalog_item_id}",
     status_code=status.HTTP_200_OK,
     response_model=CatalogItem,

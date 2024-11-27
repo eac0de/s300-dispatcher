@@ -25,9 +25,9 @@ from models.request.constants import (
 from models.request.embs.area import AreaRS
 from models.request.embs.commerce import CatalogItemCommerceRS, CommerceRS
 from models.request.embs.employee import ProviderRS
+from models.request.embs.evaluation import EvaluationRS
 from models.request.embs.execution import ExecutionRS
 from models.request.embs.house import HouseRS
-from models.request.embs.rate import RateRS
 from models.request.embs.requester import RequesterType, TenantRequester
 from models.request.request import RequestModel
 from schemes.request.tenant_request import (
@@ -98,7 +98,7 @@ class TenantRequestService(RequestService):
         requests.limit(20 if limit is None else limit)
         result = []
         async for request in requests:
-            request.execution.rates = await self._get_request_rates(request)
+            request.execution.evaluations = await self._get_request_evaluations(request)
             result.append(request)
         return result
 
@@ -119,7 +119,7 @@ class TenantRequestService(RequestService):
             RequestModel: Заявка
         """
         request = await self._get_request(request_id)
-        request.execution.rates = await self._get_request_rates(request)
+        request.execution.evaluations = await self._get_request_evaluations(request)
         return request
 
     async def _get_request(
@@ -147,13 +147,13 @@ class TenantRequestService(RequestService):
             )
         return request
 
-    async def _get_request_rates(
+    async def _get_request_evaluations(
         self,
         request: RequestModel,
-    ) -> list[RateRS]:
-        for rate in request.execution.rates:
-            if rate.tenant_id == self.tenant.id:
-                return [rate]
+    ) -> list[EvaluationRS]:
+        for e in request.execution.evaluations:
+            if e.tenant_id == self.tenant.id:
+                return [e]
         return []
 
     async def create_request(
@@ -351,10 +351,10 @@ class TenantRequestService(RequestService):
             quantity = float(math.ceil(commerce_catalog_items_map[i.id])) if i.is_divisible else commerce_catalog_items_map[i.id]
             catalog_items.append(
                 CatalogItemCommerceRS(
+                    _id=i.id,
                     name=i.name,
                     price=price,
                     quantity=quantity,
-                    item_id=i.id,
                 )
             )
         return catalog_items
@@ -377,24 +377,27 @@ class TenantRequestService(RequestService):
         Returns:
             RequestModel: _description_
         """
-        if not scheme.execution.rates:
+        request = await self._get_request(request_id)
+        if request.status != RequestStatus.PERFORMED:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="RateRS is required",
+                detail="Request can only be rated once it has been performed",
             )
-        request = await self._get_request(request_id)
-        for rate in request.execution.rates:
-            if rate.tenant_id != self.tenant.id:
-                rate.rate = scheme.execution.rates[0].rate
-                break
-        else:
-            request.execution.rates.append(
-                RateRS(
+
+        existing_evaluation = next((e for e in request.execution.evaluations if e.tenant_id == self.tenant.id), None)
+        if existing_evaluation:
+            if scheme.execution.evaluations:
+                existing_evaluation.score = scheme.execution.evaluations[0].score
+            else:
+                request.execution.evaluations.remove(existing_evaluation)
+        elif scheme.execution.evaluations:
+            request.execution.evaluations.append(
+                EvaluationRS(
                     tenant_id=self.tenant.id,
-                    rate=scheme.execution.rates[0].rate,
+                    score=scheme.execution.evaluations[0].score,
                 )
             )
-        request.execution.total_rate = sum(rate.rate for rate in request.execution.rates) / len(request.execution.rates)
+        request.execution.total_rate = (sum(e.score for e in request.execution.evaluations) / len(request.execution.evaluations)) if request.execution.evaluations else 0
         request = await request.save()
         return request
 
@@ -402,7 +405,7 @@ class TenantRequestService(RequestService):
         self,
         request_id: PydanticObjectId,
         files: list[UploadFile],
-    ) -> RequestModel:
+    ) -> list[File]:
         """
         Загрузка файлов вложения заявителя
 
@@ -439,4 +442,4 @@ class TenantRequestService(RequestService):
                 await f.delete()
             raise
         request = await request.save()
-        return request
+        return request.requester_attachment.files

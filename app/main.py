@@ -31,13 +31,14 @@ from api.routers.dispatcher_request_router import dispatcher_request_router
 from api.routers.employee_schedule_router import employee_schedule_router
 from api.routers.gateway_request_router import gateway_request_router
 from api.routers.other_router import other_router
+from api.routers.request_template_router import request_template_router
 from api.routers.tenant_catalog_item_router import tenant_catalog_item_router
 from api.routers.tenant_request_router import tenant_request_router
 from config import settings
 from database import init_db
 from errors import FailedDependencyError
 from utils.grid_fs.grid_fs import init_grid_fs_service
-from utils.responses import JSONResponse, ObjectIdEncoder
+from utils.responses import EnhancedJSONEncoder, JSONResponse
 from utils.telegram import send_notify_to_telegram
 
 
@@ -96,7 +97,7 @@ async def failed_dependency_error_handler(request: Request, exc: FailedDependenc
                 "FAILED_DEPENDENCY",
                 f"{request.method} {request.url}",
                 exc.description,
-                json.dumps(exc.kwargs, indent=4, ensure_ascii=False, cls=ObjectIdEncoder),
+                json.dumps(exc.kwargs, indent=4, ensure_ascii=False, cls=EnhancedJSONEncoder),
             ]
         )
     )
@@ -129,6 +130,11 @@ app.include_router(
     router=gateway_request_router,
     prefix="/gateway/requests",
 )
+app.include_router(
+    router=request_template_router,
+    prefix="/dispatcher/request_templates",
+)
+
 app.include_router(
     router=dispatcher_catalog_item_router,
     prefix="/dispatcher/catalog",

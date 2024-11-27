@@ -30,7 +30,7 @@ class GatewayRequestService:
             RequestModel: Модель заявки
         """
         request = await cls._get_request_by_number(number)
-        if request.commerce.pay_status != RequestPayStatus.PAID or not request.commerce.catalog_items:
+        if request.commerce.pay_status != RequestPayStatus.WAIT or not request.commerce.catalog_items:
             raise HTTPException(
                 detail="Request does not require payment",
                 status_code=status.HTTP_400_BAD_REQUEST,

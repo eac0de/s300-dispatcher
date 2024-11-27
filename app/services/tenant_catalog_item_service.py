@@ -53,11 +53,18 @@ class TenantCatalogItemService:
             "provider_id": provider_id,
             "is_available": True,
             "available_from": {
-                "$gt": current_time,
-            },
-            "available_until": {
                 "$lt": current_time,
             },
+            "$or": [
+                {
+                    "available_until": None,
+                },
+                {
+                    "available_until": {
+                        "$gt": current_time,
+                    },
+                },
+            ],
         }
         catalog_item_groups = await CatalogItem.get_motor_collection().distinct("group", query)
         return catalog_item_groups
@@ -99,11 +106,18 @@ class TenantCatalogItemService:
                 "provider_id": provider_id,
                 "is_available": True,
                 "available_from": {
-                    "$gt": current_time,
-                },
-                "available_until": {
                     "$lt": current_time,
                 },
+                "$or": [
+                    {
+                        "available_until": None,
+                    },
+                    {
+                        "available_until": {
+                            "$gt": current_time,
+                        },
+                    },
+                ],
             }
         )
         catalog_items = CatalogItem.find(*query_list)

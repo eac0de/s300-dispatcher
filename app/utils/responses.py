@@ -20,7 +20,7 @@ from collections.abc import Mapping
 from fastapi import Response
 from starlette.background import BackgroundTask
 
-from utils.json_encoders import ObjectIdEncoder
+from utils.json_encoders import EnhancedJSONEncoder
 
 
 class JSONResponse(Response):
@@ -36,7 +36,7 @@ class JSONResponse(Response):
 
     Методы:
         - render(content): Сериализует переданное содержимое в JSON с использованием
-          кастомного энкодера ObjectIdEncoder.
+          кастомного энкодера EnhancedJSONEncoder.
     """
 
     media_type = "application/json"
@@ -58,5 +58,5 @@ class JSONResponse(Response):
             allow_nan=False,
             indent=None,
             separators=(",", ":"),
-            cls=ObjectIdEncoder,
+            cls=EnhancedJSONEncoder,
         ).encode("utf-8")

@@ -116,7 +116,7 @@ class Auth:
             HTTPException: При неуспешной авторизации
         """
 
-        if token[7:] != settings.SECURITY_TOKEN:
+        if token != settings.SECURITY_TOKEN:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have authorization",

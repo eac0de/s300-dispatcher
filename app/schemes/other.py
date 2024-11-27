@@ -17,9 +17,6 @@ class OtherEmployeeCUScheme(BaseModel):
     Класс схемы для создания или обновления стороннего сотрудника
     """
 
-    short_name: str = Field(
-        title="Фамилия И.О. стороннего сотрудника",
-    )
     full_name: str = Field(
         title="Фамилия Имя Отчество стороннего сотрудника",
     )
@@ -42,9 +39,6 @@ class OtherPersonCUScheme(BaseModel):
     Класс схемы для создания или обновления стороннего лица
     """
 
-    short_name: str = Field(
-        title="Фамилия И.О. лица",
-    )
     full_name: str = Field(
         title="Фамилия Имя Отчество жителя",
     )

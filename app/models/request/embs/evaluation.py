@@ -8,20 +8,20 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 
-class RateRS(BaseModel):
+class EvaluationRS(BaseModel):
     """
     Класс оценки выполненных по заявке работ
     """
 
     tenant_id: PydanticObjectId = Field(
-        title="Идентификатор жителя проставившего оценку",
+        title="Идентификатор человека проставившего оценку",
     )
-    rate: int = Field(
+    score: int = Field(
         ge=1,
         le=5,
-        title="Оценка заявки данным жителем",
+        title="Оценка выполнения заявки (от 1 до 5)",
     )
-    created_at: datetime = Field(
+    rated_at: datetime = Field(
         default_factory=datetime.now,
-        title="Время выставления оценки",
+        title="Дата и время выставления оценки",
     )

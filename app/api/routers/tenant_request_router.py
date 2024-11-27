@@ -15,6 +15,7 @@ from schemes.request.tenant_request import (
     RequestTRScheme,
 )
 from services.request.tenant_request_service import TenantRequestService
+from utils.grid_fs.file import File
 
 tenant_request_router = APIRouter(
     tags=["tenant_requests"],
@@ -40,7 +41,7 @@ async def create_request(
 
 
 @tenant_request_router.post(
-    path="/catalog",
+    path="/catalog/",
     status_code=status.HTTP_201_CREATED,
     response_model=RequestTRScheme,
 )
@@ -98,11 +99,11 @@ async def get_request(
 
 
 @tenant_request_router.patch(
-    path="/{request_id}/rate",
+    path="/{request_id}/evaluate",
     status_code=status.HTTP_200_OK,
     response_model=RequestTRScheme,
 )
-async def rate_request(
+async def evaluate_request(
     tenant: TenantDep,
     request_id: PydanticObjectId,
     scheme: RequestTRateUScheme,
@@ -119,8 +120,9 @@ async def rate_request(
 
 
 @tenant_request_router.post(
-    path="/{request_id}/requester_attachments",
+    path="/{request_id}/requester_attachment_files",
     status_code=status.HTTP_200_OK,
+    response_model=list[File],
 )
 async def upload_requester_attachments(
     tenant: TenantDep,
@@ -132,7 +134,7 @@ async def upload_requester_attachments(
     """
 
     service = TenantRequestService(tenant)
-    await service.upload_requester_attachments(
+    return await service.upload_requester_attachments(
         request_id=request_id,
         files=files,
     )

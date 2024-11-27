@@ -12,7 +12,7 @@ from models.extra.attachment import Attachment
 from models.request.constants import RequestType
 from models.request.embs.employee import DispatcherRS
 from models.request.embs.monitoring import MonitoringRS
-from models.request.embs.rate import RateRS
+from models.request.embs.evaluation import EvaluationRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.resources import ResourcesRS
 from models.request.request import RequestModel
@@ -88,12 +88,12 @@ class RequestTCatalogCScheme(BaseModel):
     )
 
 
-class RateExecutionRequestTRateUScheme(BaseModel):
+class EvaluationExecutionRequestTRateUScheme(BaseModel):
     """
     Класс схемы оценки выполнения для ее обновления в заявке жителем
     """
 
-    rate: int = Field(
+    score: int = Field(
         ge=1,
         le=5,
         title="Оценка заявки данным жителем",
@@ -105,7 +105,7 @@ class ExecutionRequestTRateUScheme(BaseModel):
     Класс схемы модели выполнения для обновления оценки выполнения заявки жителем
     """
 
-    rates: list[RateExecutionRequestTRateUScheme] = Field(
+    evaluations: list[EvaluationExecutionRequestTRateUScheme] = Field(
         default_factory=list,
         title="Список оценок выполнения заявки",
     )
@@ -154,7 +154,7 @@ class ExecutionRequestTRLScheme(BaseModel):
         default=None,
         title="Гарантия по",
     )
-    rates: list[RateRS] = Field(
+    rates: list[EvaluationRS] = Field(
         default_factory=list,
         title="Список оценок выполнения заявки",
     )
@@ -199,18 +199,9 @@ class RequestTRScheme(RequestModel):
         default_factory=list,
         title="Вложения заявителя",
     )
-    related_call_id: PydanticObjectId | None = Field(
-        title="Ссылка на связанный с заявкой звонок",
-        exclude=True,
-    )
     relations: RelationsRS | None = Field(
         default=None,
         title="Связанные заявки",
-        exclude=True,
-    )
-    ticket_id: PydanticObjectId | None = Field(
-        default=None,
-        title="Идентификатор обращения",
         exclude=True,
     )
     dispatcher: DispatcherRS | None = Field(

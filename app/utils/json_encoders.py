@@ -2,7 +2,7 @@
 Модуль с кастомными json энкодерами.
 
 Классы:
-    - ObjectIdEncoder: Кастомный JSON-энкодер для объектов ObjectId.
+    - EnhancedJSONEncoder: Кастомный JSON-энкодер.
 
 Примечания:
     - Использование этого модуля упрощает интеграцию с базами данных MongoDB,
@@ -18,16 +18,11 @@ from beanie import PydanticObjectId
 from bson import ObjectId
 
 
-class ObjectIdEncoder(json.JSONEncoder):
+class EnhancedJSONEncoder(json.JSONEncoder):
     """
     Класс кастомного энкодера JSON.
 
-    Этот класс расширяет стандартный JSON-энкодер для обработки объектов
-    `ObjectId` и `PydanticObjectId` из библиотеки Beanie. Он позволяет
-    сериализовать эти объекты в строковое представление.
-
-    Методы:
-        - default(o): Переопределяет метод для обработки объектов ObjectId.
+    Этот класс расширяет стандартный JSON-энкодер
     """
 
     def default(self, o):

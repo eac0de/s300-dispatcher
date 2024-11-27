@@ -73,7 +73,9 @@ class OtherService:
         Returns:
             OtherPerson: Созданное стороннее лицо
         """
+        short_name = await self._get_short_name(scheme.full_name)
         other_person = await OtherPerson(
+            short_name=short_name,
             _binds=ProviderBinds(pr={self.employee.provider.id}),
             **scheme.model_dump(by_alias=True),
         ).save()
@@ -95,8 +97,12 @@ class OtherService:
             OtherPerson: Обновленное стороннее лицо
         """
         other_person = await self._get_other_person(other_person_id)
+        short_name = other_person.short_name
+        if other_person.full_name != scheme.full_name:
+            short_name = await self._get_short_name(scheme.full_name)
         other_person = await OtherPerson(
             _id=other_person.id,
+            short_name=short_name,
             _binds=ProviderBinds(pr={self.employee.provider.id}),
             **scheme.model_dump(by_alias=True),
         ).save()
@@ -178,7 +184,9 @@ class OtherService:
                 detail="Other provider not found",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
+        short_name = await self._get_short_name(scheme.full_name)
         other_employee = await OtherEmployee(
+            short_name=short_name,
             _binds=ProviderBinds(pr={self.employee.provider.id}),
             **scheme.model_dump(by_alias=True),
         ).save()
@@ -208,8 +216,12 @@ class OtherService:
                     detail="Other provider not found",
                     status_code=status.HTTP_404_NOT_FOUND,
                 )
+        short_name = other_employee.short_name
+        if other_employee.full_name != scheme.full_name:
+            short_name = await self._get_short_name(scheme.full_name)
         other_employee = await OtherEmployee(
             _id=other_employee.id,
+            short_name=short_name,
             _binds=other_employee.binds,
             **scheme.model_dump(by_alias=True),
         ).save()
@@ -349,3 +361,31 @@ class OtherService:
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         return other_provider
+
+    @staticmethod
+    async def _get_short_name(full_name: str) -> str:
+        """
+        Генерирует сокращенное имя из полного имени.
+
+        Args:
+            full_name (str): Полное имя, состоящее из трех слов.
+
+        Returns:
+            str: Сокращенное имя в формате "Фамилия И. О.".
+
+        Raises:
+            HTTPException: Если `full_name` не состоит ровно из трех слов.
+        """
+        # Удаляем лишние пробелы и делим на слова
+        full_name_split = list(filter(bool, full_name.strip().split(" ")))
+        full_name_split_len = len(full_name_split)
+        if full_name_split_len == 2:
+            f, i = full_name_split
+            return f"{f} {i[0]}."
+        if full_name_split_len != 3:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The 'full_name' field must consist of exactly 3 words separated by spaces.",
+            )
+        f, i, o = full_name_split
+        return f"{f} {i[0]}. {o[0]}."

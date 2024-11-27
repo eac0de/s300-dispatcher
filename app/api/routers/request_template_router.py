@@ -48,7 +48,7 @@ async def get_request_templates_list(
     return await service.get_templates_list()
 
 
-@request_template_router.put(
+@request_template_router.patch(
     path="/{request_template_id}",
     status_code=status.HTTP_200_OK,
 )
@@ -62,7 +62,7 @@ async def update_request_template(
     """
 
     service = RequestTemplateService(employee)
-    await service.update_template(
+    return await service.update_template(
         request_template_id=request_template_id,
         scheme=scheme,
     )

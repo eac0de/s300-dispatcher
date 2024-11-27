@@ -1,6 +1,5 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
-import pytest
 from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
@@ -8,54 +7,10 @@ from starlette import status
 from client.c300.models.employee import EmployeeC300
 from client.c300.models.tenant import TenantC300
 from config import settings
-from models.catalog_item.catalog_item import CatalogItem, CatalogItemPrice
-from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
+from models.catalog_item.catalog_item import CatalogItem
 
 TEST_FILEPATH = f"{settings.PROJECT_DIR}/tests/static/"
 TEST_FILENAME = "test_image.jpeg"
-
-
-@pytest.fixture()
-async def catalog_items(auth_employee: EmployeeC300, auth_tenant: TenantC300):
-    t = datetime.now()
-    return [
-        await CatalogItem(
-            name="test_name_1",
-            description="test_description_1",
-            code="test_code_1",
-            measurement_unit=CatalogMeasurementUnit.PIECE,
-            is_available=True,
-            is_divisible=False,
-            available_from=t,
-            group=CatalogItemGroup.ELECTRICS,
-            provider_id=auth_employee.provider.id,
-            prices=[
-                CatalogItemPrice(
-                    start_at=t,
-                    amount=1000,
-                )
-            ],
-            house_ids={auth_tenant.house.id},
-        ).save(),
-        await CatalogItem(
-            name="test_name_2",
-            description="test_description_2",
-            code="test_code_2",
-            measurement_unit=CatalogMeasurementUnit.PIECE,
-            is_available=True,
-            is_divisible=True,
-            available_from=t,
-            group=CatalogItemGroup.PLUMBING,
-            provider_id=PydanticObjectId(),
-            prices=[
-                CatalogItemPrice(
-                    start_at=t,
-                    amount=1000,
-                )
-            ],
-            house_ids={PydanticObjectId()},
-        ).save(),
-    ]
 
 
 class TestDispatcherCatalogItemRouter:
@@ -167,7 +122,7 @@ class TestDispatcherCatalogItemRouter:
             "fias": [],
             "image": None,
         }
-        resp = await api_employee_client.put(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -177,7 +132,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(catalog_item.prices) == 1
 
         data["prices"] = [{"start_at": (catalog_item.available_from + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3], "amount": 200}]
-        resp = await api_employee_client.put(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -185,7 +140,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(catalog_item.prices) == 2
 
         catalog_item = catalog_items[1]
-        resp = await api_employee_client.put(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_catalog_item(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
@@ -232,7 +187,7 @@ class TestDispatcherCatalogItemRouter:
             "fias": [],
             "image": None,
         }
-        resp = await api_employee_client.put(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
         assert resp.status_code == status.HTTP_200_OK
         await catalog_item.sync()
         assert catalog_item.image is None

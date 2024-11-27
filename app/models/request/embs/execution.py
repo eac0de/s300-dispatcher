@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from models.extra.attachment import Attachment
 from models.request.embs.employee import EmployeeRS, ProviderRS
-from models.request.embs.rate import RateRS
+from models.request.embs.evaluation import EvaluationRS
 
 
 class ExecutionRS(BaseModel):
@@ -59,9 +59,9 @@ class ExecutionRS(BaseModel):
         default=None,
         title="Гарантия по",
     )
-    rates: list[RateRS] = Field(
+    evaluations: list[EvaluationRS] = Field(
         default_factory=list,
-        title="Список оценок выполнения заявки",
+        title="Список оценок выполнения работы по заявке",
     )
     total_rate: float = Field(
         ge=0,

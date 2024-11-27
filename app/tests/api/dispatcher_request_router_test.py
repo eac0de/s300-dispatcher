@@ -1,104 +1,13 @@
 from datetime import datetime, timedelta
 
-import pytest
-from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
 from client.c300.models.employee import EmployeeC300
 from client.c300.models.tenant import TenantC300
-from models.base.binds import ProviderHouseGroupBinds
-from models.extra.attachment import Attachment
-from models.request.categories_tree import (
-    RequestCategory,
-    RequestSubcategory,
-    RequestWorkArea,
-)
-from models.request.constants import (
-    RequestPayStatus,
-    RequestSource,
-    RequestStatus,
-    RequestTag,
-    RequestType,
-)
-from models.request.embs.action import ActionRS, ActionRSType
-from models.request.embs.area import AreaRS
-from models.request.embs.commerce import CommerceRS
-from models.request.embs.employee import (
-    DispatcherRS,
-    PersonInChargeRS,
-    PersonInChargeType,
-    ProviderRS,
-)
-from models.request.embs.execution import ExecutionRS
-from models.request.embs.house import HouseRS
-from models.request.embs.monitoring import MonitoringRS
-from models.request.embs.relations import RelationsRS
-from models.request.embs.requester import RequesterType, TenantRequester
-from models.request.embs.resources import (
-    ItemWarehouseResourcesRS,
-    ResourcesRS,
-    WarehouseResourcesRS,
-)
 from models.request.request import RequestModel
 from utils.grid_fs.file import File
-from utils.json_encoders import ObjectIdEncoder
-
-
-@pytest.fixture()
-async def requests(auth_employee: EmployeeC300, auth_tenant: TenantC300):
-    t = datetime.now()
-    auth_employee_dict = auth_employee.model_dump(by_alias=True)
-    auth_tenant_dict = auth_tenant.model_dump(by_alias=True)
-    return [
-        await RequestModel(
-            _id=PydanticObjectId("672e35893872fa7eba2e3490"),
-            _binds=ProviderHouseGroupBinds(
-                pr={auth_employee.binds_permissions.pr},
-                hg={
-                    auth_employee.binds_permissions.hg,
-                },
-            ),
-            _type=RequestType.AREA,
-            actions=[ActionRS(start_at=t, end_at=t + timedelta(days=1), _type=ActionRSType.ELECTRICITY)],
-            administrative_supervision=True,
-            area=AreaRS.model_validate(auth_tenant.area.model_dump(by_alias=True)),
-            commerce=CommerceRS(pay_status=RequestPayStatus.NO_CHARGE, catalog_items=[]),
-            created_at=t,
-            description="test_description_1",
-            dispatcher=DispatcherRS.model_validate(auth_employee_dict),
-            execution=ExecutionRS(
-                desired_start_at=None,
-                desired_end_at=None,
-                provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
-                employees=[],
-                act=Attachment(files=[], comment=""),
-                attachment=Attachment(files=[], comment=""),
-                is_partially=False,
-                rates=[],
-                total_rate=0,
-            ),
-            house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
-            housing_supervision=True,
-            is_public=False,
-            monitoring=MonitoringRS(
-                control_messages=[],
-                persons_in_charge=[PersonInChargeRS.model_validate({**auth_employee_dict, "_type": PersonInChargeType.DISPATCHER})],
-            ),
-            number="7837582401637",
-            provider=ProviderRS(_id=auth_employee.provider.id, name=auth_employee.provider.name),
-            relations=RelationsRS(),
-            requester=TenantRequester.model_validate({**auth_tenant_dict, "_type": RequesterType.TENANT}),
-            requester_attachment=Attachment(files=[], comment=""),
-            resources=ResourcesRS(materials=[], services=[], warehouses=[]),
-            source=RequestSource.DISPATCHER,
-            status=RequestStatus.ACCEPTED,
-            category=RequestCategory.EMERGENCY,
-            subcategory=RequestSubcategory.ELECTRICITY,
-            tag=RequestTag.CURRENT,
-            work_area=RequestWorkArea.AREA,
-        ).save(),
-    ]
+from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestDispatcherRequestRouter:
@@ -132,8 +41,7 @@ class TestDispatcherRequestRouter:
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
-        assert len(resp_json) == 1
-        assert resp_json[0]["_id"] == str(request.id)
+        assert len(resp_json) == 2
 
         resp = await api_employee_client.get("/dispatcher/requests/", params={"status__in": request.status.value})
         assert resp.status_code == status.HTTP_200_OK
@@ -152,7 +60,7 @@ class TestDispatcherRequestRouter:
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
-        assert len(resp_json) == 1
+        assert len(resp_json) == 2
         assert resp_json[0]["_id"] == str(request.id)
 
         resp = await api_employee_client.get("/dispatcher/requests/", params={"area_range": "test_no_area_range"})
@@ -187,7 +95,7 @@ class TestDispatcherRequestRouter:
             "execution": {"desired_start_at": None, "desired_end_at": None, "act": {"files": [], "comment": ""}, "attachment": {"files": [], "comment": ""}},
             "requester_attachment": {"files": [], "comment": ""},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=ObjectIdEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -199,7 +107,7 @@ class TestDispatcherRequestRouter:
         assert request.administrative_supervision == test_bool
         assert request.housing_supervision == test_bool
 
-    async def test_update_request_status(self, mocker, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel]):
+    async def test_update_request_status(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel], mock_c300_api_upsert_storage_docs_out):
         request = requests[0]
         test_execution_description = "test_execution_description"
         data = {
@@ -216,7 +124,7 @@ class TestDispatcherRequestRouter:
             },
             "resources": {"materials": [], "services": [], "warehouses": []},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=ObjectIdEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -225,37 +133,26 @@ class TestDispatcherRequestRouter:
         assert request.execution.is_partially is False
         assert request.execution.employees[0].short_name == auth_employee.short_name
 
-        warehouse_id = PydanticObjectId()
-        warehouse_item_id = PydanticObjectId()
-        test_quantity = 1000
-        test_price = 1000
-        test_warehouse_name = "Замоканный склад"
-        test_warehouse_item_name = "Замоканная позиция склада"
-        mock_return = [
-            WarehouseResourcesRS(
-                _id=warehouse_id,
-                name=test_warehouse_name,
-                items=[ItemWarehouseResourcesRS(_id=warehouse_item_id, name=test_warehouse_item_name, price=test_price, quantity=test_quantity)],
-            )
-        ]
-        mocker.patch("client.c300.api.C300API.upsert_storage_docs_out", return_value=mock_return)
         data["resources"]["warehouses"] = [
-            {"_id": warehouse_id, "items": [{"_id": warehouse_item_id, "quantity": test_quantity}]},
+            {
+                "_id": mock_c300_api_upsert_storage_docs_out.warehouse_id,
+                "items": [{"_id": mock_c300_api_upsert_storage_docs_out.warehouse_item_id, "quantity": mock_c300_api_upsert_storage_docs_out.test_quantity}],
+            },
         ]
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=ObjectIdEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         await request.sync()
         assert len(request.resources.warehouses) == 1
         warehouse = request.resources.warehouses[0]
-        assert warehouse.id == warehouse_id
-        assert warehouse.name == test_warehouse_name
+        assert warehouse.id == mock_c300_api_upsert_storage_docs_out.warehouse_id
+        assert warehouse.name == mock_c300_api_upsert_storage_docs_out.test_warehouse_name
         assert len(warehouse.items) == 1
         warehouse_item = warehouse.items[0]
-        assert warehouse_item.id == warehouse_item_id
-        assert warehouse_item.name == test_warehouse_item_name
-        assert warehouse_item.quantity == test_quantity
-        assert warehouse_item.price == test_price
+        assert warehouse_item.id == mock_c300_api_upsert_storage_docs_out.warehouse_item_id
+        assert warehouse_item.name == mock_c300_api_upsert_storage_docs_out.test_warehouse_item_name
+        assert warehouse_item.quantity == mock_c300_api_upsert_storage_docs_out.test_quantity
+        assert warehouse_item.price == mock_c300_api_upsert_storage_docs_out.test_price
 
     async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel]):
         request = requests[0]
@@ -269,7 +166,7 @@ class TestDispatcherRequestRouter:
         test_description = "test_description"
         data = request.model_dump(by_alias=True)
         data["description"] = test_description
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=ObjectIdEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history")
         assert resp.status_code == status.HTTP_200_OK

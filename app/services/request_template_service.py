@@ -134,7 +134,7 @@ class RequestTemplateService:
             HTTPException: При неудовлетворительном запросе
         """
         request_template = await self._get_template(request_template_id)
-        if RequestModel.find({"relations.template_id": request_template.id}).exists():
+        if await RequestModel.find({"relations.template_id": request_template.id}).exists():
             raise HTTPException(
                 detail="Request template is used",
                 status_code=status.HTTP_403_FORBIDDEN,

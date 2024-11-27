@@ -14,6 +14,10 @@ class CatalogItemCommerceRS(BaseModel):
     Класс заказанной позиции из каталога
     """
 
+    id: PydanticObjectId = Field(
+        alias="_id",
+        title="Идентификатор позиции в каталоге",
+    )
     name: str = Field(
         title="Название позиции",
     )
@@ -24,9 +28,6 @@ class CatalogItemCommerceRS(BaseModel):
     quantity: float = Field(
         gt=0,
         title="Количество позиции",
-    )
-    item_id: PydanticObjectId = Field(
-        title="Идентификатор позиции в каталоге",
     )
 
 

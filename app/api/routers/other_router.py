@@ -28,7 +28,7 @@ other_router = APIRouter(
 
 
 @other_router.get(
-    path="/persons",
+    path="/persons/",
     status_code=status.HTTP_200_OK,
     response_model=list[OtherPersonRScheme],
 )
@@ -53,7 +53,7 @@ async def get_other_persons_list(
 
 
 @other_router.post(
-    path="/persons",
+    path="/persons/",
     status_code=status.HTTP_201_CREATED,
     response_model=OtherPersonRScheme,
 )
@@ -70,7 +70,7 @@ async def create_other_person(
     return other_person
 
 
-@other_router.put(
+@other_router.patch(
     path="/persons/{other_person_id}",
     status_code=status.HTTP_200_OK,
     response_model=OtherPersonRScheme,
@@ -109,7 +109,7 @@ async def delete_other_person(
 
 
 @other_router.get(
-    path="/employees",
+    path="/employees/",
     status_code=status.HTTP_200_OK,
     response_model=list[OtherEmployeeRScheme],
 )
@@ -134,7 +134,7 @@ async def get_other_employees_list(
 
 
 @other_router.post(
-    path="/employees",
+    path="/employees/",
     status_code=status.HTTP_201_CREATED,
     response_model=OtherEmployeeRScheme,
 )
@@ -151,7 +151,7 @@ async def create_other_employee(
     return other_employee
 
 
-@other_router.put(
+@other_router.patch(
     path="/employees/{other_employee_id}",
     status_code=status.HTTP_200_OK,
     response_model=OtherEmployeeRScheme,
@@ -190,7 +190,7 @@ async def delete_other_employee(
 
 
 @other_router.get(
-    path="/providers",
+    path="/providers/",
     status_code=status.HTTP_200_OK,
     response_model=list[OtherProviderRScheme],
 )
@@ -215,7 +215,7 @@ async def get_other_providers_list(
 
 
 @other_router.post(
-    path="/providers",
+    path="/providers/",
     status_code=status.HTTP_201_CREATED,
     response_model=OtherProviderRScheme,
 )
@@ -232,7 +232,7 @@ async def create_other_provider(
     return other_provider
 
 
-@other_router.put(
+@other_router.patch(
     path="/providers/{other_provider_id}",
     status_code=status.HTTP_200_OK,
     response_model=OtherProviderRScheme,

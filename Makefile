@@ -11,3 +11,6 @@ up:
 
 req: # Создание/обновление файла requirements.txt в /app
 	poetry export -f requirements.txt --output app/requirements.txt --without-hashes
+
+test: # Создание/обновление файла requirements.txt в /app
+	cd app && pytest -s -v

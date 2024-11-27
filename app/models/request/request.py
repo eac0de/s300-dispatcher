@@ -149,7 +149,10 @@ class RequestModel(Document):
         default_factory=MonitoringRS,
         title="Информация по надзору за заявкой",
     )
-    for_beanie_err: None = None  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure
+    for_beanie_err: None = Field(
+        default=None,
+        exclude=True,
+    )  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure
 
     class Settings:
         """

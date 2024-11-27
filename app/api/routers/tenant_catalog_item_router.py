@@ -17,7 +17,7 @@ tenant_catalog_item_router = APIRouter(
 
 
 @tenant_catalog_item_router.get(
-    path="/",
+    path="/groups",
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItemGroup],
 )
@@ -36,7 +36,7 @@ async def get_catalog_item_groups(
 @tenant_catalog_item_router.get(
     path="/",
     status_code=status.HTTP_200_OK,
-    response_model=CatalogItem,
+    response_model=list[CatalogItem],
 )
 async def get_catalog_items_list(
     tenant: TenantDep,
@@ -48,10 +48,10 @@ async def get_catalog_items_list(
 
     params = await TenantCatalogFilter.parse_query_params(req.query_params)
     service = TenantCatalogItemService(tenant)
-    catalog_item = await service.get_catalog_items(
+    catalog_items_list = await service.get_catalog_items(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return catalog_item
+    return catalog_items_list
