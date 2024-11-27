@@ -141,7 +141,7 @@ class RequestTemplateService:
             )
         await request_template.delete()
 
-    async def get_templates_list(
+    async def get_template_list(
         self,
     ) -> list[RequestTemplate]:
         """

@@ -23,7 +23,7 @@ dispatcher_catalog_item_router = APIRouter(
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )
-async def get_catalog_items_list(
+async def get_catalog_item_list(
     employee: EmployeeDep,
     req: Request,
 ):
@@ -34,13 +34,13 @@ async def get_catalog_items_list(
 
     params = await DispatcherCatalogFilter.parse_query_params(req.query_params)
     service = DispatcherCatalogItemService(employee)
-    catalog_item = await service.get_catalog_items(
+    catalog_item_list = await service.get_catalog_items(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return catalog_item
+    return catalog_item_list
 
 
 @dispatcher_catalog_item_router.post(

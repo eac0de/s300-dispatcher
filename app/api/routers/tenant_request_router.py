@@ -63,7 +63,7 @@ async def create_catalog_request(
     status_code=status.HTTP_200_OK,
     response_model=list[RequestTLScheme],
 )
-async def get_requests_list(
+async def get_request_list(
     tenant: TenantDep,
     req: Request,
 ):
@@ -73,7 +73,7 @@ async def get_requests_list(
 
     params = await TenantRequestFilter.parse_query_params(req.query_params)
     service = TenantRequestService(tenant)
-    return await service.get_requests_list(
+    return await service.get_request_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,

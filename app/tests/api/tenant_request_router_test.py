@@ -33,7 +33,7 @@ class TestTenantRequestRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
 
-    async def test_get_requests_list(self, api_tenant_client: AsyncClient, requests: list[RequestModel]):
+    async def test_get_request_list(self, api_tenant_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         resp = await api_tenant_client.get("/tenant/requests/")
         assert resp.status_code == status.HTTP_200_OK

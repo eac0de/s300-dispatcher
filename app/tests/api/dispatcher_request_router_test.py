@@ -35,7 +35,25 @@ class TestDispatcherRequestRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
 
-    async def test_get_requests_list(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+    async def test_get_request_stats(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
+        resp = await api_employee_client.get("/dispatcher/requests/stats")
+        assert resp.status_code == status.HTTP_200_OK
+        resp_json = resp.json()
+        assert isinstance(resp_json, dict)
+        assert resp_json == {"accepted": 1, "run": 1, "overdue": 0, "emergency": 2}
+
+        request = requests[1]
+        t = datetime.now() - timedelta(days=2)
+        request.execution.start_at = t
+        request.execution.end_at = t + timedelta(days=1)
+        await request.save()
+        resp = await api_employee_client.get("/dispatcher/requests/stats")
+        assert resp.status_code == status.HTTP_200_OK
+        resp_json = resp.json()
+        assert isinstance(resp_json, dict)
+        assert resp_json == {"accepted": 1, "run": 1, "overdue": 1, "emergency": 2}
+
+    async def test_get_request_list(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         resp = await api_employee_client.get("/dispatcher/requests/")
         assert resp.status_code == status.HTTP_200_OK

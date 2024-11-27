@@ -32,7 +32,7 @@ other_router = APIRouter(
     status_code=status.HTTP_200_OK,
     response_model=list[OtherPersonRScheme],
 )
-async def get_other_persons_list(
+async def get_other_person_list(
     employee: EmployeeDep,
     req: Request,
 ):
@@ -43,13 +43,13 @@ async def get_other_persons_list(
 
     params = await OtherPersonFilter.parse_query_params(req.query_params)
     service = OtherService(employee)
-    other_persons_list = await service.get_other_persons_list(
+    other_person_list = await service.get_other_person_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_persons_list
+    return other_person_list
 
 
 @other_router.post(
@@ -113,7 +113,7 @@ async def delete_other_person(
     status_code=status.HTTP_200_OK,
     response_model=list[OtherEmployeeRScheme],
 )
-async def get_other_employees_list(
+async def get_other_employee_list(
     employee: EmployeeDep,
     req: Request,
 ):
@@ -124,13 +124,13 @@ async def get_other_employees_list(
 
     params = await OtherEmployeeFilter.parse_query_params(req.query_params)
     service = OtherService(employee)
-    other_employees_list = await service.get_other_employees_list(
+    other_employee_list = await service.get_other_employee_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_employees_list
+    return other_employee_list
 
 
 @other_router.post(
@@ -194,7 +194,7 @@ async def delete_other_employee(
     status_code=status.HTTP_200_OK,
     response_model=list[OtherProviderRScheme],
 )
-async def get_other_providers_list(
+async def get_other_provider_list(
     employee: EmployeeDep,
     req: Request,
 ):
@@ -205,13 +205,13 @@ async def get_other_providers_list(
 
     params = await OtherProviderFilter.parse_query_params(req.query_params)
     service = OtherService(employee)
-    other_providers_list = await service.get_other_providers_list(
+    other_provider_list = await service.get_other_provider_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_providers_list
+    return other_provider_list
 
 
 @other_router.post(

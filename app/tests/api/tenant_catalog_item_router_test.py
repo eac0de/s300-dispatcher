@@ -8,7 +8,7 @@ from models.catalog_item.catalog_item import CatalogItem
 class TestTenantCatalogItemRouter:
 
     @pytest.mark.usefixtures("mock_house_get")
-    async def test_get_catalog_items_list(self, api_tenant_client: AsyncClient, catalog_items: list[CatalogItem]):
+    async def test_get_catalog_item_list(self, api_tenant_client: AsyncClient, catalog_items: list[CatalogItem]):
         catalog_item = catalog_items[0]
         resp = await api_tenant_client.get("/tenant/catalog/")
         assert resp.status_code == status.HTTP_200_OK

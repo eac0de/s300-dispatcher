@@ -15,6 +15,7 @@ from schemes.request.dispatcher_request import (
     RequestDRScheme,
     RequestDUScheme,
 )
+from schemes.request.request_stats import RequestStats
 from schemes.request.request_status import RequestDStatusUScheme
 from schemes.request_history import UpdateRequestHistoryRScheme
 from services.request.dispatcher_request_service import DispatcherRequestService
@@ -49,22 +50,38 @@ async def create_request(
 
 
 @dispatcher_request_router.get(
+    path="/stats",
+    status_code=status.HTTP_200_OK,
+    response_model=RequestStats,
+)
+async def get_request_stats(
+    employee: EmployeeDep,
+):
+    """
+    Получения статистики по заявкам сотрудником.
+    """
+    service = DispatcherRequestService(employee)
+    result = await service.get_request_stats()
+    return result
+
+
+@dispatcher_request_router.get(
     path="/",
     status_code=status.HTTP_200_OK,
     response_model=list[RequestDLScheme],
 )
-async def get_requests_list(
+async def get_request_list(
     employee: EmployeeDep,
     req: Request,
 ):
     """
-    Получения спаска заявок сотрудником.
+    Получения списка заявок сотрудником.
     Для фильтрации есть определенные фильтры см. в модуле api/filters/request_filter
     """
 
     params = await DispatcherRequestFilter.parse_query_params(req.query_params)
     service = DispatcherRequestService(employee)
-    return await service.get_requests_list(
+    return await service.get_request_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,

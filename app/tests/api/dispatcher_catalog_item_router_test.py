@@ -15,7 +15,7 @@ TEST_FILENAME = "test_image.jpeg"
 
 class TestDispatcherCatalogItemRouter:
 
-    async def test_get_catalog_items_list(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
+    async def test_get_catalog_item_list(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
         catalog_item = catalog_items[0]
         resp = await api_employee_client.get("/dispatcher/catalog/")
         assert resp.status_code == status.HTTP_200_OK

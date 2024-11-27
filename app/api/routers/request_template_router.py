@@ -37,7 +37,7 @@ async def create_request_template(
     status_code=status.HTTP_200_OK,
     response_model=list[RequestTemplate],
 )
-async def get_request_templates_list(
+async def get_request_template_list(
     employee: EmployeeDep,
 ):
     """
@@ -45,7 +45,7 @@ async def get_request_templates_list(
     """
 
     service = RequestTemplateService(employee)
-    return await service.get_templates_list()
+    return await service.get_template_list()
 
 
 @request_template_router.patch(

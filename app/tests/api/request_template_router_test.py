@@ -23,7 +23,7 @@ class TestRequestTemplateRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
 
-    async def test_get_request_templates_list(self, api_employee_client: AsyncClient, request_templates: list[RequestTemplate]):
+    async def test_get_request_template_list(self, api_employee_client: AsyncClient, request_templates: list[RequestTemplate]):
         request_template = request_templates[0]
         resp = await api_employee_client.get("/dispatcher/request_templates/")
         assert resp.status_code == status.HTTP_200_OK

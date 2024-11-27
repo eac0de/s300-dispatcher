@@ -38,7 +38,7 @@ async def get_catalog_item_groups(
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )
-async def get_catalog_items_list(
+async def get_catalog_item_list(
     tenant: TenantDep,
     req: Request,
 ):
@@ -48,10 +48,10 @@ async def get_catalog_items_list(
 
     params = await TenantCatalogFilter.parse_query_params(req.query_params)
     service = TenantCatalogItemService(tenant)
-    catalog_items_list = await service.get_catalog_items(
+    catalog_item_list = await service.get_catalog_items(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return catalog_items_list
+    return catalog_item_list

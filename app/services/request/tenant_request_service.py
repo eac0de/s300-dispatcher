@@ -59,7 +59,7 @@ class TenantRequestService(RequestService):
         super().__init__()
         self.tenant = tenant
 
-    async def get_requests_list(
+    async def get_request_list(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,

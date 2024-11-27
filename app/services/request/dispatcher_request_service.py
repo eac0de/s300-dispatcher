@@ -14,7 +14,8 @@ from client.c300.models.area import AreaC300
 from client.c300.models.employee import EmployeeC300
 from client.c300.models.house import HouseC300
 from models.request.archived_request import ArchivedRequestModel, ArchiverType
-from models.request.constants import RequestSource, RequestType
+from models.request.categories_tree import RequestCategory
+from models.request.constants import RequestSource, RequestStatus, RequestType
 from models.request.embs.area import AreaRS
 from models.request.embs.employee import (
     DispatcherRS,
@@ -30,6 +31,7 @@ from models.request.request import RequestModel
 from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
 from schemes.request.dispatcher_request import RequestDCScheme
+from schemes.request.request_stats import RequestStats
 from schemes.request_employee_schedule import (
     RequestEmployeeDailySchedule,
     RequestEmployeeWeeklySchedule,
@@ -59,7 +61,77 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         super().__init__()
         self.employee = employee
 
-    async def get_requests_list(
+    async def get_request_stats(
+        self,
+    ) -> RequestStats:
+        """
+        Получение статистики по заявкам
+
+        Returns:
+            RequestStats: Результат
+        """
+        current_time = datetime.now()
+        pipeline = [
+            {
+                "$match": {
+                    "_binds.pr": self.employee.binds_permissions.pr,
+                    "_binds.hg": self.employee.binds_permissions.hg,
+                    "$or": [
+                        {"status": RequestStatus.ACCEPTED},
+                        {"status": RequestStatus.RUN},
+                        {"category": RequestCategory.EMERGENCY},
+                    ],
+                }
+            },
+            {
+                "$addFields": {
+                    "is_overdue": {
+                        "$cond": {
+                            "if": {
+                                "$and": [
+                                    {"$eq": ["$status", RequestStatus.RUN]},
+                                    {"$lt": ["$execution.end_at", current_time]},
+                                ]
+                            },
+                            "then": True,
+                            "else": False,
+                        }
+                    }
+                }
+            },
+            {
+                "$facet": {
+                    "accepted": [
+                        {"$match": {"status": RequestStatus.ACCEPTED}},
+                        {"$count": "count"},
+                    ],
+                    "run": [
+                        {"$match": {"status": RequestStatus.RUN}},
+                        {"$count": "count"},
+                    ],
+                    "overdue": [
+                        {"$match": {"is_overdue": True}},
+                        {"$count": "count"},
+                    ],
+                    "emergency": [
+                        {"$match": {"category": RequestCategory.EMERGENCY}},
+                        {"$count": "count"},
+                    ],
+                }
+            },
+        ]
+
+        result = await RequestModel.aggregate(pipeline).to_list()
+        print(result)
+        stats = result[0] if result else {}
+        return RequestStats(
+            accepted=stats["accepted"][0].get("count", 0) if stats.get("accepted") else 0,
+            run=stats["run"][0].get("count", 0) if stats.get("run") else 0,
+            overdue=stats["overdue"][0].get("count", 0) if stats.get("overdue") else 0,
+            emergency=stats["emergency"][0].get("count", 0) if stats.get("emergency") else 0,
+        )
+
+    async def get_request_list(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,

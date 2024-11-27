@@ -10,7 +10,7 @@ from utils.json_encoders import EnhancedJSONEncoder
 
 class TestOtherRouter:
 
-    async def test_get_other_persons_list(self, api_employee_client: AsyncClient, other_persons: list[OtherPerson]):
+    async def test_get_other_person_list(self, api_employee_client: AsyncClient, other_persons: list[OtherPerson]):
         resp = await api_employee_client.get("/dispatcher/other/persons/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
@@ -70,7 +70,7 @@ class TestOtherRouter:
         resp = await api_employee_client.delete(f"/dispatcher/other/persons/{other_person.id}")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_get_other_employees_list(self, api_employee_client: AsyncClient, other_employees: list[OtherEmployee]):
+    async def test_get_other_employee_list(self, api_employee_client: AsyncClient, other_employees: list[OtherEmployee]):
         resp = await api_employee_client.get("/dispatcher/other/employees/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
@@ -134,7 +134,7 @@ class TestOtherRouter:
         resp = await api_employee_client.delete(f"/dispatcher/other/employees/{other_employee.id}")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    async def test_get_other_providers_list(self, api_employee_client: AsyncClient, other_providers: list[OtherProvider]):
+    async def test_get_other_provider_list(self, api_employee_client: AsyncClient, other_providers: list[OtherProvider]):
         resp = await api_employee_client.get("/dispatcher/other/providers/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()

@@ -34,7 +34,7 @@ class OtherService:
         """
         self.employee = employee
 
-    async def get_other_persons_list(
+    async def get_other_person_list(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
@@ -139,7 +139,7 @@ class OtherService:
             )
         return other_person
 
-    async def get_other_employees_list(
+    async def get_other_employee_list(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
@@ -258,7 +258,7 @@ class OtherService:
             )
         return other_employee
 
-    async def get_other_providers_list(
+    async def get_other_provider_list(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,

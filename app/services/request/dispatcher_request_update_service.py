@@ -468,7 +468,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
         add_request_ids = new - old
         delete_request_ids = old - new
         if delete_request_ids:
-            new_requests_list = []
+            new_request_list = []
             for r in self.request.relations.requests:
                 if r.id in delete_request_ids:
                     self.updated_fields.append(
@@ -486,8 +486,8 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         {"$push": {"relations.requests": {"_id": self.request.id, "number": self.request.number, "status": self.request.status}}}
                     )
                 )
-                new_requests_list.append(r)
-            self.request.relations.requests = new_requests_list
+                new_request_list.append(r)
+            self.request.relations.requests = new_request_list
         if add_request_ids:
             query = {
                 "_id": {"$in": add_request_ids},
@@ -975,7 +975,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
         add_employee_ids = new - old
         delete_employee_ids = old - new
         if delete_employee_ids:
-            new_employees_list = []
+            new_employee_list = []
             for e in self.request.execution.employees:
                 if e.id in delete_employee_ids:
                     self.updated_fields.append(
@@ -987,8 +987,8 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         )
                     )
                     continue
-                new_employees_list.append(e)
-            self.request.execution.employees = new_employees_list
+                new_employee_list.append(e)
+            self.request.execution.employees = new_employee_list
             self.request.monitoring.persons_in_charge = [p for p in self.request.monitoring.persons_in_charge if p.id not in delete_employee_ids and p.type == PersonInChargeType.EXECUTOR]
         if add_employee_ids:
             for employee_id in add_employee_ids:
