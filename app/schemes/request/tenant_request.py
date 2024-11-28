@@ -11,8 +11,8 @@ from models.base.binds import ProviderHouseGroupBinds
 from models.extra.attachment import Attachment
 from models.request.constants import RequestType
 from models.request.embs.employee import DispatcherRS
-from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.evaluation import EvaluationRS
+from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.resources import ResourcesRS
 from models.request.request import RequestModel

@@ -1,5 +1,5 @@
 """
-Модуль с классом с готовыми ручками для обращения к другим микросервисам C300
+Модуль с классом с готовыми ручками для обращения к другим микросервисам S300
 """
 
 from collections.abc import Iterable
@@ -10,15 +10,16 @@ from fastapi import HTTPException
 from pydantic import UUID4, TypeAdapter
 from starlette import status
 
-from client.c300.client import ClientC300
+from client.s300.client import ClientS300
 from errors import FailedDependencyError
+from models.request.embs.commerce import CatalogItemCommerceRS
 from models.request.embs.resources import WarehouseResourcesRS
 from utils.request.constants import RequestMethod
 
 
-class C300API:
+class S300API:
     """
-    Класс с готовыми ручками для обращения к другим микросервисам C300
+    Класс с готовыми ручками для обращения к другим микросервисам S300
     """
 
     @staticmethod
@@ -38,7 +39,7 @@ class C300API:
             "warehouses": warehouses,
             "is_rollback": is_rollback,
         }
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.PUT,
             tag=tag,
@@ -51,12 +52,12 @@ class C300API:
             )
         if status_code != 200:
             raise FailedDependencyError(
-                description=f"{tag}: Unsatisfactory response from C300",
+                description=f"{tag}: Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("warehouses") is None:
-            raise FailedDependencyError("The data sent from the C300 does not contain the warehouses key")
+            raise FailedDependencyError("The data sent from the S300 does not contain the warehouses key")
         try:
             ta = TypeAdapter(list[WarehouseResourcesRS])
             wl = ta.validate_python(data["warehouses"])
@@ -91,7 +92,7 @@ class C300API:
         query_params = {"house_id": str(house_id)}
         if area_id:
             query_params.update({"area_id": str(area_id)})
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag=tag,
@@ -99,12 +100,12 @@ class C300API:
         )
         if status_code != 200:
             raise FailedDependencyError(
-                description=f"{tag}: Unsatisfactory response from C300",
+                description=f"{tag}: Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("house_group_ids") is None:
-            raise FailedDependencyError("The data sent from the C300 does not contain the house_groups key")
+            raise FailedDependencyError("The data sent from the S300 does not contain the house_groups key")
         try:
 
             ta = TypeAdapter(set[PydanticObjectId])
@@ -141,7 +142,7 @@ class C300API:
             "profile": employee_number,
             "ids": worker_ids,
         }
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag=tag,
@@ -149,13 +150,13 @@ class C300API:
         )
         if status_code != 200:
             raise FailedDependencyError(
-                description=f"{tag}: Unsatisfactory response from C300",
+                description=f"{tag}: Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("allowed_worker_ids") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an allowed_worker_ids key",
+                description="The data transmitted from the S300 does not contain an allowed_worker_ids key",
             )
         try:
             ta = TypeAdapter(set[PydanticObjectId])
@@ -186,7 +187,7 @@ class C300API:
             "house_group_ids": house_group_ids if house_group_ids else [],
             "fias": fias if fias else [],
         }
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag=tag,
@@ -194,13 +195,13 @@ class C300API:
         )
         if status_code != 200:
             raise FailedDependencyError(
-                description=f"{tag}: Unsatisfactory response from C300",
+                description=f"{tag}: Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("allowed_house_ids") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an allowed_house_ids key",
+                description="The data transmitted from the S300 does not contain an allowed_house_ids key",
             )
         try:
             ta = TypeAdapter(set[PydanticObjectId])
@@ -211,3 +212,50 @@ class C300API:
                 description="AllowedHouseIds data does not correspond to expected values",
                 error=str(e),
             ) from e
+
+    @staticmethod
+    async def create_receipt_for_paid_request(
+        request_id: PydanticObjectId,
+        provider_id: PydanticObjectId,
+        tenant_email: str | None,
+        catalog_items: list[CatalogItemCommerceRS],
+    ):
+        """
+        Запрос на создание чека для оплаченной заявки
+
+        Args:
+            request_id (PydanticObjectId): Идентификатор заявки
+            provider_id (PydanticObjectId): Идентификатор организации
+            tenant_email (str | None): Почта жителя
+            catalog_items (list[CatalogItemCommerceRS]): Список заказанных позиций
+
+        Notes:
+            - Может вернуть ошибку в ходе отправки запроса
+        """
+        tag = "create_receipt_for_paid_request"
+        path = "receipts/"
+        body = {
+            "request_id": request_id,
+            "provider_id": provider_id,
+            "tenant_email": tenant_email,
+            "positions": [
+                {
+                    "price": ci.price,
+                    "quantity": ci.quantity,
+                    "name": ci.name,
+                }
+                for ci in catalog_items
+            ],
+        }
+        status_code, data = await ClientS300.send_request(
+            path=path,
+            method=RequestMethod.POST,
+            tag=tag,
+            body=body,
+        )
+        if status_code != 200:
+            raise FailedDependencyError(
+                description=f"{tag}: Unsatisfactory response from S300",
+                status_code=status_code,
+                body=str(data)[:200],
+            )

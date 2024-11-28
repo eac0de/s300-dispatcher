@@ -10,8 +10,8 @@ from jwt import InvalidTokenError, decode
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300.models.employee import EmployeeC300, ExternalControl
-from client.c300.models.tenant import TenantC300
+from client.s300.models.employee import EmployeeS300, ExternalControl
+from client.s300.models.tenant import TenantS300
 from config import settings
 
 
@@ -39,7 +39,7 @@ class Auth:
     """
 
     @classmethod
-    async def tenant(cls, access_token: str | None = Cookie(None)) -> TenantC300:
+    async def tenant(cls, access_token: str | None = Cookie(None)) -> TenantS300:
         """
         Функция для аутентификации жителя
 
@@ -50,12 +50,12 @@ class Auth:
             HTTPException: При неуспешной авторизации
 
         Returns:
-            TenantC300: Житель
+            TenantS300: Житель
         """
         payload = await cls._parse_token(access_token)
         if payload.user_type != 0:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid account type")
-        tenant = await TenantC300.get_by_number(payload.user_number)
+        tenant = await TenantS300.get_by_number(payload.user_number)
         if not tenant:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -64,7 +64,7 @@ class Auth:
         return tenant
 
     @classmethod
-    async def employee(cls, access_token: str | None = Cookie(None)) -> EmployeeC300:
+    async def employee(cls, access_token: str | None = Cookie(None)) -> EmployeeS300:
         """
         Функция для аутентификации работника
 
@@ -75,20 +75,20 @@ class Auth:
             HTTPException: При неуспешной авторизации
 
         Returns:
-            EmployeeC300: Работник
+            EmployeeS300: Работник
         """
 
         payload = await cls._parse_token(access_token)
         if payload.user_type != 1:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid account type")
-        employee = await EmployeeC300.get_by_number(payload.user_number)
+        employee = await EmployeeS300.get_by_number(payload.user_number)
         if not employee:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Employee not found",
             )
         if payload.external_control_number != payload.user_number:
-            external_control_employee = await EmployeeC300.get_by_number(payload.external_control_number)
+            external_control_employee = await EmployeeS300.get_by_number(payload.external_control_number)
             if not external_control_employee:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -152,6 +152,6 @@ class Auth:
 
 
 # Зависимости для авторизации
-TenantDep = Annotated[TenantC300, Depends(Auth.tenant)]
-EmployeeDep = Annotated[EmployeeC300, Depends(Auth.employee)]
-GatewayDep = Annotated[EmployeeC300, Depends(Auth.gateway)]
+TenantDep = Annotated[TenantS300, Depends(Auth.tenant)]
+EmployeeDep = Annotated[EmployeeS300, Depends(Auth.employee)]
+GatewayDep = Annotated[EmployeeS300, Depends(Auth.gateway)]

@@ -59,7 +59,7 @@ class OtherProviderCUScheme(BaseModel):
         title="Название сторонней организации",
     )
     inn: str = Field(
-        pattern=r"\d{12}",
+        pattern=r"\d{10}",
         title="ИНН сторонней организации",
     )
     ogrn: str = Field(

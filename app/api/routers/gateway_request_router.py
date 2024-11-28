@@ -7,7 +7,6 @@ from fastapi import APIRouter, Query, status
 
 from api.dependencies.auth import GatewayDep
 from models.request.request import RequestModel
-from schemes.request.request_pay_status import RequestGPayStatusUScheme
 from services.request.gateway_request_service import GatewayRequestService
 
 gateway_request_router = APIRouter(
@@ -34,20 +33,18 @@ async def get_request_for_pay(
 
 
 @gateway_request_router.patch(
-    path="/{request_id}/pay_status/",
+    path="/{request_id}/paid/",
     status_code=status.HTTP_200_OK,
 )
-async def update_pay_status(
+async def mark_request_as_paid(
     _: GatewayDep,
     request_id: PydanticObjectId,
-    scheme: RequestGPayStatusUScheme,
 ):
     """
     Обновление статуса оплаты заявки
     """
 
     service = GatewayRequestService()
-    await service.update_pay_status(
+    await service.mark_request_as_paid(
         request_id=request_id,
-        pay_status=scheme.pay_status,
     )

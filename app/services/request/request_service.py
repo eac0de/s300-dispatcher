@@ -9,10 +9,10 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300.api import C300API
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.house import HouseC300
-from client.c300.models.tenant import TenantC300
+from client.s300.api import S300API
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.house import HouseS300
+from client.s300.models.tenant import TenantS300
 from config import settings
 from models.base.binds import ProviderHouseGroupBinds
 from models.other.other_employee import OtherEmployee
@@ -54,7 +54,7 @@ class RequestService:
         requester_type: RequesterType,
     ) -> TenantRequester | OtherPersonRequester | EmployeeRequester | OtherEmployeeRequester:
         if requester_type == RequesterType.TENANT:
-            tenant = await TenantC300.get(requester_id)
+            tenant = await TenantS300.get(requester_id)
             if not tenant:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -70,7 +70,7 @@ class RequestService:
                 house=HouseRS.model_validate(tenant.house.model_dump(by_alias=True)),
             )
         if requester_type == RequesterType.EMPLOYEE:
-            employee = await EmployeeC300.get(requester_id)
+            employee = await EmployeeS300.get(requester_id)
             if not employee:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -123,7 +123,7 @@ class RequestService:
 
     @staticmethod
     async def _check_categories_tree(
-        house: HouseC300,
+        house: HouseS300,
         category: RequestCategory,
         subcategory: RequestSubcategory | None = None,
         work_area: RequestWorkArea | None = None,
@@ -222,7 +222,7 @@ class RequestService:
     async def _get_provider_binds(
         provider_id: PydanticObjectId,
         execution_provider_id: PydanticObjectId,
-        house: HouseC300,
+        house: HouseS300,
     ) -> set[PydanticObjectId]:
         provider_bind = None
         execution_provider_bind = None
@@ -267,7 +267,7 @@ class RequestService:
 
     async def _get_binds(
         self,
-        house: HouseC300,
+        house: HouseS300,
         provider_id: PydanticObjectId,
         execution_provider_id: PydanticObjectId,
         area_id: PydanticObjectId | None = None,
@@ -277,7 +277,7 @@ class RequestService:
             execution_provider_id=execution_provider_id,
             house=house,
         )
-        hg = await C300API.get_house_group_ids(
+        hg = await S300API.get_house_group_ids(
             house_id=house.id,
             area_id=area_id,
         )

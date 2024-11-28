@@ -9,10 +9,10 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300.api import C300API
-from client.c300.models.area import AreaC300
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.house import HouseC300
+from client.s300.api import S300API
+from client.s300.models.area import AreaS300
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.house import HouseS300
 from models.request.archived_request import ArchivedRequestModel, ArchiverType
 from models.request.categories_tree import RequestCategory
 from models.request.constants import RequestSource, RequestStatus, RequestType
@@ -50,12 +50,12 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         RollbackMixin (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
     """
 
-    def __init__(self, employee: EmployeeC300):
+    def __init__(self, employee: EmployeeS300):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeC300): Модель работника осуществляющего работу с позициями каталога
+            employee (EmployeeS300): Модель работника осуществляющего работу с позициями каталога
         """
 
         super().__init__()
@@ -122,7 +122,6 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         ]
 
         result = await RequestModel.aggregate(pipeline).to_list()
-        print(result)
         stats = result[0] if result else {}
         return RequestStats(
             accepted=stats["accepted"][0].get("count", 0) if stats.get("accepted") else 0,
@@ -210,7 +209,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
             RequestModel: Созданная заявка
         """
         try:
-            house = await HouseC300.get(scheme.house.id)
+            house = await HouseS300.get(scheme.house.id)
             if not house:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -230,7 +229,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Request with the type 'area' must have an area field",
                     )
-                area = await AreaC300.get(scheme.area.id)
+                area = await AreaS300.get(scheme.area.id)
                 if not area:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -398,7 +397,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         Returns:
             list[RequestEmployeeWeeklySchedule]: Список недельных графиков работы сотрудников
         """
-        employee_ids = await C300API.get_allowed_worker_ids(
+        employee_ids = await S300API.get_allowed_worker_ids(
             employee_number=self.employee.number,
             worker_ids=employee_ids,
         )
@@ -470,7 +469,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         Returns:
             list[RequestEmployeeWeeklySchedule]: Список недельных графиков работы сотрудников
         """
-        employee_ids = await C300API.get_allowed_worker_ids(
+        employee_ids = await S300API.get_allowed_worker_ids(
             employee_number=self.employee.number,
             worker_ids=employee_ids,
         )

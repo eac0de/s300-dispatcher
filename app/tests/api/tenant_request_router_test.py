@@ -2,7 +2,7 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
-from client.c300.models.tenant import TenantC300
+from client.s300.models.tenant import TenantS300
 from models.catalog_item.catalog_item import CatalogItem
 from models.request.constants import RequestStatus
 from models.request.request import RequestModel
@@ -79,7 +79,7 @@ class TestTenantRequestRouter:
         assert isinstance(resp_json, dict)
         assert resp_json["_id"] == str(request.id)
 
-    async def test_rate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantC300, requests: list[RequestModel]):
+    async def test_rate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
         request = requests[0]
         evaluation_score = 5
         data = {

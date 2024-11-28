@@ -8,8 +8,8 @@ from typing import Any
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300.models.house import HouseC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.house import HouseS300
+from client.s300.models.tenant import TenantS300
 from models.catalog_item.catalog_item import CatalogItem
 
 
@@ -20,7 +20,7 @@ class TenantCatalogItemService:
 
     def __init__(
         self,
-        tenant: TenantC300,
+        tenant: TenantS300,
     ):
         self.tenant = tenant
 
@@ -36,7 +36,7 @@ class TenantCatalogItemService:
         Returns:
             list[str]: Список групп позиций каталога
         """
-        house = await HouseC300.get(self.tenant.house.id)
+        house = await HouseS300.get(self.tenant.house.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -88,7 +88,7 @@ class TenantCatalogItemService:
         Returns:
             list[CatalogItem]: Список позиций каталога
         """
-        house = await HouseC300.get(self.tenant.house.id)
+        house = await HouseS300.get(self.tenant.house.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

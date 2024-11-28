@@ -7,11 +7,11 @@
 from beanie import Document, init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from client.c300.models.area import AreaC300
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.house import HouseC300
-from client.c300.models.provider import ProviderC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.area import AreaS300
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.house import HouseS300
+from client.s300.models.provider import ProviderS300
+from client.s300.models.tenant import TenantS300
 from config import settings
 from models.catalog_item.catalog_item import CatalogItem
 from models.other.other_employee import OtherEmployee
@@ -45,11 +45,11 @@ async def init_db(*docs: type[Document]):
         document_models=[
             RequestModel,
             ArchivedRequestModel,
-            TenantC300,
-            EmployeeC300,
-            HouseC300,
-            AreaC300,
-            ProviderC300,
+            TenantS300,
+            EmployeeS300,
+            HouseS300,
+            AreaS300,
+            ProviderS300,
             RequestHistory,
             CatalogItem,
             RequestTemplate,

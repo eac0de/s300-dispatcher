@@ -7,10 +7,10 @@ from typing import Any, Self
 
 import pydantic_core
 from beanie import PydanticObjectId
+from client.s300.client import ClientS300
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from models.extra.external_control import ExternalControl
 from models.extra.phone_number import PhoneNumber
@@ -18,7 +18,7 @@ from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class PositionEC300S(BaseModel):
+class PositionES300S(BaseModel):
     """
     Модель должности сотрудника
     """
@@ -32,7 +32,7 @@ class PositionEC300S(BaseModel):
     )
 
 
-class DepartmentEC300S(BaseModel):
+class DepartmentES300S(BaseModel):
     """
     Модель отдела сотрудника
     """
@@ -46,7 +46,7 @@ class DepartmentEC300S(BaseModel):
     )
 
 
-class ProviderEC300S(BaseModel):
+class ProviderES300S(BaseModel):
     """
     Модель организации сотрудника
     """
@@ -60,7 +60,7 @@ class ProviderEC300S(BaseModel):
     )
 
 
-class BindsPermissionsEC300S(BaseModel):
+class BindsPermissionsES300S(BaseModel):
     """
     Модель разрешений сотрудника
     """
@@ -73,7 +73,7 @@ class BindsPermissionsEC300S(BaseModel):
     )
 
 
-class EmployeeC300(DocumentCache):
+class EmployeeS300(DocumentCache):
     """
     Модель закешированного сотрудника
     """
@@ -95,16 +95,16 @@ class EmployeeC300(DocumentCache):
         default=None,
         title="Email сотрудника",
     )
-    position: PositionEC300S = Field(
+    position: PositionES300S = Field(
         title="Должность сотрудника",
     )
-    department: DepartmentEC300S = Field(
+    department: DepartmentES300S = Field(
         title="Отдел сотрудника",
     )
-    provider: ProviderEC300S = Field(
+    provider: ProviderES300S = Field(
         title="Организация сотрудника",
     )
-    binds_permissions: BindsPermissionsEC300S = Field(
+    binds_permissions: BindsPermissionsES300S = Field(
         title="Доступ сотрудника",
     )
     external_control: ExternalControl | None = Field(
@@ -142,7 +142,7 @@ class EmployeeC300(DocumentCache):
         query: Mapping[str, Any],
     ):
         """
-        Метод для подгрузки из C300 сотрудника
+        Метод для подгрузки из S300 сотрудника
 
         Args:
             query (Mapping[str, Any]): Параметры запроса
@@ -152,7 +152,7 @@ class EmployeeC300(DocumentCache):
         """
 
         path = "workers/get/"
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag="load_employee",
@@ -163,13 +163,13 @@ class EmployeeC300(DocumentCache):
             return
         if status_code != status.HTTP_200_OK:
             raise FailedDependencyError(
-                description="Unsatisfactory response from C300",
+                description="Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("worker") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an «worker» key",
+                description="The data transmitted from the S300 does not contain an «worker» key",
             )
         try:
             data = data["worker"]

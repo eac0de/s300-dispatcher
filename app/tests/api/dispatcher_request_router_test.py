@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from httpx import AsyncClient
 from starlette import status
 
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.tenant import TenantS300
 from models.request.request import RequestModel
 from utils.grid_fs.file import File
 from utils.json_encoders import EnhancedJSONEncoder
@@ -12,7 +12,7 @@ from utils.json_encoders import EnhancedJSONEncoder
 
 class TestDispatcherRequestRouter:
 
-    async def test_create_request(self, api_employee_client: AsyncClient, auth_tenant: TenantC300, requests: list[RequestModel]):
+    async def test_create_request(self, api_employee_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
         data = {
             "_type": "area",
             "area": {"_id": str(auth_tenant.area.id)},
@@ -125,7 +125,7 @@ class TestDispatcherRequestRouter:
         assert request.administrative_supervision == test_bool
         assert request.housing_supervision == test_bool
 
-    async def test_update_request_status(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel], mock_c300_api_upsert_storage_docs_out):
+    async def test_update_request_status(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, requests: list[RequestModel], mock_s300_api_upsert_storage_docs_out):
         request = requests[0]
         test_execution_description = "test_execution_description"
         data = {
@@ -153,8 +153,8 @@ class TestDispatcherRequestRouter:
 
         data["resources"]["warehouses"] = [
             {
-                "_id": mock_c300_api_upsert_storage_docs_out.warehouse_id,
-                "items": [{"_id": mock_c300_api_upsert_storage_docs_out.warehouse_item_id, "quantity": mock_c300_api_upsert_storage_docs_out.test_quantity}],
+                "_id": mock_s300_api_upsert_storage_docs_out.warehouse_id,
+                "items": [{"_id": mock_s300_api_upsert_storage_docs_out.warehouse_item_id, "quantity": mock_s300_api_upsert_storage_docs_out.test_quantity}],
             },
         ]
         resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=EnhancedJSONEncoder.normalize(data))
@@ -163,16 +163,16 @@ class TestDispatcherRequestRouter:
         await request.sync()
         assert len(request.resources.warehouses) == 1
         warehouse = request.resources.warehouses[0]
-        assert warehouse.id == mock_c300_api_upsert_storage_docs_out.warehouse_id
-        assert warehouse.name == mock_c300_api_upsert_storage_docs_out.test_warehouse_name
+        assert warehouse.id == mock_s300_api_upsert_storage_docs_out.warehouse_id
+        assert warehouse.name == mock_s300_api_upsert_storage_docs_out.test_warehouse_name
         assert len(warehouse.items) == 1
         warehouse_item = warehouse.items[0]
-        assert warehouse_item.id == mock_c300_api_upsert_storage_docs_out.warehouse_item_id
-        assert warehouse_item.name == mock_c300_api_upsert_storage_docs_out.test_warehouse_item_name
-        assert warehouse_item.quantity == mock_c300_api_upsert_storage_docs_out.test_quantity
-        assert warehouse_item.price == mock_c300_api_upsert_storage_docs_out.test_price
+        assert warehouse_item.id == mock_s300_api_upsert_storage_docs_out.warehouse_item_id
+        assert warehouse_item.name == mock_s300_api_upsert_storage_docs_out.test_warehouse_item_name
+        assert warehouse_item.quantity == mock_s300_api_upsert_storage_docs_out.test_quantity
+        assert warehouse_item.price == mock_s300_api_upsert_storage_docs_out.test_price
 
-    async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, requests: list[RequestModel]):
+    async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, requests: list[RequestModel]):
         request = requests[0]
         request.created_at = datetime.now() - timedelta(days=1)  # Заявка если только создана не создает историю а просто перезаписывает поля
         await request.save()

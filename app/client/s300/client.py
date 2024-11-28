@@ -1,5 +1,5 @@
 """
-Модуль с клиентом к C300 для запросов к другим микросервисам
+Модуль с клиентом к S300 для запросов к другим микросервисам
 """
 
 import asyncio
@@ -14,9 +14,9 @@ from utils.request.constants import RequestMethod
 from utils.request.request import send_request_with_log
 
 
-class ClientC300:
+class ClientS300:
     """
-    Класс клиента к C300 для запросов к другим микросервисам
+    Класс клиента к S300 для запросов к другим микросервисам
     """
 
     __host: str | None = None
@@ -34,7 +34,7 @@ class ClientC300:
         res_json: bool = True,
     ) -> tuple[int, str | dict[str, Any]]:
         """
-        Функция для отправки запроса в C300, использует один и тот же хост для отправки, но если он недоступен переключается на другой
+        Функция для отправки запроса в S300, использует один и тот же хост для отправки, но если он недоступен переключается на другой
 
         Args:
             url (str): URL запроса
@@ -53,9 +53,9 @@ class ClientC300:
         attempt = 0
         if not headers:
             headers = {}
-        headers.update({"token": settings.C300_TOKEN})
+        headers.update({"token": settings.S300_TOKEN})
         while True:
-            url = f"{await cls.get_host()}/{settings.C300_API_PREFIX}/" + path
+            url = f"{await cls.get_host()}/{settings.S300_API_PREFIX}/" + path
             try:
                 return await send_request_with_log(
                     url=url,
@@ -110,11 +110,11 @@ class ClientC300:
 
         if cls.__host is None:
             for _ in range(2):
-                for host in set(settings.C300_HOSTS):
+                for host in set(settings.S300_HOSTS):
                     if await cls.__is_host_alive(host):
                         cls.__host = host
                         return cls.__host
-            raise FailedDependencyError("None of the C300 servers are available")
+            raise FailedDependencyError("None of the S300 servers are available")
         return cls.__host
 
     @classmethod

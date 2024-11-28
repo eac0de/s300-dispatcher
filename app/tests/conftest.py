@@ -8,11 +8,11 @@ from beanie import PydanticObjectId
 from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel
 
-from client.c300.models.area import AreaC300
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.house import HouseC300
-from client.c300.models.provider import ProviderC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.area import AreaS300
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.house import HouseS300
+from client.s300.models.provider import ProviderS300
+from client.s300.models.tenant import TenantS300
 from config import settings
 from database import init_db
 from main import app
@@ -104,11 +104,11 @@ async def setup_db():
     models = [
         RequestModel,
         ArchivedRequestModel,
-        TenantC300,
-        EmployeeC300,
-        HouseC300,
-        AreaC300,
-        ProviderC300,
+        TenantS300,
+        EmployeeS300,
+        HouseS300,
+        AreaS300,
+        ProviderS300,
         RequestHistory,
         CatalogItem,
         RequestTemplate,
@@ -124,7 +124,7 @@ async def setup_db():
 @pytest.fixture()
 @pytest.mark.usefixtures("setup_db")
 async def auth_employee():
-    worker = EmployeeC300.model_validate(
+    worker = EmployeeS300.model_validate(
         {
             "_id": "6343c35a80fa3d001a9a4c9e",
             "binds_permissions": {"pr": "61b06a693b6d6e0019260942", "hg": "61b06eecc950b1001a3a31e8"},
@@ -144,7 +144,7 @@ async def auth_employee():
 
 
 @pytest.fixture()
-async def auth_employee_cookie(auth_employee: EmployeeC300):
+async def auth_employee_cookie(auth_employee: EmployeeS300):
     token = jwt.encode(
         payload={
             "profile": auth_employee.number,
@@ -169,7 +169,7 @@ async def api_employee_client(auth_employee_cookie: dict[str, str]):
 @pytest.fixture()
 @pytest.mark.usefixtures("setup_db")
 async def auth_tenant():
-    tenant = TenantC300.model_validate(
+    tenant = TenantS300.model_validate(
         {
             "_id": "64bf8629a236cf0019a7b473",
             "binds_permissions": {"pr": "61b06a693b6d6e0019260942", "hg": "61b06eecc950b1001a3a31e8"},
@@ -194,7 +194,7 @@ async def auth_tenant():
 
 
 @pytest.fixture()
-async def auth_tenant_cookie(auth_tenant: TenantC300):
+async def auth_tenant_cookie(auth_tenant: TenantS300):
     token = jwt.encode(
         payload={
             "profile": auth_tenant.number,
@@ -226,7 +226,7 @@ async def api_gateway_client():
 
 # ------------------- Фикстуры с моками -------------------
 @pytest.fixture()
-async def mock_c300_api_upsert_storage_docs_out(mocker):
+async def mock_s300_api_upsert_storage_docs_out(mocker):
 
     class MockData(BaseModel):
         warehouse_id: PydanticObjectId = PydanticObjectId()
@@ -244,13 +244,13 @@ async def mock_c300_api_upsert_storage_docs_out(mocker):
             items=[ItemWarehouseResourcesRS(_id=mock_data.warehouse_item_id, name=mock_data.test_warehouse_item_name, price=mock_data.test_price, quantity=mock_data.test_quantity)],
         )
     ]
-    mocker.patch("client.c300.api.C300API.upsert_storage_docs_out", return_value=mock_return)
+    mocker.patch("client.s300.api.S300API.upsert_storage_docs_out", return_value=mock_return)
     return mock_data
 
 
 @pytest.fixture()
-async def mock_house_get(mocker, auth_tenant: TenantC300, auth_employee: EmployeeC300):
-    mock_house = HouseC300.model_validate(
+async def mock_house_get(mocker, auth_tenant: TenantS300, auth_employee: EmployeeS300):
+    mock_house = HouseS300.model_validate(
         {
             "_id": auth_tenant.house.id,
             "address": "г Санкт-Петербург, ул Панфилова, д. 15 корп. 8 лит. А",
@@ -271,13 +271,13 @@ async def mock_house_get(mocker, auth_tenant: TenantC300, auth_employee: Employe
         }
     )
     await mock_house.save()
-    mocker.patch("client.c300.models.house.HouseC300.get", return_value=mock_house)
+    mocker.patch("client.s300.models.house.HouseS300.get", return_value=mock_house)
     return mock_house
 
 
 # ------------------- Фикстуры с созданием моделей -------------------
 @pytest.fixture()
-async def catalog_items(auth_employee: EmployeeC300, auth_tenant: TenantC300):
+async def catalog_items(auth_employee: EmployeeS300, auth_tenant: TenantS300):
     t = datetime.now()
     return [
         await CatalogItem(
@@ -320,7 +320,7 @@ async def catalog_items(auth_employee: EmployeeC300, auth_tenant: TenantC300):
 
 
 @pytest.fixture()
-async def requests(auth_employee: EmployeeC300, auth_tenant: TenantC300):
+async def requests(auth_employee: EmployeeS300, auth_tenant: TenantS300):
     t = datetime.now()
     auth_employee_dict = auth_employee.model_dump(by_alias=True)
     auth_tenant_dict = auth_tenant.model_dump(by_alias=True)
@@ -422,7 +422,7 @@ async def requests(auth_employee: EmployeeC300, auth_tenant: TenantC300):
 
 
 @pytest.fixture()
-async def other_persons(auth_employee: EmployeeC300):
+async def other_persons(auth_employee: EmployeeS300):
     return [
         await OtherPerson(
             short_name="f1 i. o.",
@@ -446,7 +446,7 @@ async def other_persons(auth_employee: EmployeeC300):
 
 
 @pytest.fixture()
-async def other_providers(auth_employee: EmployeeC300):
+async def other_providers(auth_employee: EmployeeS300):
     return [
         await OtherProvider(
             name="name_1",

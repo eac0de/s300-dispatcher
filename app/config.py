@@ -37,12 +37,12 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = "no_reply@eis24.me"
     SMTP_PASSWORD: str = "1d18b5CTc6Bb67"
 
-    # c300
-    C300_HOSTS: list[str] = [
+    # s300
+    S300_HOSTS: list[str] = [
         "http://10.1.1.213:8081",
     ]
-    C300_API_PREFIX: str = "api/gw/request_service"
-    C300_TOKEN: str = "YOAmBevZHkYk3zPjfQp4"
+    S300_API_PREFIX: str = "api/gw/dispatcher"
+    S300_TOKEN: str = "YOAmBevZHkYk3zPjfQp4"
 
     # hosts
     REDIS_BROKER_URL: RedisDsn = "redis://localhost:6379/0"  # type: ignore

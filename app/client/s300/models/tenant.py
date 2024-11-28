@@ -9,17 +9,17 @@ from typing import Any
 
 import pydantic_core
 from beanie import PydanticObjectId
+from client.s300.client import ClientS300
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from models.extra.phone_number import PhoneNumber
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class HouseTC300S(BaseModel):
+class HouseTS300S(BaseModel):
     """
     Модель дома жителя
     """
@@ -33,7 +33,7 @@ class HouseTC300S(BaseModel):
     )
 
 
-class AreaTC300S(BaseModel):
+class AreaTS300S(BaseModel):
     """
     Модель помещения жителя
     """
@@ -50,7 +50,7 @@ class AreaTC300S(BaseModel):
     )
 
 
-class TenantC300(DocumentCache):
+class TenantS300(DocumentCache):
     """
     Модель закешированного жителя
     """
@@ -72,10 +72,10 @@ class TenantC300(DocumentCache):
         default=None,
         title="Email жителя",
     )
-    area: AreaTC300S = Field(
+    area: AreaTS300S = Field(
         title="Квартира жителя",
     )
-    house: HouseTC300S = Field(
+    house: HouseTS300S = Field(
         title="Дом жителя",
     )
 
@@ -106,7 +106,7 @@ class TenantC300(DocumentCache):
         query: Mapping[str, Any],
     ):
         """
-        Метод для подгрузки из C300 жителя
+        Метод для подгрузки из S300 жителя
 
         Args:
             query (Mapping[str, Any]): Параметры запроса
@@ -116,7 +116,7 @@ class TenantC300(DocumentCache):
         """
 
         path = "tenants/get/"
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag="load_tenant",
@@ -127,13 +127,13 @@ class TenantC300(DocumentCache):
             return
         if status_code != status.HTTP_200_OK:
             raise FailedDependencyError(
-                description="Unsatisfactory response from C300",
+                description="Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("tenant") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an «tenant» key",
+                description="The data transmitted from the S300 does not contain an «tenant» key",
             )
         try:
             await cls(**data["tenant"]).save()

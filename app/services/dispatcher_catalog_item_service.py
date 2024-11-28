@@ -10,8 +10,8 @@ from beanie.exceptions import RevisionIdWasChanged
 from fastapi import HTTPException, UploadFile
 from starlette import status
 
-from client.c300.api import C300API
-from client.c300.models.employee import EmployeeC300
+from client.s300.api import S300API
+from client.s300.models.employee import EmployeeS300
 from models.catalog_item.catalog_item import CatalogItem
 from schemes.catalog_item import CatalogItemCScheme, CatalogItemUScheme
 from utils.grid_fs.constants import FileExtensionGroup
@@ -27,13 +27,13 @@ class DispatcherCatalogItemService:
 
     def __init__(
         self,
-        employee: EmployeeC300,
+        employee: EmployeeS300,
     ):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeC300): Модель работника осуществляющего работу с позициями каталога
+            employee (EmployeeS300): Модель работника осуществляющего работу с позициями каталога
         """
         self.employee = employee
 
@@ -141,7 +141,7 @@ class DispatcherCatalogItemService:
         """
 
         await self._validate_catalog_item_scheme(scheme)
-        house_ids = await C300API.get_allowed_house_ids(
+        house_ids = await S300API.get_allowed_house_ids(
             provider_id=self.employee.provider.id,
             house_ids=scheme.house_ids,
             house_group_ids=scheme.house_group_ids,
@@ -185,7 +185,7 @@ class DispatcherCatalogItemService:
         await self._validate_catalog_item_scheme(scheme)
         house_ids = existing_catalog_item.house_ids
         if scheme.house_ids != existing_catalog_item.house_ids or scheme.house_group_ids or scheme.fias:
-            house_ids = await C300API.get_allowed_house_ids(
+            house_ids = await S300API.get_allowed_house_ids(
                 house_ids=scheme.house_ids,
                 provider_id=self.employee.provider.id,
                 house_group_ids=scheme.house_group_ids,

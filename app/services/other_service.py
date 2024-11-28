@@ -8,7 +8,7 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300.models.employee import EmployeeC300
+from client.s300.models.employee import EmployeeS300
 from models.base.binds import ProviderBinds
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
@@ -25,12 +25,12 @@ class OtherService:
     Сервис для работы со сторонними субъектами
     """
 
-    def __init__(self, employee: EmployeeC300):
+    def __init__(self, employee: EmployeeS300):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeC300): Сотрудник работающий со сторонними субъектами
+            employee (EmployeeS300): Сотрудник работающий со сторонними субъектами
         """
         self.employee = employee
 

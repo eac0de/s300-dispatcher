@@ -10,10 +10,10 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException, UploadFile
 from starlette import status
 
-from client.c300.models.area import AreaC300
-from client.c300.models.house import HouseC300
-from client.c300.models.provider import ProviderC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.area import AreaS300
+from client.s300.models.house import HouseS300
+from client.s300.models.provider import ProviderS300
+from client.s300.models.tenant import TenantS300
 from models.catalog_item.catalog_item import CatalogItem
 from models.request.categories_tree import RequestCategory, RequestSubcategory
 from models.request.constants import (
@@ -49,12 +49,12 @@ class TenantRequestService(RequestService):
         RequestService (_type_): Сервис работы с заявками не привязанный к пользователю
     """
 
-    def __init__(self, tenant: TenantC300):
+    def __init__(self, tenant: TenantS300):
         """
         Инициализация сервиса
 
         Args:
-            tenant (TenantC300): Модель жителя осуществляющего работу с заявками
+            tenant (TenantS300): Модель жителя осуществляющего работу с заявками
         """
         super().__init__()
         self.tenant = tenant
@@ -172,7 +172,7 @@ class TenantRequestService(RequestService):
         Returns:
             RequestModel: Созданная заявка
         """
-        house = await HouseC300.get(self.tenant.house.id)
+        house = await HouseS300.get(self.tenant.house.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -184,7 +184,7 @@ class TenantRequestService(RequestService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="There is no organization in your house that is responsible for requests",
             )
-        provider = await ProviderC300.get(provider_id)
+        provider = await ProviderS300.get(provider_id)
         if not provider:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -193,7 +193,7 @@ class TenantRequestService(RequestService):
 
         area = None
         if scheme.type == RequestType.AREA:
-            area = await AreaC300.get(self.tenant.area.id)
+            area = await AreaS300.get(self.tenant.area.id)
             if not area:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -254,7 +254,7 @@ class TenantRequestService(RequestService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="At least 1 position is required",
             )
-        house = await HouseC300.get(self.tenant.house.id)
+        house = await HouseS300.get(self.tenant.house.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -266,13 +266,13 @@ class TenantRequestService(RequestService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="There is no organization in your house that is responsible for requests",
             )
-        provider = await ProviderC300.get(provider_id)
+        provider = await ProviderS300.get(provider_id)
         if not provider:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Request-provider from house not found",
             )
-        area = await AreaC300.get(self.tenant.area.id)
+        area = await AreaS300.get(self.tenant.area.id)
         if not area:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

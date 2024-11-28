@@ -8,10 +8,10 @@ from beanie import PydanticObjectId
 from fastapi import HTTPException, UploadFile
 from starlette import status
 
-from client.c300.api import C300API
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.house import HouseC300
-from client.c300.models.provider import ProviderC300
+from client.s300.api import S300API
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.house import HouseS300
+from client.s300.models.provider import ProviderS300
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
     REQUEST_CATEGORY_EN_RU,
@@ -76,14 +76,14 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
 
     def __init__(
         self,
-        employee: EmployeeC300,
+        employee: EmployeeS300,
         request: RequestModel,
     ):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeC300): Модель работника осуществляющего работу с позициями каталога
+            employee (EmployeeS300): Модель работника осуществляющего работу с позициями каталога
             request (RequestModel): Модель заявки для обновления
         """
         super().__init__()
@@ -586,7 +586,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
     ):
         if category == self.request.category and work_area == self.request.work_area and subcategory == self.request.subcategory and not self.request.actions and not actions:
             return
-        house = await HouseC300.get(self.request.house.id)
+        house = await HouseS300.get(self.request.house.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -846,13 +846,13 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
         new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
         if existing_warehouses == new_warehouses:
             return
-        warehouses = await C300API.upsert_storage_docs_out(
+        warehouses = await S300API.upsert_storage_docs_out(
             request_id=self.request.id,
             provider_id=self.employee.provider.id,
             warehouses=new_warehouses,
         )
         self.add_rollback(
-            C300API.upsert_storage_docs_out(
+            S300API.upsert_storage_docs_out(
                 request_id=self.request.id,
                 provider_id=self.employee.provider.id,
                 is_rollback=True,
@@ -992,7 +992,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             self.request.monitoring.persons_in_charge = [p for p in self.request.monitoring.persons_in_charge if p.id not in delete_employee_ids and p.type == PersonInChargeType.EXECUTOR]
         if add_employee_ids:
             for employee_id in add_employee_ids:
-                employee = await EmployeeC300.get(employee_id)
+                employee = await EmployeeS300.get(employee_id)
                 if not employee:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -1055,13 +1055,13 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
         self,
         execution_provider_id: PydanticObjectId,
     ):
-        execution_provider = await ProviderC300.get(execution_provider_id)
+        execution_provider = await ProviderS300.get(execution_provider_id)
         if not execution_provider:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="ExecutionRS provider not found",
             )
-        house = await HouseC300.get(self.request.id)
+        house = await HouseS300.get(self.request.id)
         if not house:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

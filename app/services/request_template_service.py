@@ -7,7 +7,7 @@ from beanie.exceptions import RevisionIdWasChanged
 from fastapi import HTTPException
 from starlette import status
 
-from client.c300.models.employee import EmployeeC300
+from client.s300.models.employee import EmployeeS300
 from models.request.categories_tree import (
     CATEGORY_SUBCATEGORY_WORK_AREA_TREE,
     RequestCategory,
@@ -26,13 +26,13 @@ class RequestTemplateService:
 
     def __init__(
         self,
-        employee: EmployeeC300,
+        employee: EmployeeS300,
     ):
         """
         Инициализация сервиса
 
         Args:
-            employee (EmployeeC300): Сотрудник который работает с шаблонами заявок
+            employee (EmployeeS300): Сотрудник который работает с шаблонами заявок
         """
         self.employee = employee
 

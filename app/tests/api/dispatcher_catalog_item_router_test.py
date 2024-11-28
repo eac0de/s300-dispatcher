@@ -4,8 +4,8 @@ from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
 
-from client.c300.models.employee import EmployeeC300
-from client.c300.models.tenant import TenantC300
+from client.s300.models.employee import EmployeeS300
+from client.s300.models.tenant import TenantS300
 from config import settings
 from models.catalog_item.catalog_item import CatalogItem
 
@@ -58,7 +58,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(resp_json) == 1
         assert resp_json[0] == catalog_items[0].group.value
 
-    async def test_create_catalog_item(self, api_employee_client: AsyncClient, auth_employee: EmployeeC300, auth_tenant: TenantC300):
+    async def test_create_catalog_item(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, auth_tenant: TenantS300):
         test_name = "test_name"
         test_code = "test_code"
         tenant_house_id = auth_tenant.house.id

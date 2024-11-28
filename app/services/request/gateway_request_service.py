@@ -2,10 +2,13 @@
 Модуль для работы заявки через шлюз
 """
 
+import asyncio
+
 from beanie import PydanticObjectId
 from fastapi import HTTPException
 from starlette import status
 
+from client.s300.api import S300API
 from models.request.constants import RequestPayStatus
 from models.request.request import RequestModel
 
@@ -38,20 +41,26 @@ class GatewayRequestService:
         return request
 
     @classmethod
-    async def update_pay_status(
+    async def mark_request_as_paid(
         cls,
         request_id: PydanticObjectId,
-        pay_status: RequestPayStatus,
     ):
         """
-        Обновление статусы оплаты заявки
+        Пометить заявку как оплаченную
 
         Args:
             request_id (PydanticObjectId): Идентификатор заявки
-            pay_status (RequestPayStatus): Статус оплаты
         """
         request = await cls._get_request(request_id)
-        request.commerce.pay_status = pay_status
+        request.commerce.pay_status = RequestPayStatus.PAID
+        asyncio.create_task(
+            S300API.create_receipt_for_paid_request(
+                request_id=request.id,
+                provider_id=request.provider.id,
+                tenant_email=request.requester.email,
+                catalog_items=request.commerce.catalog_items,
+            )
+        )
         await request.save()
 
     @classmethod

@@ -8,16 +8,16 @@ from typing import Any
 
 import pydantic_core
 from beanie import PydanticObjectId
+from client.s300.client import ClientS300
 from pydantic import BaseModel, Field
 from starlette import status
 
-from client.c300.client import ClientC300
 from errors import FailedDependencyError
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
 
 
-class ServiceBindHC300S(BaseModel):
+class ServiceBindHS300S(BaseModel):
     """
     Модель привязок дома к организациям
     """
@@ -49,7 +49,7 @@ class ServiceBindHC300S(BaseModel):
     )
 
 
-class StandpipeHC300S(BaseModel):
+class StandpipeHS300S(BaseModel):
     """
     Модель стояка подЪезда
     """
@@ -60,7 +60,7 @@ class StandpipeHC300S(BaseModel):
     )
 
 
-class LiftHC300S(BaseModel):
+class LiftHS300S(BaseModel):
     """
     Модель лифта подЪезда
     """
@@ -71,22 +71,22 @@ class LiftHC300S(BaseModel):
     )
 
 
-class PorchHC300S(BaseModel):
+class PorchHS300S(BaseModel):
     """
     Модель подЪезда дома
     """
 
-    standpipes: list[StandpipeHC300S] = Field(
+    standpipes: list[StandpipeHS300S] = Field(
         default_factory=list,
         title="Стояки крыльца",
     )
-    lifts: list[LiftHC300S] = Field(
+    lifts: list[LiftHS300S] = Field(
         default_factory=list,
         title="Лифты крыльца",
     )
 
 
-class SettingsHC300S(BaseModel):
+class SettingsHS300S(BaseModel):
     """
     Модель настроек дома
     """
@@ -96,7 +96,7 @@ class SettingsHC300S(BaseModel):
     )
 
 
-class HouseC300(DocumentCache):
+class HouseS300(DocumentCache):
     """
     Модель закешированного дома
     """
@@ -104,19 +104,19 @@ class HouseC300(DocumentCache):
     address: str = Field(
         title="Адрес дома",
     )
-    service_binds: list[ServiceBindHC300S] = Field(
+    service_binds: list[ServiceBindHS300S] = Field(
         default_factory=list,
         title="Вид деятельности в отношении к дому",
     )
-    porches: list[PorchHC300S] = Field(
+    porches: list[PorchHS300S] = Field(
         default_factory=list,
         title="Крыльца",
     )
-    settings: SettingsHC300S = Field(
+    settings: SettingsHS300S = Field(
         title="настройки дома",
     )
 
-    async def get_lift(self, lift_id: PydanticObjectId) -> LiftHC300S | None:
+    async def get_lift(self, lift_id: PydanticObjectId) -> LiftHS300S | None:
         """
         Получение лифта дома по его идентификатору
 
@@ -132,7 +132,7 @@ class HouseC300(DocumentCache):
                 if l.id == lift_id:
                     return l
 
-    async def get_standpipe(self, standpipe_id: PydanticObjectId) -> StandpipeHC300S | None:
+    async def get_standpipe(self, standpipe_id: PydanticObjectId) -> StandpipeHS300S | None:
         """
         Получение стояка дома по его идентификатору
 
@@ -154,7 +154,7 @@ class HouseC300(DocumentCache):
         query: Mapping[str, Any],
     ):
         """
-        Метод для подгрузки из C300 дома
+        Метод для подгрузки из S300 дома
 
         Args:
             query (Mapping[str, Any]): Параметры запроса
@@ -164,7 +164,7 @@ class HouseC300(DocumentCache):
         """
 
         path = "houses/get/"
-        status_code, data = await ClientC300.send_request(
+        status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag="load_house",
@@ -175,13 +175,13 @@ class HouseC300(DocumentCache):
             return
         if status_code != status.HTTP_200_OK:
             raise FailedDependencyError(
-                description="Unsatisfactory response from C300",
+                description="Unsatisfactory response from S300",
                 status_code=status_code,
                 body=str(data)[:200],
             )
         if not isinstance(data, dict) or data.get("house") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the C300 does not contain an «house» key",
+                description="The data transmitted from the S300 does not contain an «house» key",
             )
         try:
             await cls(**data["house"]).save()
