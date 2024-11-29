@@ -12,9 +12,9 @@ from models.other.other_person import OtherPerson
 from models.other.other_provider import OtherProvider
 
 
-class OtherEmployeeCUScheme(BaseModel):
+class OtherEmployeeCScheme(BaseModel):
     """
-    Класс схемы для создания или обновления стороннего сотрудника
+    Класс схемы для создания стороннего сотрудника
     """
 
     full_name: str = Field(
@@ -34,7 +34,34 @@ class OtherEmployeeCUScheme(BaseModel):
     )
 
 
-class OtherPersonCUScheme(BaseModel):
+class OtherEmployeeUScheme(BaseModel):
+    """
+    Класс схемы для обновления стороннего сотрудника
+    """
+
+    full_name: str | None = Field(
+        default=None,
+        title="Фамилия Имя Отчество стороннего сотрудника",
+    )
+    phone_numbers: list[PhoneNumber] = Field(
+        default_factory=list,
+        title="Номера телефонов стороннего сотрудника",
+    )
+    email: EmailStr | None = Field(
+        default=None,
+        title="Email стороннего сотрудника",
+    )
+    position_name: str | None = Field(
+        default=None,
+        title="Должность стороннего сотрудника",
+    )
+    provider_id: PydanticObjectId | None = Field(
+        default=None,
+        title="Идентификатор организации стороннего сотрудника",
+    )
+
+
+class OtherPersonCScheme(BaseModel):
     """
     Класс схемы для создания или обновления стороннего лица
     """
@@ -50,7 +77,26 @@ class OtherPersonCUScheme(BaseModel):
     )
 
 
-class OtherProviderCUScheme(BaseModel):
+class OtherPersonUScheme(BaseModel):
+    """
+    Класс схемы для создания или обновления стороннего лица
+    """
+
+    full_name: str | None = Field(
+        default=None,
+        title="Фамилия Имя Отчество жителя",
+    )
+    phone_numbers: list[PhoneNumber] = Field(
+        default_factory=list,
+        title="Номера телефонов стороннего лица",
+    )
+    email: EmailStr | None = Field(
+        default=None,
+        title="Email стороннего лица",
+    )
+
+
+class OtherProviderCScheme(BaseModel):
     """
     Класс схемы для создания или обновления сторонней организации
     """
@@ -63,6 +109,27 @@ class OtherProviderCUScheme(BaseModel):
         title="ИНН сторонней организации",
     )
     ogrn: str = Field(
+        pattern=r"\d{13}",
+        title="ОГРН сторонней организации",
+    )
+
+
+class OtherProviderUScheme(BaseModel):
+    """
+    Класс схемы для создания или обновления сторонней организации
+    """
+
+    name: str | None = Field(
+        default=None,
+        title="Название сторонней организации",
+    )
+    inn: str | None = Field(
+        default=None,
+        pattern=r"\d{10}",
+        title="ИНН сторонней организации",
+    )
+    ogrn: str | None = Field(
+        default=None,
         pattern=r"\d{13}",
         title="ОГРН сторонней организации",
     )

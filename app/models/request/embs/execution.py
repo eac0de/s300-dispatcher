@@ -63,7 +63,7 @@ class ExecutionRS(BaseModel):
         default_factory=list,
         title="Список оценок выполнения работы по заявке",
     )
-    total_rate: float = Field(
+    evaluation_average: float = Field(
         ge=0,
         le=5,
         default=0,

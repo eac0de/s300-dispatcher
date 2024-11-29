@@ -22,6 +22,9 @@ aiofiles = "^24.1.0"
 pyjwt = "^2.10.0"
 aiohttp = "^3.11.7"
 python-multipart = "^0.0.17"
+pip = "^24.3.1"
+openpyxl = "^3.1.5"
+reportlab = "^4.2.5"
 
 [tool.poetry.group.dev.dependencies]
 aiodocker = "^0.24.0"

@@ -14,9 +14,12 @@ from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
 from models.other.other_provider import OtherProvider
 from schemes.other import (
-    OtherEmployeeCUScheme,
-    OtherPersonCUScheme,
-    OtherProviderCUScheme,
+    OtherEmployeeCScheme,
+    OtherEmployeeUScheme,
+    OtherPersonCScheme,
+    OtherPersonUScheme,
+    OtherProviderCScheme,
+    OtherProviderUScheme,
 )
 
 
@@ -62,7 +65,7 @@ class OtherService:
 
     async def create_other_person(
         self,
-        scheme: OtherPersonCUScheme,
+        scheme: OtherPersonCScheme,
     ) -> OtherPerson:
         """
         Создание стороннего лица
@@ -84,7 +87,7 @@ class OtherService:
     async def update_other_person(
         self,
         other_person_id: PydanticObjectId,
-        scheme: OtherPersonCUScheme,
+        scheme: OtherPersonUScheme,
     ) -> OtherPerson:
         """
         Обновление стороннего лица
@@ -97,16 +100,17 @@ class OtherService:
             OtherPerson: Обновленное стороннее лицо
         """
         other_person = await self._get_other_person(other_person_id)
-        short_name = other_person.short_name
-        if other_person.full_name != scheme.full_name:
-            short_name = await self._get_short_name(scheme.full_name)
-        other_person = await OtherPerson(
-            _id=other_person.id,
-            short_name=short_name,
-            _binds=ProviderBinds(pr={self.employee.provider.id}),
-            **scheme.model_dump(by_alias=True),
-        ).save()
-        return other_person
+        updated_other_person = other_person.model_copy(
+            deep=True,
+            update=scheme.model_dump(
+                by_alias=True,
+                exclude_unset=True,
+            ),
+        )
+        if other_person.full_name != updated_other_person.full_name:
+            updated_other_person.short_name = await self._get_short_name(updated_other_person.full_name)
+
+        return await updated_other_person.save()
 
     async def delete_other_person(
         self,
@@ -167,7 +171,7 @@ class OtherService:
 
     async def create_other_employee(
         self,
-        scheme: OtherEmployeeCUScheme,
+        scheme: OtherEmployeeCScheme,
     ) -> OtherEmployee:
         """
         Создание стороннего сотрудника
@@ -195,7 +199,7 @@ class OtherService:
     async def update_other_employee(
         self,
         other_employee_id: PydanticObjectId,
-        scheme: OtherEmployeeCUScheme,
+        scheme: OtherEmployeeUScheme,
     ) -> OtherEmployee:
         """
         Обновление стороннего сотрудника
@@ -208,24 +212,24 @@ class OtherService:
             OtherEmployee: Обновленный сторонний сотрудник
         """
         other_employee = await self._get_other_employee(other_employee_id)
+        updated_other_employee = other_employee.model_copy(
+            deep=True,
+            update=scheme.model_dump(
+                by_alias=True,
+                exclude_unset=True,
+            ),
+        )
         provider = None
-        if other_employee.provider_id != scheme.provider_id:
-            provider = await OtherProvider.get(scheme.provider_id)
+        if other_employee.provider_id != updated_other_employee.provider_id:
+            provider = await OtherProvider.get(updated_other_employee.provider_id)
             if not provider:
                 raise HTTPException(
                     detail="Other provider not found",
                     status_code=status.HTTP_404_NOT_FOUND,
                 )
-        short_name = other_employee.short_name
-        if other_employee.full_name != scheme.full_name:
-            short_name = await self._get_short_name(scheme.full_name)
-        other_employee = await OtherEmployee(
-            _id=other_employee.id,
-            short_name=short_name,
-            _binds=other_employee.binds,
-            **scheme.model_dump(by_alias=True),
-        ).save()
-        return other_employee
+        if other_employee.full_name != updated_other_employee.full_name:
+            updated_other_employee.short_name = await self._get_short_name(updated_other_employee.full_name)
+        return await updated_other_employee.save()
 
     async def delete_other_employee(
         self,
@@ -286,7 +290,7 @@ class OtherService:
 
     async def create_other_provider(
         self,
-        scheme: OtherProviderCUScheme,
+        scheme: OtherProviderCScheme,
     ) -> OtherProvider:
         """
         Создание сторонней организации
@@ -306,7 +310,7 @@ class OtherService:
     async def update_other_provider(
         self,
         other_provider_id: PydanticObjectId,
-        scheme: OtherProviderCUScheme,
+        scheme: OtherProviderUScheme,
     ) -> OtherProvider:
         """
         Обновление сторонней организации
@@ -318,12 +322,14 @@ class OtherService:
             OtherProvider: Обновленная сторонняя организация
         """
         other_provider = await self._get_other_provider(other_provider_id)
-        other_provider = await OtherProvider(
-            _id=other_provider.id,
-            _binds=other_provider.binds,
-            **scheme.model_dump(by_alias=True),
-        ).save()
-        return other_provider
+        updated_other_provider = other_provider.model_copy(
+            deep=True,
+            update=scheme.model_dump(
+                by_alias=True,
+                exclude_unset=True,
+            ),
+        )
+        return await updated_other_provider.save()
 
     async def delete_other_provider(
         self,

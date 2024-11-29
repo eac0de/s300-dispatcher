@@ -36,7 +36,7 @@ class TestDispatcherRequestRouter:
         assert isinstance(resp_json, dict)
 
     async def test_get_request_stats(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
-        resp = await api_employee_client.get("/dispatcher/requests/stats")
+        resp = await api_employee_client.get("/dispatcher/requests/stats/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -47,7 +47,7 @@ class TestDispatcherRequestRouter:
         request.execution.start_at = t
         request.execution.end_at = t + timedelta(days=1)
         await request.save()
-        resp = await api_employee_client.get("/dispatcher/requests/stats")
+        resp = await api_employee_client.get("/dispatcher/requests/stats/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -69,10 +69,7 @@ class TestDispatcherRequestRouter:
         assert resp_json[0]["_id"] == str(request.id)
 
         resp = await api_employee_client.get("/dispatcher/requests/", params={"status__in": "test_no_status__in"})
-        assert resp.status_code == status.HTTP_200_OK
-        resp_json = resp.json()
-        assert isinstance(resp_json, list)
-        assert len(resp_json) == 0
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
         resp = await api_employee_client.get("/dispatcher/requests/", params={"area_range": request.area.number if request.area else "1"})
         assert resp.status_code == status.HTTP_200_OK
@@ -86,7 +83,7 @@ class TestDispatcherRequestRouter:
 
     async def test_get_request(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -113,7 +110,7 @@ class TestDispatcherRequestRouter:
             "execution": {"desired_start_at": None, "desired_end_at": None, "act": {"files": [], "comment": ""}, "attachment": {"files": [], "comment": ""}},
             "requester_attachment": {"files": [], "comment": ""},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -142,7 +139,7 @@ class TestDispatcherRequestRouter:
             },
             "resources": {"materials": [], "services": [], "warehouses": []},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -157,7 +154,7 @@ class TestDispatcherRequestRouter:
                 "items": [{"_id": mock_s300_api_upsert_storage_docs_out.warehouse_item_id, "quantity": mock_s300_api_upsert_storage_docs_out.test_quantity}],
             },
         ]
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         await request.sync()
@@ -176,7 +173,7 @@ class TestDispatcherRequestRouter:
         request = requests[0]
         request.created_at = datetime.now() - timedelta(days=1)  # Заявка если только создана не создает историю а просто перезаписывает поля
         await request.save()
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -184,9 +181,9 @@ class TestDispatcherRequestRouter:
         test_description = "test_description"
         data = request.model_dump(by_alias=True)
         data["description"] = test_description
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -202,18 +199,18 @@ class TestDispatcherRequestRouter:
     # Тест для reset_request
     async def test_delete_and_reset_request(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
-        resp = await api_employee_client.delete(f"/dispatcher/requests/{request.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/requests/{request.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         r = await RequestModel.get(request.id)
         assert r is None
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/restore")
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/restore/")
         assert resp.status_code == status.HTTP_403_FORBIDDEN
 
     # Тест для upload_requester_attachment_files
     async def test_upload_requester_attachment_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/requester_attachment_files", files=files)
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/requester_attachment_files/", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -226,7 +223,7 @@ class TestDispatcherRequestRouter:
         file = await File.create(file_content, "file1.txt", f"requester_attachment {request.id}")
         request.requester_attachment.files.append(file)
         await request.save()
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file.id}")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file.id}/")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
         assert "text/plain" in resp.headers["Content-Type"]
@@ -236,7 +233,7 @@ class TestDispatcherRequestRouter:
     async def test_upload_execution_attachment_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_attachment_files", files=files)
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_attachment_files/", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -249,7 +246,7 @@ class TestDispatcherRequestRouter:
         file = await File.create(file_content, "file1.txt", f"execution_attachment {request.id}")
         request.requester_attachment.files.append(file)
         await request.save()
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_attachment_files/{file.id}")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_attachment_files/{file.id}/")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
         assert "text/plain" in resp.headers["Content-Type"]
@@ -259,7 +256,7 @@ class TestDispatcherRequestRouter:
     async def test_upload_execution_act_files(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
-        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_act_files", files=files)
+        resp = await api_employee_client.post(f"/dispatcher/requests/{request.id}/execution_act_files/", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -272,7 +269,7 @@ class TestDispatcherRequestRouter:
         file = await File.create(file_content, "file1.txt", f"execution_act {request.id}")
         request.requester_attachment.files.append(file)
         await request.save()
-        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_act_files/{file.id}")
+        resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_act_files/{file.id}/")
         assert resp.status_code == status.HTTP_200_OK
         assert "Content-Disposition" in resp.headers
         assert "text/plain" in resp.headers["Content-Type"]

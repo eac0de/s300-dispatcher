@@ -46,7 +46,7 @@ class TestOtherRouter:
             "phone_numbers": test_phone_numbers,
             "email": "user@example.com",
         }
-        resp = await api_employee_client.patch(f"/dispatcher/other/persons/{other_person.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/other/persons/{other_person.id}/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -56,18 +56,18 @@ class TestOtherRouter:
         assert len(other_person.phone_numbers) == len(test_phone_numbers)
 
         other_person = other_persons[1]
-        resp = await api_employee_client.patch(f"/dispatcher/other/persons/{other_person.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/other/persons/{other_person.id}/", json=data)
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_other_person(self, api_employee_client: AsyncClient, other_persons: list[OtherPerson]):
         other_person = other_persons[0]
 
-        resp = await api_employee_client.delete(f"/dispatcher/other/persons/{other_person.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/persons/{other_person.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         assert await OtherPerson.get(other_person.id) is None
 
         other_person = other_persons[1]
-        resp = await api_employee_client.delete(f"/dispatcher/other/persons/{other_person.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/persons/{other_person.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_get_other_employee_list(self, api_employee_client: AsyncClient, other_employees: list[OtherEmployee]):
@@ -112,7 +112,7 @@ class TestOtherRouter:
             "position_name": "test_position_name",
             "provider_id": other_employee.provider_id,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -121,17 +121,17 @@ class TestOtherRouter:
         assert len(other_employee.phone_numbers) == len(test_phone_numbers)
 
         other_employee = other_employees[1]
-        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_other_employee(self, api_employee_client: AsyncClient, other_employees: list[OtherEmployee]):
         other_employee = other_employees[0]
-        resp = await api_employee_client.delete(f"/dispatcher/other/employees/{other_employee.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/employees/{other_employee.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         assert await OtherPerson.get(other_employee.id) is None
 
         other_employee = other_employees[1]
-        resp = await api_employee_client.delete(f"/dispatcher/other/employees/{other_employee.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/employees/{other_employee.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_get_other_provider_list(self, api_employee_client: AsyncClient, other_providers: list[OtherProvider]):
@@ -165,7 +165,7 @@ class TestOtherRouter:
             "inn": "33333333333333",
             "ogrn": "33333333333333",
         }
-        resp = await api_employee_client.patch(f"/dispatcher/other/providers/{other_provider.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/other/providers/{other_provider.id}/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -173,15 +173,15 @@ class TestOtherRouter:
         assert other_provider.name == test_name
 
         other_provider = other_providers[1]
-        resp = await api_employee_client.patch(f"/dispatcher/other/providers/{other_provider.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/other/providers/{other_provider.id}/", json=data)
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_other_provider(self, api_employee_client: AsyncClient, other_providers: list[OtherProvider]):
         other_provider = other_providers[0]
-        resp = await api_employee_client.delete(f"/dispatcher/other/providers/{other_provider.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/providers/{other_provider.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         assert await OtherProvider.get(other_provider.id) is None
 
         other_provider = other_providers[1]
-        resp = await api_employee_client.delete(f"/dispatcher/other/providers/{other_provider.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/other/providers/{other_provider.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND

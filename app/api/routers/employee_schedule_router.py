@@ -20,7 +20,7 @@ employee_schedule_router = APIRouter(
 
 
 @employee_schedule_router.get(
-    path="/weekly",
+    path="/weekly/",
     status_code=status.HTTP_200_OK,
     response_model=list[RequestEmployeeWeeklySchedule],
 )
@@ -45,7 +45,7 @@ async def get_request_employee_weekly_schedules(
 
 
 @employee_schedule_router.get(
-    path="/daily",
+    path="/daily/",
     status_code=status.HTTP_200_OK,
     response_model=list[RequestEmployeeDailySchedule],
 )

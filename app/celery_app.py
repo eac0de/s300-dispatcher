@@ -12,7 +12,7 @@ import celery
 
 from config import settings
 from database import init_db
-from utils.grid_fs.grid_fs import init_grid_fs_service
+from utils.grid_fs.core import init_grid_fs_service
 from utils.template_renderer import init_template_renderer
 
 T = TypeVar("T")

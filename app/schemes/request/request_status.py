@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from models.request.constants import RequestStatus
 from models.request.embs.resources import ManuallyAddedItemResourcesRS
-from schemes.only_id import OnlyIdScheme
+from schemes.extra.only_id import OnlyIdScheme
 
 
 class ExecutionRequestDStatusUScheme(BaseModel):

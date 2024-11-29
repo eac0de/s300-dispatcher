@@ -28,7 +28,7 @@ from models.request.constants import (
     RequestTag,
 )
 from models.request.embs.action import (
-    ACTION_TYPE_EN_RU_DISPLAY,
+    ACTION_TYPE_EN_RU,
     ActionRS,
     ActionRSType,
     LiftShutdownActionRS,
@@ -51,7 +51,7 @@ from models.request_history.request_history import (
 )
 from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
-from schemes.only_id import OnlyIdScheme
+from schemes.extra.only_id import OnlyIdScheme
 from schemes.request.dispatcher_request import (
     RelationsRequestDCUScheme,
     RequestDUScheme,
@@ -647,8 +647,8 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         UpdatedField(
                             name="actions",
                             value=action,
-                            name_display="Новое отключение",
-                            value_display=f"{ACTION_TYPE_EN_RU_DISPLAY[action.type]}{start_at}{end_at}",
+                            name_display="Новое действие",
+                            value_display=f"{ACTION_TYPE_EN_RU[action.type]}{start_at}{end_at}",
                         )
                     )
                     continue
@@ -658,7 +658,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         UpdatedField(
                             name="actions.end_at",
                             value=action.end_at,
-                            name_display=f"Время окончания отключения {ACTION_TYPE_EN_RU_DISPLAY[action.type]}",
+                            name_display=f"Время окончания {ACTION_TYPE_EN_RU[action.type]}",
                             value_display=action.end_at.strftime("%H:%M %d.%m.%Y") if action.end_at else "Нет",
                         )
                     )
@@ -667,7 +667,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         UpdatedField(
                             name="actions.start_at",
                             value=action.start_at,
-                            name_display=f"Время начала отключения {ACTION_TYPE_EN_RU_DISPLAY[action.type]}",
+                            name_display=f"Время начала {ACTION_TYPE_EN_RU[action.type]}",
                             value_display=action.start_at.strftime("%H:%M %d.%m.%Y") if action.start_at else "Нет",
                         )
                     )
@@ -685,7 +685,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         UpdatedField(
                             name="actions.lift",
                             value=action.start_at,
-                            name_display=f"Отключаемый стояк {ACTION_TYPE_EN_RU_DISPLAY[action.type]}",
+                            name_display=f"Отключаемый стояк {ACTION_TYPE_EN_RU[action.type]}",
                             value_display=str(action.standpipe.id),
                         )
                     )
@@ -697,7 +697,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                         name="actions",
                         value=None,
                         name_display="Удалено действие",
-                        value_display=f"Отключение {ACTION_TYPE_EN_RU_DISPLAY[_type]}{start_at}{end_at}",
+                        value_display=f"{ACTION_TYPE_EN_RU[_type]}{start_at}{end_at}",
                     )
                 )
             self.request.actions = actions

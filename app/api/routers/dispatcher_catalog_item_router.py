@@ -20,6 +20,7 @@ dispatcher_catalog_item_router = APIRouter(
 
 @dispatcher_catalog_item_router.get(
     path="/",
+    description="Получение списка позиций каталога работником." + DispatcherCatalogFilter.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )
@@ -62,7 +63,7 @@ async def create_catalog_item(
 
 
 @dispatcher_catalog_item_router.get(
-    path="/groups",
+    path="/groups/",
     status_code=status.HTTP_200_OK,
     response_model=list[str],
 )
@@ -79,7 +80,7 @@ async def get_catalog_item_groups(
 
 
 @dispatcher_catalog_item_router.patch(
-    path="/{catalog_item_id}",
+    path="/{catalog_item_id}/",
     status_code=status.HTTP_200_OK,
     response_model=CatalogItem,
 )
@@ -100,7 +101,7 @@ async def update_catalog_item(
 
 
 @dispatcher_catalog_item_router.delete(
-    path="/{catalog_item_id}",
+    path="/{catalog_item_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_catalog_item(
@@ -116,7 +117,7 @@ async def delete_catalog_item(
 
 
 @dispatcher_catalog_item_router.post(
-    path="/{catalog_item_id}/image",
+    path="/{catalog_item_id}/image/",
     status_code=status.HTTP_200_OK,
     response_model=CatalogItem,
 )
@@ -137,7 +138,7 @@ async def upload_catalog_item_image(
 
 
 @dispatcher_catalog_item_router.get(
-    path="/{catalog_item_id}/image",
+    path="/{catalog_item_id}/image/",
     status_code=status.HTTP_200_OK,
 )
 async def download_catalog_item_image(

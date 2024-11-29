@@ -17,7 +17,7 @@ tenant_catalog_item_router = APIRouter(
 
 
 @tenant_catalog_item_router.get(
-    path="/groups",
+    path="/groups/",
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItemGroup],
 )
@@ -35,6 +35,7 @@ async def get_catalog_item_groups(
 
 @tenant_catalog_item_router.get(
     path="/",
+    description="Получение возможных позиций каталога" + TenantCatalogFilter.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )

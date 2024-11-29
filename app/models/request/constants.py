@@ -94,3 +94,11 @@ class RequestSource(str, Enum):
     TENANT = "tenant"
     DISPATCHER = "dispatcher"
     CATALOG = "catalog"
+
+
+REQUEST_SOURCE_EN_RU = {
+    RequestSource.TICKET: "Из обращения",
+    RequestSource.TENANT: "Житель",
+    RequestSource.DISPATCHER: "Диспетчер",
+    RequestSource.CATALOG: "Из каталога",
+}

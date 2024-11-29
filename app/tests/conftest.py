@@ -249,6 +249,11 @@ async def mock_s300_api_upsert_storage_docs_out(mocker):
 
 
 @pytest.fixture()
+async def mock_create_receipt_for_paid_request(mocker):
+    mocker.patch("client.s300.api.S300API.create_receipt_for_paid_request", return_value=None)
+
+
+@pytest.fixture()
 async def mock_house_get(mocker, auth_tenant: TenantS300, auth_employee: EmployeeS300):
     mock_house = HouseS300.model_validate(
         {
@@ -349,7 +354,7 @@ async def requests(auth_employee: EmployeeS300, auth_tenant: TenantS300):
                 attachment=Attachment(files=[], comment=""),
                 is_partially=False,
                 evaluations=[],
-                total_rate=0,
+                evaluation_average=0,
             ),
             house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
             housing_supervision=True,
@@ -396,7 +401,7 @@ async def requests(auth_employee: EmployeeS300, auth_tenant: TenantS300):
                 attachment=Attachment(files=[], comment=""),
                 is_partially=False,
                 evaluations=[],
-                total_rate=0,
+                evaluation_average=0,
             ),
             house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
             housing_supervision=True,

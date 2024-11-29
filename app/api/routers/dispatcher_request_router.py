@@ -7,7 +7,10 @@ from fastapi import APIRouter, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from api.dependencies.auth import EmployeeDep
-from api.filters.request_filter import DispatcherRequestFilter
+from api.filters.request_filter import (
+    DispatcherRequestFilter,
+    DispatcherRequestReportFilter,
+)
 from models.request.request import RequestModel
 from schemes.request.dispatcher_request import (
     RequestDCScheme,
@@ -18,16 +21,62 @@ from schemes.request.dispatcher_request import (
 from schemes.request.request_stats import RequestStats
 from schemes.request.request_status import RequestDStatusUScheme
 from schemes.request_history import UpdateRequestHistoryRScheme
+from services.request.dispatcher_request_report_service import (
+    DispatcherRequestReportService,
+)
 from services.request.dispatcher_request_service import DispatcherRequestService
 from services.request.dispatcher_request_update_service import (
     DispatcherRequestUpdateService,
 )
 from services.request_history_service import RequestHistoryService
+from utils.grid_fs.constants import ContentType
 from utils.grid_fs.file import File
 
 dispatcher_request_router = APIRouter(
     tags=["dispatcher_requests"],
 )
+
+
+@dispatcher_request_router.get(
+    path="/blank/",
+    status_code=status.HTTP_200_OK,
+)
+async def download_pdf_blanks_zip(
+    employee: EmployeeDep,
+    req: Request,
+):
+    params = await DispatcherRequestReportFilter.parse_query_params(req.query_params)
+    request_service = DispatcherRequestService(employee)
+    requests = await request_service.get_requests(
+        query_list=params.query_list,
+        offset=params.offset,
+        limit=params.limit if params.limit and params.limit < 1000 else 1000,
+        sort=params.sort,
+    )
+    date = ""
+    request = await requests.first_or_none()
+    if request:
+        date = "_" + request.created_at.strftime("%d.%M.%Y")
+    report_service = DispatcherRequestReportService(employee)
+    headers = {"Content-Disposition": f"attachment; filename={f"request_blanks{date}.zip"}"}
+    response = StreamingResponse(report_service.generate_pdf_blanks_zip(requests), media_type=ContentType.ZIP.value, headers=headers)
+    return response
+
+
+@dispatcher_request_router.get(
+    path="/{request_id}/blank/",
+    status_code=status.HTTP_200_OK,
+)
+async def download_pdf_blank(
+    employee: EmployeeDep,
+    request_id: PydanticObjectId,
+):
+    request_service = DispatcherRequestService(employee)
+    request = await request_service.get_request(request_id)
+    report_service = DispatcherRequestReportService(employee)
+    headers = {"Content-Disposition": f"attachment; filename={f"Бланк заявки №{request.number}.pdf"}"}
+    response = StreamingResponse(report_service.generate_pdf_blank(request), media_type=ContentType.PDF.value, headers=headers)
+    return response
 
 
 @dispatcher_request_router.post(
@@ -50,7 +99,7 @@ async def create_request(
 
 
 @dispatcher_request_router.get(
-    path="/stats",
+    path="/stats/",
     status_code=status.HTTP_200_OK,
     response_model=RequestStats,
 )
@@ -67,6 +116,7 @@ async def get_request_stats(
 
 @dispatcher_request_router.get(
     path="/",
+    description="Получения списка заявок сотрудником.<br>" + DispatcherRequestFilter.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[RequestDLScheme],
 )
@@ -81,16 +131,17 @@ async def get_request_list(
 
     params = await DispatcherRequestFilter.parse_query_params(req.query_params)
     service = DispatcherRequestService(employee)
-    return await service.get_request_list(
+    requests = await service.get_requests(
         query_list=params.query_list,
         offset=params.offset,
-        limit=params.limit,
+        limit=params.limit if params.limit and params.limit < 20 else 20,
         sort=params.sort,
     )
+    return await requests.to_list()
 
 
 @dispatcher_request_router.get(
-    path="/{request_id}",
+    path="/{request_id}/",
     status_code=status.HTTP_200_OK,
     response_model=RequestDRScheme,
 )
@@ -107,7 +158,7 @@ async def get_request(
 
 
 @dispatcher_request_router.patch(
-    path="/{request_id}",
+    path="/{request_id}/",
     status_code=status.HTTP_200_OK,
     response_model=RequestDRScheme,
 )
@@ -130,7 +181,7 @@ async def update_request(
 
 
 @dispatcher_request_router.patch(
-    path="/{request_id}/status",
+    path="/{request_id}/status/",
     status_code=status.HTTP_200_OK,
     response_model=RequestDRScheme,
 )
@@ -153,7 +204,7 @@ async def update_request_status(
 
 
 @dispatcher_request_router.get(
-    path="/{request_id}/history",
+    path="/{request_id}/history/",
     status_code=status.HTTP_200_OK,
     response_model=list[UpdateRequestHistoryRScheme],
 )
@@ -176,7 +227,7 @@ async def get_request_history(
 
 
 @dispatcher_request_router.delete(
-    path="/{request_id}",
+    path="/{request_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_request(
@@ -192,7 +243,7 @@ async def delete_request(
 
 
 @dispatcher_request_router.post(
-    path="/{request_id}/restore",
+    path="/{request_id}/restore/",
     status_code=status.HTTP_200_OK,
     response_model=RequestModel,
 )
@@ -209,7 +260,7 @@ async def reset_request(
 
 
 @dispatcher_request_router.post(
-    path="/{request_id}/requester_attachment_files",
+    path="/{request_id}/requester_attachment_files/",
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
@@ -232,7 +283,7 @@ async def upload_requester_attachment_files(
 
 
 @dispatcher_request_router.get(
-    path="/{request_id}/requester_attachment_files/{file_id}",
+    path="/{request_id}/requester_attachment_files/{file_id}/",
     status_code=status.HTTP_200_OK,
 )
 async def download_requester_attachment_file(
@@ -255,7 +306,7 @@ async def download_requester_attachment_file(
 
 
 @dispatcher_request_router.post(
-    path="/{request_id}/execution_attachment_files",
+    path="/{request_id}/execution_attachment_files/",
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
@@ -278,7 +329,7 @@ async def upload_execution_attachment_files(
 
 
 @dispatcher_request_router.get(
-    path="/{request_id}/execution_attachment_files/{file_id}",
+    path="/{request_id}/execution_attachment_files/{file_id}/",
     status_code=status.HTTP_200_OK,
 )
 async def download_execution_attachment_file(
@@ -301,7 +352,7 @@ async def download_execution_attachment_file(
 
 
 @dispatcher_request_router.post(
-    path="/{request_id}/execution_act_files",
+    path="/{request_id}/execution_act_files/",
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
@@ -324,7 +375,7 @@ async def upload_execution_act_files(
 
 
 @dispatcher_request_router.get(
-    path="/{request_id}/execution_act_files/{file_id}",
+    path="/{request_id}/execution_act_files/{file_id}/",
     status_code=status.HTTP_200_OK,
 )
 async def download_execution_act_file(

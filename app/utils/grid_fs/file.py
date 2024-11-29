@@ -11,6 +11,8 @@
 
 import logging
 import os
+from collections.abc import AsyncGenerator
+from datetime import datetime
 from typing import Self
 
 import aiofiles
@@ -22,7 +24,7 @@ from pydantic import BaseModel, Field
 from starlette import status
 
 from utils.grid_fs.constants import ContentType, FileEncoding, FileExtensionGroup
-from utils.grid_fs.grid_fs import grid_fs_service
+from utils.grid_fs.core import grid_fs_service
 from utils.grid_fs.utils import get_content_type_by_filename
 
 UNKNOWN_FILE_TAG = "unknown"
@@ -62,7 +64,10 @@ class File(BaseModel):
             - Может возникнуть ошибка от библиотеки motor во время выполнения.
         """
         grid_out = await grid_fs_service.download_file(self.id)
-        return await grid_out.read()
+        try:
+            return await grid_out.read()
+        finally:
+            grid_out.close()
 
     async def open_stream(self) -> AsyncIOMotorGridOut:
         """
@@ -84,6 +89,7 @@ class File(BaseModel):
         tag: str = UNKNOWN_FILE_TAG,
         encoding: FileEncoding = FileEncoding.UTF_8,
         mode: str = "r",
+        autoremove_before: datetime | None = None,
     ) -> Self | None:
         """
         Загрузка файла с диска в GridFS.
@@ -93,6 +99,7 @@ class File(BaseModel):
             filepath (str): Путь к директории с файлом.
             tag (str): Тег файла.
             encoding (FileEncoding): Кодировка файла.
+            autoremove_before (datetime | None): Автоудаление файла после указанного времени
 
         Returns:
             File | None: Загруженный файл или None в случае ошибки.
@@ -110,6 +117,7 @@ class File(BaseModel):
                     "content_type": content_type,
                     "tag": tag,
                     "encoding": encoding,
+                    "autoremove_before": autoremove_before,
                 }
                 file_id = await grid_fs_service.upload_file(
                     await f.read(),
@@ -194,6 +202,7 @@ class File(BaseModel):
         tag: str = UNKNOWN_FILE_TAG,
         encoding: FileEncoding = FileEncoding.UTF_8,
         allowed_file_extensions: FileExtensionGroup = FileExtensionGroup.ALL,
+        autoremove_before: datetime | None = None,
     ) -> Self:
         """
         Загрузка файла в GridFS.
@@ -203,6 +212,8 @@ class File(BaseModel):
             filename (str | None): Название файла.
             tag (str): Тег файла.
             encoding (FileEncoding): Кодировка файла.
+            allowed_file_extensions (FileExtensionGroup): Разрешенные расширения файла
+            autoremove_before (datetime | None): Автоудаление файла после указанного времени
 
         Returns:
             File: Загруженный файл.
@@ -222,7 +233,7 @@ class File(BaseModel):
             filename=filename,
             allowed_file_extensions=allowed_file_extensions,
         )
-        metadata = {"content_type": content_type, "tag": tag, "encoding": encoding}
+        metadata = {"content_type": content_type, "tag": tag, "encoding": encoding, "autoremove_before": autoremove_before}
         file_id = await grid_fs_service.upload_file(
             file_content,
             filename,
@@ -255,11 +266,11 @@ class File(BaseModel):
             grid_out = await grid_fs_service.download_file(file_id)
         except gridfs.NoFile:
             return None
-        file = cls.__build_file(grid_out)
+        file = await cls.__build_file(grid_out)
         return file
 
     @classmethod
-    async def find(cls, query: dict) -> list[Self]:
+    async def find(cls, query: dict) -> AsyncGenerator["File", None]:
         """
         Получение файлов из GridFS по параметрам запроса.
 
@@ -267,18 +278,21 @@ class File(BaseModel):
             query (dict): Параметры запроса.
 
         Returns:
-            list[File]: Список файлов.
+           FileAsyncIterator: Итератор файлов.
 
         Notes:
             - Может возникнуть ошибка от библиотеки motor во время выполнения.
         """
 
         cursor = await grid_fs_service.find_files(query)
-
-        return [cls.__build_file(f) async for f in cursor]
+        try:
+            async for grid_out in cursor:
+                yield await cls.__build_file(grid_out)
+        finally:
+            await cursor.close()
 
     @classmethod
-    def __build_file(
+    async def __build_file(
         cls,
         grid_out: AsyncIOMotorGridOut,
     ):
@@ -314,3 +328,8 @@ class File(BaseModel):
             tag=tag,
             encoding=encoding,
         )
+
+    @classmethod
+    async def delete_autoremove_files(cls):
+        async for file in File.find({"metadata.autoremove_before": {"$lte": datetime.now()}}):
+            await file.delete()

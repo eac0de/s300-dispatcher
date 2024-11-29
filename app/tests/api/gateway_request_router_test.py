@@ -1,3 +1,4 @@
+import pytest
 from httpx import AsyncClient
 from starlette import status
 
@@ -32,10 +33,11 @@ class TestGatewayRequestRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
 
-    async def test_update_pay_status(self, api_gateway_client: AsyncClient, requests: list[RequestModel]):
+    @pytest.mark.usefixtures("mock_create_receipt_for_paid_request")
+    async def test_mark_request_as_paid(self, api_gateway_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         test_pay_status = RequestPayStatus.PAID
-        resp = await api_gateway_client.patch(f"/gateway/requests/{request.id}/pay_status/", json=EnhancedJSONEncoder.normalize({"pay_status": test_pay_status}))
+        resp = await api_gateway_client.patch(f"/gateway/requests/{request.id}/paid/", json=EnhancedJSONEncoder.normalize({"pay_status": test_pay_status}))
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
         assert request.commerce.pay_status == test_pay_status

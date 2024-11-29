@@ -23,7 +23,7 @@ from models.request.embs.action import (
 from models.request.embs.employee import EmployeeRS
 from models.request.embs.requester import RequesterType
 from models.request.request import RequestModel
-from schemes.only_id import OnlyIdScheme
+from schemes.extra.only_id import OnlyIdScheme
 
 
 class RequesterRequestDCScheme(BaseModel):

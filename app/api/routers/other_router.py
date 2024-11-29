@@ -13,12 +13,15 @@ from api.filters.other_filter import (
     OtherProviderFilter,
 )
 from schemes.other import (
-    OtherEmployeeCUScheme,
+    OtherEmployeeCScheme,
     OtherEmployeeRScheme,
-    OtherPersonCUScheme,
+    OtherEmployeeUScheme,
+    OtherPersonCScheme,
     OtherPersonRScheme,
-    OtherProviderCUScheme,
+    OtherPersonUScheme,
+    OtherProviderCScheme,
     OtherProviderRScheme,
+    OtherProviderUScheme,
 )
 from services.other_service import OtherService
 
@@ -59,7 +62,7 @@ async def get_other_person_list(
 )
 async def create_other_person(
     employee: EmployeeDep,
-    scheme: OtherPersonCUScheme,
+    scheme: OtherPersonCScheme,
 ):
     """
     Создание стороннего лица
@@ -71,14 +74,14 @@ async def create_other_person(
 
 
 @other_router.patch(
-    path="/persons/{other_person_id}",
+    path="/persons/{other_person_id}/",
     status_code=status.HTTP_200_OK,
     response_model=OtherPersonRScheme,
 )
 async def update_other_person(
     employee: EmployeeDep,
     other_person_id: PydanticObjectId,
-    scheme: OtherPersonCUScheme,
+    scheme: OtherPersonUScheme,
 ):
     """
     Обновление стороннего лица
@@ -93,7 +96,7 @@ async def update_other_person(
 
 
 @other_router.delete(
-    path="/persons/{other_person_id}",
+    path="/persons/{other_person_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_other_person(
@@ -110,6 +113,7 @@ async def delete_other_person(
 
 @other_router.get(
     path="/employees/",
+    description="Получение списка сторонних сотрудников.<br>" + OtherEmployeeFilter.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[OtherEmployeeRScheme],
 )
@@ -140,7 +144,7 @@ async def get_other_employee_list(
 )
 async def create_other_employee(
     employee: EmployeeDep,
-    scheme: OtherEmployeeCUScheme,
+    scheme: OtherEmployeeCScheme,
 ):
     """
     Создание стороннего сотрудника
@@ -152,14 +156,14 @@ async def create_other_employee(
 
 
 @other_router.patch(
-    path="/employees/{other_employee_id}",
+    path="/employees/{other_employee_id}/",
     status_code=status.HTTP_200_OK,
     response_model=OtherEmployeeRScheme,
 )
 async def update_other_employee(
     employee: EmployeeDep,
     other_employee_id: PydanticObjectId,
-    scheme: OtherEmployeeCUScheme,
+    scheme: OtherEmployeeUScheme,
 ):
     """
     Обновление стороннего сотрудника
@@ -174,7 +178,7 @@ async def update_other_employee(
 
 
 @other_router.delete(
-    path="/employees/{other_employee_id}",
+    path="/employees/{other_employee_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_other_employee(
@@ -221,7 +225,7 @@ async def get_other_provider_list(
 )
 async def create_other_provider(
     employee: EmployeeDep,
-    scheme: OtherProviderCUScheme,
+    scheme: OtherProviderCScheme,
 ):
     """
     Создание сторонней организации
@@ -233,14 +237,14 @@ async def create_other_provider(
 
 
 @other_router.patch(
-    path="/providers/{other_provider_id}",
+    path="/providers/{other_provider_id}/",
     status_code=status.HTTP_200_OK,
     response_model=OtherProviderRScheme,
 )
 async def update_other_provider(
     employee: EmployeeDep,
     other_provider_id: PydanticObjectId,
-    scheme: OtherProviderCUScheme,
+    scheme: OtherProviderUScheme,
 ):
     """
     Обновление сторонней организации
@@ -255,7 +259,7 @@ async def update_other_provider(
 
 
 @other_router.delete(
-    path="/providers/{other_provider_id}",
+    path="/providers/{other_provider_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_other_provider(

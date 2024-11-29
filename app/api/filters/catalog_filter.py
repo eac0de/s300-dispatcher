@@ -2,7 +2,8 @@
 Модуль с фильтрами для query параметров запросов к каталогу
 """
 
-from utils.document_filter import DocumentFilter, Filter
+from models.catalog_item.constants import CatalogItemGroup
+from utils.document_filter import DocumentFilter, Filter, StandartParser
 
 
 class DispatcherCatalogFilter(DocumentFilter):
@@ -13,9 +14,12 @@ class DispatcherCatalogFilter(DocumentFilter):
     __filters__ = {
         "name": Filter[str](
             q_func=lambda x: {"name": {"$regex": x, "$options": "i"}},
+            description="Название позиции",
         ),
-        "group": Filter[str](
+        "group": Filter[CatalogItemGroup](
             q_func=lambda x: {"group": x},
+            t_parser=StandartParser.get_enum_parser(CatalogItemGroup),
+            description="Группа позиций",
         ),
     }
 
@@ -28,8 +32,11 @@ class TenantCatalogFilter(DocumentFilter):
     __filters__ = {
         "name": Filter[str](
             q_func=lambda x: {"name": {"$regex": x, "$options": "i"}},
+            description="Название позиции",
         ),
-        "group": Filter[str](
+        "group": Filter[CatalogItemGroup](
             q_func=lambda x: {"group": x},
+            t_parser=StandartParser.get_enum_parser(CatalogItemGroup),
+            description="Группа позиций",
         ),
     }

@@ -60,7 +60,7 @@ class TestTenantRequestRouter:
 
     async def test_get_request(self, api_tenant_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
-        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}")
+        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -68,12 +68,12 @@ class TestTenantRequestRouter:
 
         request.requester.id = PydanticObjectId()
         await request.save()
-        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}")
+        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
         request.is_public = True
         await request.save()
-        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}")
+        resp = await api_tenant_client.get(f"/tenant/requests/{request.id}/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -85,12 +85,12 @@ class TestTenantRequestRouter:
         data = {
             "execution": {"evaluations": [{"score": evaluation_score}]},
         }
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
         request.status = RequestStatus.PERFORMED
         await request.save()
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate", json=data)
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
         assert len(request.execution.evaluations) == 1
@@ -99,7 +99,7 @@ class TestTenantRequestRouter:
         assert evaluation.score == evaluation_score
 
         data["execution"] = {"evaluations": []}
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate", json=data)
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
         assert len(request.execution.evaluations) == 0
@@ -108,7 +108,7 @@ class TestTenantRequestRouter:
     async def test_upload_requester_attachment_files(self, api_tenant_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         files = [("files", ("file1.txt", b"file_content_1", "text/plain")), ("files", ("file2.txt", b"file_content_2", "text/plain"))]
-        resp = await api_tenant_client.post(f"/tenant/requests/{request.id}/requester_attachment_files", files=files)
+        resp = await api_tenant_client.post(f"/tenant/requests/{request.id}/requester_attachment_files/", files=files)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)

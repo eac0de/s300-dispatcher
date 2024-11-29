@@ -154,11 +154,11 @@ class ExecutionRequestTRLScheme(BaseModel):
         default=None,
         title="Гарантия по",
     )
-    rates: list[EvaluationRS] = Field(
+    evaluations: list[EvaluationRS] = Field(
         default_factory=list,
         title="Список оценок выполнения заявки",
     )
-    total_rate: float = Field(
+    evaluation_average: float = Field(
         ge=0,
         le=5,
         default=0,

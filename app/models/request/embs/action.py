@@ -23,19 +23,11 @@ class ActionRSType(str, Enum):
 
 
 ACTION_TYPE_EN_RU = {
-    ActionRSType.LIFT: "Лифт",
-    ActionRSType.CENTRAL_HEATING: "Центральное отопление",
-    ActionRSType.HWS: "Горячее водоснабжение",
-    ActionRSType.CWS: "Холодное водоснабжение",
-    ActionRSType.ELECTRICITY: "Электричество",
-}
-
-ACTION_TYPE_EN_RU_DISPLAY = {
-    ActionRSType.LIFT: "лифта",
-    ActionRSType.CENTRAL_HEATING: "центрального отопления",
-    ActionRSType.HWS: "горячего водоснабжения",
-    ActionRSType.CWS: "холодного водоснабжения",
-    ActionRSType.ELECTRICITY: "электричества",
+    ActionRSType.LIFT: "Отключение лифта",
+    ActionRSType.CENTRAL_HEATING: "Отключение стояка ЦО",
+    ActionRSType.HWS: "Отключение стояка ГВС",
+    ActionRSType.CWS: "Отключение стояка ХВС",
+    ActionRSType.ELECTRICITY: "Отключение электроснабжения",
 }
 
 

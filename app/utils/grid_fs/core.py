@@ -55,7 +55,7 @@ class GridFSService:
             filename,
             file_content,
             metadata=metadata,
-        )
+        ) 
         return file_id
 
     async def find_files(
@@ -75,8 +75,7 @@ class GridFSService:
             - Функция может отдавать ошибки motor библиотеки в ходе выполнения
         """
 
-        files = self.fs.find(query)
-        return files
+        return self.fs.find(query)
 
     async def download_file(self, file_id: PydanticObjectId) -> AsyncIOMotorGridOut:
         """

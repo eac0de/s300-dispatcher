@@ -43,7 +43,7 @@ class TestRequestTemplateRouter:
             "_type": request_template.type,
             "body": test_body,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/request_templates/{request_template.id}", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/request_templates/{request_template.id}/", json=EnhancedJSONEncoder.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -56,12 +56,12 @@ class TestRequestTemplateRouter:
         request = requests[0]
         request.relations.template_id = request_template.id
         await request.save()
-        resp = await api_employee_client.delete(f"/dispatcher/request_templates/{request_template.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/request_templates/{request_template.id}/")
         assert resp.status_code == status.HTTP_403_FORBIDDEN
 
         request.relations.template_id = None
         await request.save()
-        resp = await api_employee_client.delete(f"/dispatcher/request_templates/{request_template.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/request_templates/{request_template.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         r = await RequestTemplate.get(request_template.id)
         assert r is None

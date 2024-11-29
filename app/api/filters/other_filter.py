@@ -18,6 +18,7 @@ class OtherEmployeeFilter(DocumentFilter):
         "provider_id": Filter[PydanticObjectId](
             q_func=lambda x: {"provider_id": x},
             t_parser=StandartParser.get_type_parser(PydanticObjectId),
+            description="Организация",
         ),
     }
 

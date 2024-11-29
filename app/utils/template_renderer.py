@@ -25,7 +25,7 @@ class TemplateRenderer:
         Загружает шаблоны из директории, заданной в настройках проекта, с поддержкой
         автоматического экранирования для файлов с расширениями .html и .xml.
         """
-        template_folder = "/templates"
+        template_folder = "static/templates"
         self.env = Environment(
             loader=FileSystemLoader(settings.PROJECT_DIR + template_folder),
             autoescape=select_autoescape(["html", "xml"]),

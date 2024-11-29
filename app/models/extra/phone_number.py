@@ -31,7 +31,7 @@ class PhoneNumber(BaseModel):
         title="Тип телефона",
     )
     number: str = Field(
-        pattern=r"\d{1,10}",
+        pattern=r"\d{10}",
         title="Полный номер телефона",
     )
     add: str | None = Field(

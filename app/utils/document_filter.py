@@ -1,24 +1,23 @@
 """
-Модуль с классом для фильтрации параметров запроса.
+Модуль для фильтрации параметров запроса в FastAPI.
 
-Этот модуль содержит классы и методы, которые позволяют фильтровать параметры
-запроса в FastAPI. Он реализует возможность создания фильтров для различных
-параметров, таких как `limit`, `offset`, и предоставляет возможность их
-парсинга и валидации.
+Этот модуль предоставляет функциональность для фильтрации параметров запросов, 
+которые поступают в API, с помощью класса `DocumentFilter`. Он реализует систему фильтров 
+для различных типов данных и позволяет легко парсить, валидировать и применять фильтры 
+к параметрам запроса, таким как `limit`, `offset`, и `sort_by`. В дополнение к фильтрам 
+возможности парсинга данных также поддерживают стандартные типы данных, включая `datetime` 
+и `bool`.
 
-Классы:
-    - Filter: Класс для определения фильтров.
-    - FilterParams: Модель для хранения результатов парсинга параметров запроса.
-    - DocumentFilter: Класс для обработки и парсинга параметров запроса.
-    - StandartParser: Статический класс для парсинга стандартных типов данных.
-
-Примечания:
+Notes:
     - Использование этого модуля упрощает создание гибких и безопасных фильтров
       для API-запросов.
+    - Модуль также поддерживает работу с перечислениями (Enum), которые могут быть использованы
+      в фильтрах для более строгой типизации.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from datetime import datetime
+from enum import Enum
 from typing import Any, Generic, TypeVar
 
 from fastapi import HTTPException
@@ -31,14 +30,23 @@ T = TypeVar("T")
 
 class Filter(BaseModel, Generic[T]):
     """
-    Класс фильтра для определения параметров фильтрации.
+    Класс фильтра для параметров запроса.
 
-    Добавляется в поле __filters__ класса DocumentFilter.
+    Этот класс позволяет создавать фильтры для параметров запроса в API. Он включает
+    функции для парсинга значений, применения условий фильтрации и определения,
+    является ли фильтр обязательным.
 
-    Пример использования:
+    Attrs:
+        q_func (Callable[[T | list[T]], dict[str, Any]]): Функция для преобразования
+            значений фильтра в словарь для запроса к базе данных.
+        t_parser (Callable[[str], T | list[T]]): Функция для преобразования строки
+            в нужный тип данных.
+        many (bool): Если True, фильтр может принимать список значений.
+        exclusions (list[str]): Список фильтров, которые исключают текущий фильтр.
+        is_required (bool): Если True, фильтр обязателен.
+        description (str | None): Описание фильтра.
 
-        Создание фильтра для работы с фильтрами заявок:
-
+    Example:
         class RequestFilter(DocumentFilter):
             __filters__ = {
                 "provider_id": Filter[PydanticObjectId](
@@ -59,17 +67,35 @@ class Filter(BaseModel, Generic[T]):
     )
     many: bool = Field(
         default=False,
-        title="НОпределяет, может ли фильтр принимать список значений",
+        title="Определяет, может ли фильтр принимать список значений",
     )
     exclusions: list[str] = Field(
         default_factory=list,
         title="Список ключей фильтров, которые исключают текущий фильтр",
+    )
+    is_required: bool = Field(
+        default=False,
+        title="Если фильтр обязателен",
+    )
+    description: str | None = Field(
+        default=None,
+        title="Описание фильтра",
     )
 
 
 class FilterParams(BaseModel):
     """
     Модель результата парсинга параметров запроса.
+
+    Этот класс используется для хранения информации о фильтрах, полученных
+    из параметров запроса API. Он также включает информацию о сортировке,
+    лимите и смещении (пагинации).
+
+    Attrs:
+        query_list (list[dict[str, Any]]): Список фильтров, полученных из параметров запроса.
+        sort (list[str]): Список ключей сортировки, указанных в запросе.
+        limit (int | None): Лимит на количество возвращаемых результатов.
+        offset (int | None): Смещение для пагинации результатов.
     """
 
     query_list: list[dict[str, Any]] = Field(
@@ -90,26 +116,85 @@ class FilterParams(BaseModel):
     )
 
 
-class DocumentFilter:
+class DocumentFilterMetaclass(type):
     """
-    Класс для работы с фильтрами.
+    Метакласс для автоматического объединения фильтров родителя и наследника.
 
-    Этот класс управляет фильтрами и обеспечивает парсинг параметров запроса.
-    Фильтры определяются в классе с помощью поля __filters__.
+    Этот метакласс позволяет автоматически объединять фильтры из родительских классов
+    с фильтрами, определенными в текущем классе. Он также создает строку документации
+    для каждого фильтра.
+    """
+
+    def __new__(
+        cls,
+        name: str,
+        bases: tuple,
+        namespace: dict[str, Any],
+    ):
+        filters: dict[str, Filter] = {}
+        required_filter_set: set[str] = set()
+        for base in bases:
+            if hasattr(base, "__filters__"):
+                filters.update(getattr(base, "__filters__", {}).copy())
+        filters.update(namespace.get("__filters__", {}))
+        required_filter_set.update([n for n, f in namespace.get("__filters__", {}).items() if f.is_required])
+        namespace["__filters__"] = filters
+        namespace["__required_filter_set__"] = required_filter_set
+        namespace["__docs__"] = ""
+        if namespace["__filters__"]:
+
+            def filter_info(f: Filter):
+                """Функция для извлечения информации о фильтре."""
+                type_info = f.__pydantic_generic_metadata__["args"][0]  # type: ignore
+                if issubclass(type_info, Enum):  # Проверяем, является ли тип Enum
+                    enum_values = ", ".join([e.value for e in type_info])  # Получаем имена всех значений Enum
+                    type_info = f"{type_info.__bases__[0].__name__ }({enum_values})"
+                else:
+                    type_info = type_info.__name__
+                return f"{f.description + '<br><br>' if f.description else ''}**ValueType:** {type_info}<br>**Many:** {f.many}<br>**Is Required:** {f.is_required}{'<br>**Exclusions:** ' + ', '.join(f.exclusions) if f.exclusions else ''}"
+
+            namespace["__docs__"] = "<h2>Filters:</h2>" + "<br>".join(f"<br><h3>{n}</h3>{filter_info(f)}" for n, f in namespace["__filters__"].items())
+        return super().__new__(cls, name, bases, namespace)
+
+
+class DocumentFilter(metaclass=DocumentFilterMetaclass):
+    """
+    Класс для работы с фильтрами параметров запроса.
+
+    Этот класс управляет фильтрами и обеспечивает парсинг параметров запроса в API.
+    Фильтры определяются в классе с помощью поля `__filters__`.
+
+    Attrs:
+        __filters__ (dict[str, Filter[Any]]): Словарь фильтров, определенных в классе.
+        __required_filter_set__ (set[str]): Множество обязательных фильтров.
+        __docs__ (str): Строка документации для фильтров.
+
+    Methods:
+        parse_query_params(cls, query_params: QueryParams) -> FilterParams:
+            Парсит параметры запроса и возвращает объект FilterParams.
+        _check_required_filters(cls, existing_filters: Iterable[str]):
+            Проверяет наличие всех обязательных фильтров.
+        get_docs(cls) -> str:
+            Возвращает строку документации для всех фильтров.
     """
 
     __filters__: dict[str, Filter[Any]] = {}
+    __required_filter_set__: set[str] = set()
+    __docs__: str = ""
 
     @classmethod
     async def parse_query_params(cls, query_params: QueryParams) -> FilterParams:
         """
         Метод для парсинга параметров запроса.
 
+        Этот метод анализирует параметры запроса и возвращает результаты в виде
+        объекта `FilterParams`.
+
         Args:
             query_params (QueryParams): Параметры запроса.
 
         Raises:
-            HTTPException: При неудовлетворительном запросе.
+            HTTPException: В случае недопустимого запроса.
 
         Returns:
             FilterParams: Результат парсинга параметров запроса.
@@ -122,7 +207,8 @@ class DocumentFilter:
             sort=query_params.getlist("sort_by"),
         )
         query: dict[str, dict[str, Any]] = {}
-        for param in query_params.keys():
+        query_params_keys = query_params.keys()
+        for param in query_params_keys:
             if param in ["limit", "offset", "sort_by"] or param in query:
                 continue
             f = cls.__filters__.get(param)
@@ -132,7 +218,7 @@ class DocumentFilter:
                     detail="Some filters are not allowed",
                 )
             for exclusion in f.exclusions:
-                if exclusion in query_params.keys():
+                if exclusion in query_params_keys:
                     query[param] = {}
                     break
             else:
@@ -147,8 +233,40 @@ class DocumentFilter:
                         detail=str(e),
                     ) from e
                 query[param] = f.q_func(value)
+        await cls._check_required_filters(query.keys())
         filter_params.query_list = list(query.values())
         return filter_params
+
+    @classmethod
+    async def _check_required_filters(cls, existing_filters: Iterable[str]):
+        """
+        Проверяет наличие обязательных фильтров в запросе.
+
+        Args:
+            existing_filters (Iterable[str]): Существующие фильтры, переданные в запросе.
+
+        Returns:
+            HTTPException: Если обязательные фильтры не переданы.
+        """
+        if not cls.__required_filter_set__:
+            return
+        if undefined_required_filters := cls.__required_filter_set__ - set(existing_filters):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Missing required filters: {', '.join(undefined_required_filters)}",
+            )
+
+    @classmethod
+    def get_docs(cls) -> str:
+        """
+        Возвращает документацию для фильтров.
+
+        Возвращает HTML-документацию для всех фильтров, определенных в классе.
+
+        Returns:
+            str: HTML-документация.
+        """
+        return cls.__docs__
 
 
 class StandartParser:
@@ -215,3 +333,25 @@ class StandartParser:
                 raise ValueError(f"Value {v} is not correct for type {_type.__name__}") from e
 
         return type_parser
+
+    @staticmethod
+    def get_enum_parser(enum: type[T]) -> Callable[[str], T]:
+        """
+        Метод для получения парсера для типовых значений Enum.
+
+        Args:
+            enum (Type[T]): Класс Enum, для которого требуется парсер.
+
+        Returns:
+            Callable[[str], T]: Парсер, который преобразует строку в элемент Enum.
+        """
+
+        def enum_parser(v: str) -> T:
+            try:
+                return enum(v)  # type: ignore
+            except ValueError as e:
+                enum_values = ", ".join([e.value for e in enum])  # type: ignore
+                type_info = f"{enum.__bases__[0].__name__ }({enum_values})"
+                raise ValueError(f"Value '{v}' is not a valid member of {type_info}") from e
+
+        return enum_parser

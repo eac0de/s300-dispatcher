@@ -397,7 +397,7 @@ class TenantRequestService(RequestService):
                     score=scheme.execution.evaluations[0].score,
                 )
             )
-        request.execution.total_rate = (sum(e.score for e in request.execution.evaluations) / len(request.execution.evaluations)) if request.execution.evaluations else 0
+        request.execution.evaluation_average = (sum(e.score for e in request.execution.evaluations) / len(request.execution.evaluations)) if request.execution.evaluations else 0
         request = await request.save()
         return request
 

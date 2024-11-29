@@ -37,7 +37,7 @@ from api.routers.tenant_request_router import tenant_request_router
 from config import settings
 from database import init_db
 from errors import FailedDependencyError
-from utils.grid_fs.grid_fs import init_grid_fs_service
+from utils.grid_fs.core import init_grid_fs_service
 from utils.responses import EnhancedJSONEncoder, JSONResponse
 from utils.telegram import send_notify_to_telegram
 
@@ -72,8 +72,14 @@ async def internal_server_error_handler(request: Request, exc: Exception):
     Returns:
         JSONResponse: Ответ с информацией об ошибке.
     """
-    error_traceback = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-    await send_notify_to_telegram(f"{request.method} {request.url}\n{error_traceback}")
+    tb = traceback.extract_tb(exc.__traceback__)
+    last_call = tb[-1] if tb else None
+    if last_call:
+        error_location = f"File {last_call.filename}, line {last_call.lineno}, in {last_call.name}"
+    else:
+        error_location = "No traceback available"
+    message = f"{request.method} {request.url}\n{error_location}\nError type: {type(exc).__name__}"
+    await send_notify_to_telegram(message)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": str(exc) if settings.MODE != "PROD" else "Internal server error"},

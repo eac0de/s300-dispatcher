@@ -9,7 +9,7 @@ from pydantic import UUID4, BaseModel, Field
 
 from models.catalog_item.catalog_item import CatalogItemPrice
 from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
-from schemes.only_id import OnlyIdScheme
+from schemes.extra.only_id import OnlyIdScheme
 
 
 class CatalogItemCScheme(BaseModel):

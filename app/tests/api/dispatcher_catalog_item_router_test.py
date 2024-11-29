@@ -45,13 +45,10 @@ class TestDispatcherCatalogItemRouter:
         assert resp_json[0]["_id"] == str(catalog_item.id)
 
         resp = await api_employee_client.get("/dispatcher/catalog/", params={"group": "test_no_group"})
-        assert resp.status_code == status.HTTP_200_OK
-        resp_json = resp.json()
-        assert isinstance(resp_json, list)
-        assert len(resp_json) == 0
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     async def test_get_catalog_item_groups(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
-        resp = await api_employee_client.get("/dispatcher/catalog/groups")
+        resp = await api_employee_client.get("/dispatcher/catalog/groups/")
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -122,7 +119,7 @@ class TestDispatcherCatalogItemRouter:
             "fias": [],
             "image": None,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -132,7 +129,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(catalog_item.prices) == 1
 
         data["prices"] = [{"start_at": (catalog_item.available_from + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3], "amount": 200}]
-        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -140,32 +137,32 @@ class TestDispatcherCatalogItemRouter:
         assert len(catalog_item.prices) == 2
 
         catalog_item = catalog_items[1]
-        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}/", json=data)
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_catalog_item(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
         catalog_item = catalog_items[0]
-        resp = await api_employee_client.delete(f"/dispatcher/catalog/{catalog_item.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/catalog/{catalog_item.id}/")
         assert resp.status_code == status.HTTP_204_NO_CONTENT
         assert await CatalogItem.get(catalog_item.id) is None
 
         catalog_item = catalog_items[1]
-        resp = await api_employee_client.delete(f"/dispatcher/catalog/{catalog_item.id}")
+        resp = await api_employee_client.delete(f"/dispatcher/catalog/{catalog_item.id}/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_catalog_item_image(self, api_employee_client: AsyncClient, catalog_items: list[CatalogItem]):
         catalog_item = catalog_items[0]
-        resp = await api_employee_client.get(f"/dispatcher/catalog/{catalog_item.id}/image")
+        resp = await api_employee_client.get(f"/dispatcher/catalog/{catalog_item.id}/image/")
         assert resp.status_code == status.HTTP_404_NOT_FOUND
         with open(TEST_FILEPATH + TEST_FILENAME, "rb") as file:
             file_content = file.read()
-        resp = await api_employee_client.post(f"/dispatcher/catalog/{catalog_item.id}/image", files={"file": (TEST_FILENAME, file_content, "image/jpeg")})
+        resp = await api_employee_client.post(f"/dispatcher/catalog/{catalog_item.id}/image/", files={"file": (TEST_FILENAME, file_content, "image/jpeg")})
         assert resp.status_code == status.HTTP_200_OK
         await catalog_item.sync()
         assert catalog_item.image is not None
         assert catalog_item.image.name == TEST_FILENAME
 
-        resp = await api_employee_client.get(f"/dispatcher/catalog/{catalog_item.id}/image")
+        resp = await api_employee_client.get(f"/dispatcher/catalog/{catalog_item.id}/image/")
         assert resp.status_code == status.HTTP_200_OK
         assert resp.headers["Content-Disposition"] == f"attachment; filename={TEST_FILENAME}"
         assert resp.headers["Content-Type"] == "image/jpeg"
@@ -187,11 +184,11 @@ class TestDispatcherCatalogItemRouter:
             "fias": [],
             "image": None,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}", json=data)
+        resp = await api_employee_client.patch(f"/dispatcher/catalog/{catalog_item.id}/", json=data)
         assert resp.status_code == status.HTTP_200_OK
         await catalog_item.sync()
         assert catalog_item.image is None
 
         catalog_item = catalog_items[1]
-        resp = await api_employee_client.post(f"/dispatcher/catalog/{catalog_item.id}/image", files={"file": (TEST_FILENAME, file_content, "image/jpeg")})
+        resp = await api_employee_client.post(f"/dispatcher/catalog/{catalog_item.id}/image/", files={"file": (TEST_FILENAME, file_content, "image/jpeg")})
         assert resp.status_code == status.HTTP_404_NOT_FOUND

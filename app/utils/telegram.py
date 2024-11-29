@@ -44,7 +44,7 @@ async def send_notify_to_telegram(message: str):
         url = f"https://api.telegram.org/bot{settings.TG_BOT_TOKEN}/sendMessage"
         payload = {
             "chat_id": settings.REQUEST_SERVICE_CHAT_ID,
-            "text": message,
+            "text": message[:4000],
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(

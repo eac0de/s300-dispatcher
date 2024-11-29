@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from beanie import PydanticObjectId
+from beanie.odm.queries.find import FindMany
 from fastapi import HTTPException
 from starlette import status
 
@@ -130,15 +131,15 @@ class DispatcherRequestService(RequestService, RollbackMixin):
             emergency=stats["emergency"][0].get("count", 0) if stats.get("emergency") else 0,
         )
 
-    async def get_request_list(
+    async def get_requests(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
         limit: int | None = None,
         sort: list[str] | None = None,
-    ) -> list[RequestModel]:
+    ) -> FindMany[RequestModel]:
         """
-        Получение списка заявок
+        Получение заявок
 
         Args:
             query_list (list[dict[str, Any]]): Список словарей для составления запроса
@@ -147,7 +148,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
             sort (list[str] | None, optional): Список полей для сортировки. Defaults to None
 
         Returns:
-            list[RequestModel]: Список заявок
+            FindMany[RequestModel]: Список заявок
         """
         query_list.append(
             {
@@ -157,9 +158,11 @@ class DispatcherRequestService(RequestService, RollbackMixin):
         )
         requests = RequestModel.find(*query_list)
         requests.sort(*sort if sort else ["-_id"])
-        requests.skip(0 if offset is None else offset)
-        requests.limit(20 if limit is None else limit)
-        return await requests.to_list()
+        if offset:
+            requests.skip(offset)
+        if limit:
+            requests.limit(limit)
+        return requests
 
     async def get_request(
         self,

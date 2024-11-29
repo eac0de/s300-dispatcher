@@ -49,7 +49,7 @@ async def get_request_template_list(
 
 
 @request_template_router.patch(
-    path="/{request_template_id}",
+    path="/{request_template_id}/",
     status_code=status.HTTP_200_OK,
 )
 async def update_request_template(
@@ -69,7 +69,7 @@ async def update_request_template(
 
 
 @request_template_router.delete(
-    path="/{request_template_id}",
+    path="/{request_template_id}/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_request_template(

@@ -38,7 +38,7 @@ services:
       context: app
       dockerfile: Dockerfile
     ports:
-      - "5555:5555"
+      - "5558:5555"
     command: ["celery", "-A", "celery_app", "flower", "--port=5555"]
     depends_on:
       - s300_dispatcher_redis

@@ -12,7 +12,7 @@ class TestDispatcherRequestRouter:
 
     @pytest.mark.usefixtures("requests")
     async def test_get_request_employee_weekly_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300):
-        resp = await api_employee_client.get("/dispatcher/employee_schedules/weekly", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
+        resp = await api_employee_client.get("/dispatcher/employee_schedules/weekly/", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)
@@ -23,7 +23,7 @@ class TestDispatcherRequestRouter:
         assert schedule["workload"] == [1, 1, 1, 0, 0, 0, 0]
 
     async def test_get_request_employee_daily_schedules(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, requests: list[RequestModel]):
-        resp = await api_employee_client.get("/dispatcher/employee_schedules/daily", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
+        resp = await api_employee_client.get("/dispatcher/employee_schedules/daily/", params={"start_at": datetime.now().isoformat(), "employee_ids": [str(auth_employee.id)]})
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, list)

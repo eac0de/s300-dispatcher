@@ -82,7 +82,7 @@ async def get_request_list(
 
 
 @tenant_request_router.get(
-    path="/{request_id}",
+    path="/{request_id}/",
     status_code=status.HTTP_200_OK,
     response_model=RequestTRScheme,
 )
@@ -99,7 +99,7 @@ async def get_request(
 
 
 @tenant_request_router.patch(
-    path="/{request_id}/evaluate",
+    path="/{request_id}/evaluate/",
     status_code=status.HTTP_200_OK,
     response_model=RequestTRScheme,
 )
@@ -120,7 +120,7 @@ async def evaluate_request(
 
 
 @tenant_request_router.post(
-    path="/{request_id}/requester_attachment_files",
+    path="/{request_id}/requester_attachment_files/",
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
