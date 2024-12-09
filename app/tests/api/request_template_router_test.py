@@ -1,3 +1,4 @@
+import jsony
 from httpx import AsyncClient
 from starlette import status
 
@@ -5,7 +6,6 @@ from models.request.categories_tree import RequestCategory, RequestSubcategory
 from models.request.request import RequestModel
 from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
-from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestRequestTemplateRouter:
@@ -18,7 +18,7 @@ class TestRequestTemplateRouter:
             "_type": RequestTemplateType.REQUEST,
             "body": "test_body",
         }
-        resp = await api_employee_client.post("/dispatcher/request_templates/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.post("/dispatcher/request_templates/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_201_CREATED
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -43,7 +43,7 @@ class TestRequestTemplateRouter:
             "_type": request_template.type,
             "body": test_body,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/request_templates/{request_template.id}/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/request_templates/{request_template.id}/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)

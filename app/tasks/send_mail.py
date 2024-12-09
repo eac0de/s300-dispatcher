@@ -1,8 +1,9 @@
+from email_sender import EmailSender
+from email_sender.constants import MailBodyType
+from file_manager import File
+from template_renderer import TemplateRenderer
+
 from celery_app import celery_app
-from config import settings
-from utils.grid_fs.file import File
-from utils.send_mail import MailBodyType, send_mail
-from utils.template_renderer import template_renderer
 
 
 @celery_app.task
@@ -11,7 +12,6 @@ async def send_html_mail(
     context: dict,
     subject: str,
     to_email: str,
-    from_email: str = settings.SMTP_USERNAME,
     files: list[File] | None = None,
 ):
     """
@@ -32,15 +32,14 @@ async def send_html_mail(
 
     error = None
     try:
-        mail_body = await template_renderer.render_template(
+        mail_body = await TemplateRenderer.render(
             template_name=template_name,
             context=context,
         )
-        await send_mail(
+        await EmailSender.send(
             subject=subject,
             body=mail_body,
             to_email=to_email,
-            from_email=from_email,
             files=files,
             body_type=MailBodyType.HTML,
         )
@@ -49,6 +48,5 @@ async def send_html_mail(
     return dict(
         subject=subject,
         to_email=to_email,
-        from_email=from_email,
         error=error,
     )

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request
 from starlette import status
 
 from api.dependencies.auth import TenantDep
-from api.filters.catalog_filter import TenantCatalogFilter
+from api.qp_translators.catalog_qp_translator import TenantCatalogQPTranslator
 from models.catalog_item.catalog_item import CatalogItem
 from models.catalog_item.constants import CatalogItemGroup
 from services.tenant_catalog_item_service import TenantCatalogItemService
@@ -35,7 +35,7 @@ async def get_catalog_item_groups(
 
 @tenant_catalog_item_router.get(
     path="/",
-    description="Получение возможных позиций каталога" + TenantCatalogFilter.get_docs(),
+    description="Получение возможных позиций каталога" + TenantCatalogQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )
@@ -47,7 +47,7 @@ async def get_catalog_item_list(
     Получение возможных позиций каталога
     """
 
-    params = await TenantCatalogFilter.parse_query_params(req.query_params)
+    params = await TenantCatalogQPTranslator.parse(req.query_params)
     service = TenantCatalogItemService(tenant)
     catalog_item_list = await service.get_catalog_items(
         query_list=params.query_list,

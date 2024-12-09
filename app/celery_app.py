@@ -9,11 +9,11 @@ from functools import wraps
 from typing import Any, TypeVar
 
 import celery
+from file_manager import config_file_manager
+from template_renderer import config_template_renderer
 
 from config import settings
 from database import init_db
-from utils.grid_fs.core import init_grid_fs_service
-from utils.template_renderer import init_template_renderer
 
 T = TypeVar("T")
 
@@ -42,8 +42,13 @@ class Celery(celery.Celery):
         # цикл событий, чтобы из синхронной функции вызывать асинхронную
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(init_db())
-        self.loop.run_until_complete(init_grid_fs_service())
-        self.loop.run_until_complete(init_template_renderer())
+        self.loop.run_until_complete(
+            config_file_manager(
+                mongo_uri=str(settings.MONGO_URI),
+                db_name=settings.GRID_FS_DB,
+            )
+        )
+        self.loop.run_until_complete(config_template_renderer(templates_path="static/templates"))
 
     def task(
         self,

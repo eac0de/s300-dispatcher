@@ -7,10 +7,10 @@ from fastapi import APIRouter, Request
 from starlette import status
 
 from api.dependencies.auth import EmployeeDep
-from api.filters.other_filter import (
-    OtherEmployeeFilter,
-    OtherPersonFilter,
-    OtherProviderFilter,
+from api.qp_translators.other_qp_translator import (
+    OtherEmployeeQPTranslator,
+    OtherPersonQPTranslator,
+    OtherProviderQPTranslator,
 )
 from schemes.other import (
     OtherEmployeeCScheme,
@@ -44,7 +44,7 @@ async def get_other_person_list(
     Для фильтрации есть определенные фильтры см. в модуле api/filters/other_filter
     """
 
-    params = await OtherPersonFilter.parse_query_params(req.query_params)
+    params = await OtherPersonQPTranslator.parse(req.query_params)
     service = OtherService(employee)
     other_person_list = await service.get_other_person_list(
         query_list=params.query_list,
@@ -113,7 +113,7 @@ async def delete_other_person(
 
 @other_router.get(
     path="/employees/",
-    description="Получение списка сторонних сотрудников.<br>" + OtherEmployeeFilter.get_docs(),
+    description="Получение списка сторонних сотрудников.<br>" + OtherEmployeeQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[OtherEmployeeRScheme],
 )
@@ -126,7 +126,7 @@ async def get_other_employee_list(
     Для фильтрации есть определенные фильтры см. в модуле api/filters/other_filter
     """
 
-    params = await OtherEmployeeFilter.parse_query_params(req.query_params)
+    params = await OtherEmployeeQPTranslator.parse(req.query_params)
     service = OtherService(employee)
     other_employee_list = await service.get_other_employee_list(
         query_list=params.query_list,
@@ -207,7 +207,7 @@ async def get_other_provider_list(
     Для фильтрации есть определенные фильтры см. в модуле api/filters/other_filter
     """
 
-    params = await OtherProviderFilter.parse_query_params(req.query_params)
+    params = await OtherProviderQPTranslator.parse(req.query_params)
     service = OtherService(employee)
     other_provider_list = await service.get_other_provider_list(
         query_list=params.query_list,

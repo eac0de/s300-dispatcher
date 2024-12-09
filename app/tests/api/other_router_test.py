@@ -1,3 +1,4 @@
+import jsony
 from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
@@ -5,7 +6,6 @@ from starlette import status
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
 from models.other.other_provider import OtherProvider
-from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestOtherRouter:
@@ -88,7 +88,7 @@ class TestOtherRouter:
             "provider_id": other_provider.id,
             "position_name": "test_position_name",
         }
-        resp = await api_employee_client.post("/dispatcher/other/employees/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.post("/dispatcher/other/employees/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_201_CREATED
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -112,7 +112,7 @@ class TestOtherRouter:
             "position_name": "test_position_name",
             "provider_id": other_employee.provider_id,
         }
-        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -121,7 +121,7 @@ class TestOtherRouter:
         assert len(other_employee.phone_numbers) == len(test_phone_numbers)
 
         other_employee = other_employees[1]
-        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/other/employees/{other_employee.id}/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_404_NOT_FOUND
 
     async def test_delete_other_employee(self, api_employee_client: AsyncClient, other_employees: list[OtherEmployee]):

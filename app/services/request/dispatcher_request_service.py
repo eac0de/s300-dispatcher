@@ -8,6 +8,7 @@ from typing import Any
 from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
 from fastapi import HTTPException
+from file_manager import File
 from starlette import status
 
 from client.s300.api import S300API
@@ -38,7 +39,6 @@ from schemes.request_employee_schedule import (
     RequestEmployeeWeeklySchedule,
 )
 from services.request.request_service import RequestService
-from utils.grid_fs.file import File
 from utils.rollbacker import RollbackMixin
 
 

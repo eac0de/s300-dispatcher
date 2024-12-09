@@ -1,13 +1,13 @@
 from datetime import datetime, timedelta
 
+import jsony
+from file_manager import File
 from httpx import AsyncClient
 from starlette import status
 
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.tenant import TenantS300
 from models.request.request import RequestModel
-from utils.grid_fs.file import File
-from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestDispatcherRequestRouter:
@@ -110,7 +110,7 @@ class TestDispatcherRequestRouter:
             "execution": {"desired_start_at": None, "desired_end_at": None, "act": {"files": [], "comment": ""}, "attachment": {"files": [], "comment": ""}},
             "requester_attachment": {"files": [], "comment": ""},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -139,7 +139,7 @@ class TestDispatcherRequestRouter:
             },
             "resources": {"materials": [], "services": [], "warehouses": []},
         }
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -154,7 +154,7 @@ class TestDispatcherRequestRouter:
                 "items": [{"_id": mock_s300_api_upsert_storage_docs_out.warehouse_item_id, "quantity": mock_s300_api_upsert_storage_docs_out.test_quantity}],
             },
         ]
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/status/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         await request.sync()
@@ -181,7 +181,7 @@ class TestDispatcherRequestRouter:
         test_description = "test_description"
         data = request.model_dump(by_alias=True)
         data["description"] = test_description
-        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_employee_client.patch(f"/dispatcher/requests/{request.id}/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_200_OK
         resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/history/")
         assert resp.status_code == status.HTTP_200_OK

@@ -8,6 +8,7 @@ from typing import Any
 
 from beanie import PydanticObjectId
 from fastapi import HTTPException, UploadFile
+from file_manager import File
 from starlette import status
 
 from client.s300.models.area import AreaS300
@@ -38,7 +39,6 @@ from schemes.request.tenant_request import (
 )
 from services.dispatcher_catalog_item_service import DispatcherCatalogItemService
 from services.request.request_service import RequestService
-from utils.grid_fs.file import File
 
 
 class TenantRequestService(RequestService):

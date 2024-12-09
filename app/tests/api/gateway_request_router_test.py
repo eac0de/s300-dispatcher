@@ -1,3 +1,4 @@
+import jsony
 import pytest
 from httpx import AsyncClient
 from starlette import status
@@ -6,7 +7,6 @@ from models.catalog_item.catalog_item import CatalogItem
 from models.request.constants import RequestPayStatus
 from models.request.embs.commerce import CatalogItemCommerceRS
 from models.request.request import RequestModel
-from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestGatewayRequestRouter:
@@ -37,7 +37,7 @@ class TestGatewayRequestRouter:
     async def test_mark_request_as_paid(self, api_gateway_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         test_pay_status = RequestPayStatus.PAID
-        resp = await api_gateway_client.patch(f"/gateway/requests/{request.id}/paid/", json=EnhancedJSONEncoder.normalize({"pay_status": test_pay_status}))
+        resp = await api_gateway_client.patch(f"/gateway/requests/{request.id}/paid/", json=jsony.normalize({"pay_status": test_pay_status}))
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
         assert request.commerce.pay_status == test_pay_status

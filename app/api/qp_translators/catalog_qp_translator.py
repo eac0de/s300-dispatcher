@@ -2,11 +2,12 @@
 Модуль с фильтрами для query параметров запросов к каталогу
 """
 
+from qp_translator import Filter, QPTranslator, str_parsers
+
 from models.catalog_item.constants import CatalogItemGroup
-from utils.document_filter import DocumentFilter, Filter, StandartParser
 
 
-class DispatcherCatalogFilter(DocumentFilter):
+class DispatcherCatalogQPTranslator(QPTranslator):
     """
     Класс с фильтрами для каталога диспетчера
     """
@@ -18,13 +19,13 @@ class DispatcherCatalogFilter(DocumentFilter):
         ),
         "group": Filter[CatalogItemGroup](
             q_func=lambda x: {"group": x},
-            t_parser=StandartParser.get_enum_parser(CatalogItemGroup),
+            t_parser=str_parsers.get_enum_parser(CatalogItemGroup),
             description="Группа позиций",
         ),
     }
 
 
-class TenantCatalogFilter(DocumentFilter):
+class TenantCatalogQPTranslator(QPTranslator):
     """
     Класс с фильтрами для каталога жителя
     """
@@ -36,7 +37,7 @@ class TenantCatalogFilter(DocumentFilter):
         ),
         "group": Filter[CatalogItemGroup](
             q_func=lambda x: {"group": x},
-            t_parser=StandartParser.get_enum_parser(CatalogItemGroup),
+            t_parser=str_parsers.get_enum_parser(CatalogItemGroup),
             description="Группа позиций",
         ),
     }

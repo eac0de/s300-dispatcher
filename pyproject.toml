@@ -8,9 +8,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.12.4"
 fastapi = "^0.115.5"
-pydantic = {extras = ["email"], version = "^2.10.1"}
+pydantic = {extras = ["email"], version = "^2.10.3"}
 pydantic-settings = "^2.6.1"
-beanie = "^1.27.0"
+beanie = "1.27.0"
 celery = "^5.4.0"
 redis = "^5.2.0"
 flower = "^2.0.1"
@@ -25,6 +25,12 @@ python-multipart = "^0.0.17"
 pip = "^24.3.1"
 openpyxl = "^3.1.5"
 reportlab = "^4.2.5"
+jsony-responses = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "jsony_responses"}
+qp-translator = {git = "https://github.com/eac0de/u_utils", subdirectory = "qp_translator"}
+telegram-sender = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "telegram_sender"}
+template-renderer = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "template_renderer"}
+file-manager = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "file_manager"}
+email-sender = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "email_sender"}
 
 [tool.poetry.group.dev.dependencies]
 aiodocker = "^0.24.0"

@@ -15,14 +15,19 @@
 - Запуск приложения с использованием uvicorn.
 """
 
-import json
 import traceback
 from contextlib import asynccontextmanager
 
+import jsony
 import uvicorn
+from email_sender import config_email_sender
 from fastapi import FastAPI, Request
+from file_manager import config_file_manager
+from jsony_responses import JSONYResponse
 from starlette import status
 from starlette.middleware.gzip import GZipMiddleware
+from telegram_sender import TelegramSender, config_telegram_sender
+from template_renderer import config_template_renderer
 
 from api.middlewares.procces_time_middleware import ProcessTimeMiddleware
 from api.routers.constants_router import constants_router
@@ -37,9 +42,6 @@ from api.routers.tenant_request_router import tenant_request_router
 from config import settings
 from database import init_db
 from errors import FailedDependencyError
-from utils.grid_fs.core import init_grid_fs_service
-from utils.responses import EnhancedJSONEncoder, JSONResponse
-from utils.telegram import send_notify_to_telegram
 
 
 @asynccontextmanager
@@ -50,7 +52,24 @@ async def lifespan(_app: FastAPI):
     запуске приложения и обеспечивает их корректное завершение.
     """
     await init_db()
-    await init_grid_fs_service()
+    await config_file_manager(
+        mongo_uri=str(settings.MONGO_URI),
+        db_name=settings.GRID_FS_DB,
+    )
+    await config_template_renderer(
+        templates_path="static/templates",
+    )
+    await config_telegram_sender(
+        chat_id=settings.REQUEST_SERVICE_CHAT_ID,
+        telegram_bot_token=settings.TG_BOT_TOKEN,
+    )
+    await config_email_sender(
+        smtp_server=settings.SMTP_SERVER,
+        smtp_port=settings.SMTP_PORT,
+        smtp_username=settings.SMTP_USERNAME,
+        smtp_password=settings.SMTP_PASSWORD,
+        test_email=settings.TEST_EMAIL if settings.MODE != "PROD" else None,
+    )
     yield
 
 
@@ -78,9 +97,9 @@ async def internal_server_error_handler(request: Request, exc: Exception):
         error_location = f"File {last_call.filename}, line {last_call.lineno}, in {last_call.name}"
     else:
         error_location = "No traceback available"
-    message = f"{request.method} {request.url}\n{error_location}\nError type: {type(exc).__name__}"
-    await send_notify_to_telegram(message)
-    return JSONResponse(
+    message = f"{request.method} {request.url}\n{error_location}\n{str(exc)}\nError type: {type(exc).__name__}"
+    await TelegramSender.send(message)
+    return JSONYResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": str(exc) if settings.MODE != "PROD" else "Internal server error"},
     )
@@ -97,17 +116,17 @@ async def failed_dependency_error_handler(request: Request, exc: FailedDependenc
     Returns:
         JSONResponse: Ответ с информацией об ошибке зависимости.
     """
-    await send_notify_to_telegram(
+    await TelegramSender.send(
         "\n".join(
             [
                 "FAILED_DEPENDENCY",
                 f"{request.method} {request.url}",
                 exc.description,
-                json.dumps(exc.kwargs, indent=4, ensure_ascii=False, cls=EnhancedJSONEncoder),
+                jsony.dumps(exc.kwargs, indent=4, ensure_ascii=False),
             ]
         )
     )
-    return JSONResponse(
+    return JSONYResponse(
         status_code=status.HTTP_424_FAILED_DEPENDENCY,
         content={"detail": {"description": exc.description, **exc.kwargs}},
     )

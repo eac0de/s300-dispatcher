@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from beanie import PydanticObjectId
 from fastapi import HTTPException, UploadFile
+from file_manager import File
 from starlette import status
 
 from client.s300.api import S300API
@@ -61,7 +62,6 @@ from schemes.request.request_status import (
     ResourcesRequestDStatusUScheme,
 )
 from services.request.request_service import RequestService
-from utils.grid_fs.file import File
 from utils.rollbacker import RollbackMixin
 
 

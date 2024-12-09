@@ -4,9 +4,10 @@
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile, status
+from file_manager import File
 
 from api.dependencies.auth import TenantDep
-from api.filters.request_filter import TenantRequestFilter
+from api.qp_translators.request_qp_translator import TenantRequestQPTranslator
 from schemes.request.tenant_request import (
     RequestTCatalogCScheme,
     RequestTCScheme,
@@ -15,7 +16,6 @@ from schemes.request.tenant_request import (
     RequestTRScheme,
 )
 from services.request.tenant_request_service import TenantRequestService
-from utils.grid_fs.file import File
 
 tenant_request_router = APIRouter(
     tags=["tenant_requests"],
@@ -71,7 +71,7 @@ async def get_request_list(
     Получение заявок жителем
     """
 
-    params = await TenantRequestFilter.parse_query_params(req.query_params)
+    params = await TenantRequestQPTranslator.parse(req.query_params)
     service = TenantRequestService(tenant)
     return await service.get_request_list(
         query_list=params.query_list,

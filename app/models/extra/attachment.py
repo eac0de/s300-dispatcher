@@ -2,9 +2,8 @@
 Модуль с дополнительным классом для заявки - вложения
 """
 
+from file_manager import File
 from pydantic import BaseModel, Field
-
-from utils.grid_fs.file import File
 
 
 class Attachment(BaseModel):

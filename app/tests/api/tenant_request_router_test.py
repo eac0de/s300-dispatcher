@@ -1,3 +1,4 @@
+import jsony
 from beanie import PydanticObjectId
 from httpx import AsyncClient
 from starlette import status
@@ -6,7 +7,6 @@ from client.s300.models.tenant import TenantS300
 from models.catalog_item.catalog_item import CatalogItem
 from models.request.constants import RequestStatus
 from models.request.request import RequestModel
-from utils.json_encoders import EnhancedJSONEncoder
 
 
 class TestTenantRequestRouter:
@@ -28,7 +28,7 @@ class TestTenantRequestRouter:
             "description": "test_description",
             "commerce": {"catalog_items": [{"_id": catalog_item.id, "quantity": 1}]},
         }
-        resp = await api_tenant_client.post("/tenant/requests/catalog/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_tenant_client.post("/tenant/requests/catalog/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_201_CREATED
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
@@ -85,7 +85,7 @@ class TestTenantRequestRouter:
         data = {
             "execution": {"evaluations": [{"score": evaluation_score}]},
         }
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=EnhancedJSONEncoder.normalize(data))
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=jsony.normalize(data))
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
         request.status = RequestStatus.PERFORMED

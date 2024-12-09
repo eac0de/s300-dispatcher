@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from starlette import status
 
 from api.dependencies.auth import EmployeeDep
-from api.filters.catalog_filter import DispatcherCatalogFilter
+from api.qp_translators.catalog_qp_translator import DispatcherCatalogQPTranslator
 from models.catalog_item.catalog_item import CatalogItem
 from schemes.catalog_item import CatalogItemCScheme, CatalogItemUScheme
 from services.dispatcher_catalog_item_service import DispatcherCatalogItemService
@@ -20,7 +20,7 @@ dispatcher_catalog_item_router = APIRouter(
 
 @dispatcher_catalog_item_router.get(
     path="/",
-    description="Получение списка позиций каталога работником." + DispatcherCatalogFilter.get_docs(),
+    description="Получение списка позиций каталога работником." + DispatcherCatalogQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[CatalogItem],
 )
@@ -33,7 +33,7 @@ async def get_catalog_item_list(
     Для фильтрации есть определенные фильтры см. в модуле api/filters/catalog_filter
     """
 
-    params = await DispatcherCatalogFilter.parse_query_params(req.query_params)
+    params = await DispatcherCatalogQPTranslator.parse(req.query_params)
     service = DispatcherCatalogItemService(employee)
     catalog_item_list = await service.get_catalog_items(
         query_list=params.query_list,

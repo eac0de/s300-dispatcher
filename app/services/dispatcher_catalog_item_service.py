@@ -8,14 +8,14 @@ from typing import Any
 from beanie import PydanticObjectId
 from beanie.exceptions import RevisionIdWasChanged
 from fastapi import HTTPException, UploadFile
+from file_manager import File
+from file_manager.constants import FileExtensionGroup
 from starlette import status
 
 from client.s300.api import S300API
 from client.s300.models.employee import EmployeeS300
 from models.catalog_item.catalog_item import CatalogItem
 from schemes.catalog_item import CatalogItemCScheme, CatalogItemUScheme
-from utils.grid_fs.constants import FileExtensionGroup
-from utils.grid_fs.file import File
 
 CATALOG_ITEM_IMAGE_FILE_TAG = "catalog_item_image"
 

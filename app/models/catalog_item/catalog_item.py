@@ -5,11 +5,11 @@
 from datetime import datetime
 
 from beanie import Document, PydanticObjectId
+from file_manager import File
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
 from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
-from utils.grid_fs.file import File
 
 
 class CatalogItemPrice(BaseModel):

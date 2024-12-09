@@ -3,6 +3,7 @@
 """
 
 from fastapi import APIRouter, status
+from jsony_responses import JSONYResponse
 
 from models.request.categories_tree import CATEGORY_SUBCATEGORY_WORK_AREA_TREE
 from models.request.constants import (
@@ -11,7 +12,6 @@ from models.request.constants import (
     REQUEST_TYPE_EN_RU,
 )
 from models.request_template.constants import TEMPLATE_TYPE_EN_RU
-from utils.responses import JSONResponse
 
 constants_router = APIRouter(
     tags=["constants"],
@@ -158,12 +158,12 @@ async def get_requests_constants():
             {"value": "GasHouseMeter", "text": "Газа"},
         ],
         "RequestRelationship": [{"value": "sync", "text": "Дублирующие"}, {"value": "regular", "text": "Cвязанные"}],
-        "WaterType": [{"value": "hot", "text": "ГВС"}, {"value": "cold", "text": "ХВС"}, {"value": "central", "text": "ЦО"}, {"value": "gaz", "text": "Газ"}],
+        "StandPipeType": [{"value": "hot", "text": "ГВС"}, {"value": "cold", "text": "ХВС"}, {"value": "central", "text": "ЦО"}, {"value": "gaz", "text": "Газ"}],
         "NotificationConstants": [{"value": "email", "text": "E-mail"}, {"value": "telegram", "text": "Telegram-бот"}, {"value": "app", "text": "В кабинет-жителя.рф"}],
         "SocialTypeConstants": [{"value": "viber", "text": "Viber"}, {"value": "telegram", "text": "Telegram"}, {"value": "whatsapp", "text": "WhatsApp"}],
     }
 
-    return JSONResponse(content={"results": results})
+    return JSONYResponse(content={"results": results})
 
 
 @constants_router.get(
@@ -174,4 +174,4 @@ async def get_requests_categories_tree():
     """
     Получение дерева категорий, подкатегорий, областей работ и действий
     """
-    return JSONResponse(content=CATEGORY_SUBCATEGORY_WORK_AREA_TREE)
+    return JSONYResponse(content=CATEGORY_SUBCATEGORY_WORK_AREA_TREE)

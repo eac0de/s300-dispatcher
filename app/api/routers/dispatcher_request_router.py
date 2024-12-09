@@ -5,11 +5,13 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
+from file_manager import File
+from file_manager.constants import ContentType
 
 from api.dependencies.auth import EmployeeDep
-from api.filters.request_filter import (
-    DispatcherRequestFilter,
-    DispatcherRequestReportFilter,
+from api.qp_translators.request_qp_translator import (
+    DispatcherRequestQPTranslator,
+    DispatcherRequestReportQPTranslator,
 )
 from models.request.request import RequestModel
 from schemes.request.dispatcher_request import (
@@ -29,8 +31,6 @@ from services.request.dispatcher_request_update_service import (
     DispatcherRequestUpdateService,
 )
 from services.request_history_service import RequestHistoryService
-from utils.grid_fs.constants import ContentType
-from utils.grid_fs.file import File
 
 dispatcher_request_router = APIRouter(
     tags=["dispatcher_requests"],
@@ -45,7 +45,7 @@ async def download_pdf_blanks_zip(
     employee: EmployeeDep,
     req: Request,
 ):
-    params = await DispatcherRequestReportFilter.parse_query_params(req.query_params)
+    params = await DispatcherRequestReportQPTranslator.parse(req.query_params)
     request_service = DispatcherRequestService(employee)
     requests = await request_service.get_requests(
         query_list=params.query_list,
@@ -116,7 +116,7 @@ async def get_request_stats(
 
 @dispatcher_request_router.get(
     path="/",
-    description="Получения списка заявок сотрудником.<br>" + DispatcherRequestFilter.get_docs(),
+    description="Получения списка заявок сотрудником.<br>" + DispatcherRequestQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[RequestDLScheme],
 )
@@ -126,10 +126,10 @@ async def get_request_list(
 ):
     """
     Получения списка заявок сотрудником.
-    Для фильтрации есть определенные фильтры см. в модуле api/filters/request_filter
+    Для фильтрации есть определенные фильтры см. в модуле api/filters/request_qp_translator
     """
 
-    params = await DispatcherRequestFilter.parse_query_params(req.query_params)
+    params = await DispatcherRequestQPTranslator.parse(req.query_params)
     service = DispatcherRequestService(employee)
     requests = await service.get_requests(
         query_list=params.query_list,
