@@ -49,6 +49,6 @@ services:
     image: hub.eis24.me/redis:3.2.4
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"
     env_file:
       - .env.docker

@@ -327,7 +327,7 @@ class DispatcherRequestService(RequestService, RollbackMixin):
                         }
                     }
                 )
-                self.add_rollback(related_request.update({"$pull": {"relations.requests": {"_id": request.id}}}))
+                self.add_rollback(related_request.update, {"$pull": {"relations.requests": {"_id": request.id}}})
             request = await request.save()
         except:
             await self.rollback()

@@ -90,14 +90,14 @@ class RequestSource(str, Enum):
     Источники создания заявки
     """
 
-    TICKET = "ticket"
+    APPEAL = "appeal"
     TENANT = "tenant"
     DISPATCHER = "dispatcher"
     CATALOG = "catalog"
 
 
 REQUEST_SOURCE_EN_RU = {
-    RequestSource.TICKET: "Из обращения",
+    RequestSource.APPEAL: "Из обращения",
     RequestSource.TENANT: "Житель",
     RequestSource.DISPATCHER: "Диспетчер",
     RequestSource.CATALOG: "Из каталога",

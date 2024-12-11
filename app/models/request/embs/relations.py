@@ -38,7 +38,7 @@ class RelationsRS(BaseModel):
         default=None,
         title="Ссылка на связанный с заявкой звонок",
     )
-    ticket_id: PydanticObjectId | None = Field(
+    appeal_id: PydanticObjectId | None = Field(
         default=None,
         title="Ссылка на связанное с заявкой обращение",
     )

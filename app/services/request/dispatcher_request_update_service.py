@@ -254,7 +254,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                     filename=file.filename,
                     tag=await self.get_filetag_for_requester_attachment(self.request.id),
                 )
-                self.add_rollback(f.delete())
+                self.add_rollback(f.delete)
                 self.updated_fields.append(
                     UpdatedField(
                         name="requester_attachment.files",
@@ -302,7 +302,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                     filename=file.filename,
                     tag=await self.get_filetag_for_execution_attachment(self.request.id),
                 )
-                self.add_rollback(f.delete())
+                self.add_rollback(f.delete)
                 self.updated_fields.append(
                     UpdatedField(
                         name="execution.attachment.files",
@@ -350,7 +350,7 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                     filename=file.filename,
                     tag=await self.get_filetag_for_execution_act(self.request.id),
                 )
-                self.add_rollback(f.delete())
+                self.add_rollback(f.delete)
                 self.updated_fields.append(
                     UpdatedField(
                         name="execution.act.files",
@@ -482,9 +482,8 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                     continue
                 await RequestModel.find({"_id": {"$in": delete_request_ids}}).update_many({"$pull": {"relations.requests": {"_id": self.request.id}}})
                 self.add_rollback(
-                    RequestModel.find({"_id": {"$in": delete_request_ids}}).update_many(
-                        {"$push": {"relations.requests": {"_id": self.request.id, "number": self.request.number, "status": self.request.status}}}
-                    )
+                    RequestModel.find({"_id": {"$in": delete_request_ids}}).update_many,
+                    {"$push": {"relations.requests": {"_id": self.request.id, "number": self.request.number, "status": self.request.status}}},
                 )
                 new_request_list.append(r)
             self.request.relations.requests = new_request_list
@@ -524,15 +523,14 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
                 }
             )
             self.add_rollback(
-                RequestModel.find({"_id": {"$in": add_request_ids}}).update_many(
-                    {
-                        "$pull": {
-                            "relations.requests": {
-                                "_id": self.request.id,
-                            }
+                RequestModel.find({"_id": {"$in": add_request_ids}}).update_many,
+                {
+                    "$pull": {
+                        "relations.requests": {
+                            "_id": self.request.id,
                         }
                     }
-                )
+                },
             )
 
     async def _update_add_params(
@@ -852,11 +850,10 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
             warehouses=new_warehouses,
         )
         self.add_rollback(
-            S300API.upsert_storage_docs_out(
-                request_id=self.request.id,
-                provider_id=self.employee.provider.id,
-                is_rollback=True,
-            )
+            S300API.upsert_storage_docs_out,
+            request_id=self.request.id,
+            provider_id=self.employee.provider.id,
+            is_rollback=True,
         )
         for warehouse_index, warehouse in enumerate(warehouses):
             w = existing_warehouses.pop(str(warehouse.id), None)

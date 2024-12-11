@@ -11,7 +11,24 @@
     - Все функции, добавленные в список откатов, должны быть асинхронными.
 """
 
-from collections.abc import Awaitable
+from collections.abc import Callable, Coroutine
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+
+class RollbackCoroutine(BaseModel):
+    coro: Callable[..., Coroutine[Any, Any, Any]] = Field(
+        title="Корутина которая выполниться при роллбеке",
+    )
+    args: tuple[Any, ...] = Field(
+        default=(),
+        title="Аргументы",
+    )
+    kwargs: dict[str, Any] = Field(
+        default_factory=dict,
+        title="Именованные аргументы",
+    )
 
 
 class RollbackMixin:
@@ -36,16 +53,16 @@ class RollbackMixin:
             **kwargs: Ключевые аргументы для инициализации родительского класса.
         """
         super().__init__(*args, **kwargs)  # Вызов инициализации других классов
-        self.__rollbacks: list[Awaitable] = []  # Индивидуальный список для каждого экземпляра
+        self.__rollbacks: list[RollbackCoroutine] = []  # Индивидуальный список для каждого экземпляра
 
-    def add_rollback(self, func: Awaitable):
+    def add_rollback(self, coro: Callable[..., Any], *args, **kwargs):
         """
         Добавление await-функций в список для возможности отката.
 
         Args:
             func (Awaitable): Асинхронная функция, которую нужно добавить в список откатов.
         """
-        self.__rollbacks.append(func)
+        self.__rollbacks.append(RollbackCoroutine(coro=coro, args=args, kwargs=kwargs))
 
     async def rollback(self):
         """
@@ -61,7 +78,7 @@ class RollbackMixin:
         """
         for r in self.__rollbacks:
             try:
-                await r
+                await r.coro(*r.args, **r.kwargs)
             except:
                 pass
         self.__rollbacks.clear()
