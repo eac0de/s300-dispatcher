@@ -31,6 +31,7 @@ from template_renderer import config_template_renderer
 
 from api.middlewares.procces_time_middleware import ProcessTimeMiddleware
 from api.routers.constants_router import constants_router
+from api.routers.dispatcher_appeal_router import dispatcher_appeal_router
 from api.routers.dispatcher_catalog_item_router import dispatcher_catalog_item_router
 from api.routers.dispatcher_request_router import dispatcher_request_router
 from api.routers.employee_schedule_router import employee_schedule_router
@@ -179,6 +180,10 @@ app.include_router(
 app.include_router(
     router=constants_router,
     prefix="/constants",
+)
+app.include_router(
+    router=dispatcher_appeal_router,
+    prefix="/dispatcher/appeals",
 )
 
 

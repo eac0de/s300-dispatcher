@@ -158,6 +158,11 @@ class DispatcherRequestUpdateService(RequestService, RollbackMixin):
         """
         try:
             if scheme.status == RequestStatus.ACCEPTED:
+                if self.request.status != RequestStatus.ACCEPTED:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Unable to change status to accepted",
+                    )
                 return self.request
             if scheme.execution.provider.id != self.request.execution.provider.id:
                 await self._update_execution_provider(scheme.execution.provider.id)

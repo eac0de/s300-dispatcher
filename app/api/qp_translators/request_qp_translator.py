@@ -91,8 +91,8 @@ class DispatcherRequestQPTranslator(QPTranslator):
             t_parser=str_parsers.datetime_parser,
             description="Дата подачи заявки (С)",
         ),
-        "created_at__lte": Filter[datetime](
-            q_func=lambda x: {"created_at": {"$lte": x}},
+        "created_at__lt": Filter[datetime](
+            q_func=lambda x: {"created_at": {"$lt": x}},
             t_parser=str_parsers.datetime_parser,
             description="Дата подачи заявки (По)",
         ),
@@ -101,8 +101,8 @@ class DispatcherRequestQPTranslator(QPTranslator):
             t_parser=str_parsers.datetime_parser,
             description="Дата выполнения заявки (С)",
         ),
-        "execution__end_at__lte": Filter[datetime](
-            q_func=lambda x: {"execution.end_at": {"$lte": x}},
+        "execution__end_at__lt": Filter[datetime](
+            q_func=lambda x: {"execution.end_at": {"$lt": x}},
             t_parser=str_parsers.datetime_parser,
             description="Дата выполнения заявки (По)",
         ),
@@ -111,8 +111,8 @@ class DispatcherRequestQPTranslator(QPTranslator):
             t_parser=str_parsers.datetime_parser,
             description="Желаемое время выполнения заявки (С)",
         ),
-        "execution__desired_end_at__lte": Filter[datetime](
-            q_func=lambda x: {"execution.desired_end_at": {"$lte": x}},
+        "execution__desired_end_at__lt": Filter[datetime](
+            q_func=lambda x: {"execution.desired_end_at": {"$lt": x}},
             t_parser=str_parsers.datetime_parser,
             description="Желаемое время выполнения заявки (По)",
         ),
@@ -168,7 +168,7 @@ class DispatcherRequestQPTranslator(QPTranslator):
             description="Время отключения лифта (С)",
         ),
         "actions__lift__date_till": Filter[datetime](
-            q_func=lambda x: {"$and": [{"action._type": "lift"}, {"action.date_till": {"$lte": x}}]},
+            q_func=lambda x: {"$and": [{"action._type": "lift"}, {"action.date_till": {"$lt": x}}]},
             t_parser=str_parsers.datetime_parser,
             description="Время отключения лифта (По)",
         ),
@@ -178,7 +178,7 @@ class DispatcherRequestQPTranslator(QPTranslator):
             description="Время отключения центрального отопления (С)",
         ),
         "actions__central_heating__date_till": Filter[datetime](
-            q_func=lambda x: {"$and": [{"action._type": "central_heating"}, {"action.date_till": {"$lte": x}}]},
+            q_func=lambda x: {"$and": [{"action._type": "central_heating"}, {"action.date_till": {"$lt": x}}]},
             t_parser=str_parsers.datetime_parser,
             description="Время отключения центрального отопления (По)",
         ),
@@ -188,7 +188,7 @@ class DispatcherRequestQPTranslator(QPTranslator):
             description="Время отключения горячего водоснабжения (С)",
         ),
         "actions__hot_water_supply__date_till": Filter[datetime](
-            q_func=lambda x: {"$and": [{"action._type": "hot_water_supply"}, {"action.date_till": {"$lte": x}}]},
+            q_func=lambda x: {"$and": [{"action._type": "hot_water_supply"}, {"action.date_till": {"$lt": x}}]},
             t_parser=str_parsers.datetime_parser,
             description="Время отключения горячего водоснабжения (По)",
         ),
@@ -198,7 +198,7 @@ class DispatcherRequestQPTranslator(QPTranslator):
             description="Время отключения холодного водоснабжения (С)",
         ),
         "actions__cold_water_supply__date_till": Filter[datetime](
-            q_func=lambda x: {"$and": [{"action._type": "cold_water_supply"}, {"action.date_till": {"$lte": x}}]},
+            q_func=lambda x: {"$and": [{"action._type": "cold_water_supply"}, {"action.date_till": {"$lt": x}}]},
             t_parser=str_parsers.datetime_parser,
             description="Время отключения холодного водоснабжения (По)",
         ),
@@ -208,7 +208,7 @@ class DispatcherRequestQPTranslator(QPTranslator):
             description="Время отключения электроснабжения (С)",
         ),
         "actions__electricity__date_till": Filter[datetime](
-            q_func=lambda x: {"$and": [{"action._type": "electricity"}, {"action.date_till": {"$lte": x}}]},
+            q_func=lambda x: {"$and": [{"action._type": "electricity"}, {"action.date_till": {"$lt": x}}]},
             t_parser=str_parsers.datetime_parser,
             description="Время отключения электроснабжения (По)",
         ),

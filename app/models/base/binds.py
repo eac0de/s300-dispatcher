@@ -30,3 +30,14 @@ class ProviderBinds(BaseModel):
         default_factory=set,
         title="Привязка к организации",
     )
+
+
+class DepartmentBinds(BaseModel):
+    """
+    Модель привязки к провайдерам и отделам
+    """
+
+    dp: set[PydanticObjectId] = Field(
+        default_factory=set,
+        title="Привязка к отделу",
+    )
