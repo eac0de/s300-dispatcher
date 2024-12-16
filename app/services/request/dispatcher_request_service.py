@@ -39,16 +39,16 @@ from schemes.request_employee_schedule import (
     RequestEmployeeWeeklySchedule,
 )
 from services.request.request_service import RequestService
-from utils.rollbacker import RollbackMixin
+from utils.rollbacker import Rollbacker
 
 
-class DispatcherRequestService(RequestService, RollbackMixin):
+class DispatcherRequestService(RequestService, Rollbacker):
     """
     Сервис для работы с заявками для сотрудников
 
     Args:
         RequestService (_type_): Сервис работы с заявками не привязанный к пользователю
-        RollbackMixin (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
+        Rollbacker (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
     """
 
     def __init__(self, employee: EmployeeS300):

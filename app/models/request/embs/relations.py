@@ -25,6 +25,20 @@ class RequestRelationsRS(BaseModel):
     )
 
 
+class AppealRelationsRS(BaseModel):
+    """
+    Класс связанного обращения
+    """
+
+    id: PydanticObjectId = Field(
+        alias="_id",
+        title="Идентификатор связанного обращения",
+    )
+    number: str = Field(
+        title="Номер связанного обращения",
+    )
+
+
 class RelationsRS(BaseModel):
     """
     Класс связей заявки с другими классами или другими заявками
@@ -38,9 +52,9 @@ class RelationsRS(BaseModel):
         default=None,
         title="Ссылка на связанный с заявкой звонок",
     )
-    appeal_id: PydanticObjectId | None = Field(
+    appeal: AppealRelationsRS | None = Field(
         default=None,
-        title="Ссылка на связанное с заявкой обращение",
+        title="Ссылка на обращение, которое создано из этой заявки",
     )
     template_id: PydanticObjectId | None = Field(
         default=None,

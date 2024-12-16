@@ -2,8 +2,11 @@
 Модуль с сервисом для работы с шаблонами заявок
 """
 
+from typing import Any
+
 from beanie import PydanticObjectId
 from beanie.exceptions import RevisionIdWasChanged
+from beanie.odm.queries.find import FindMany
 from fastapi import HTTPException
 from starlette import status
 
@@ -136,21 +139,32 @@ class RequestTemplateService:
         request_template = await self._get_template(request_template_id)
         if await RequestModel.find({"relations.template_id": request_template.id}).exists():
             raise HTTPException(
-                detail="Request template is used",
-                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Шаблон задействован в заявках",
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
             )
         await request_template.delete()
 
-    async def get_template_list(
+    async def get_templates(
         self,
-    ) -> list[RequestTemplate]:
+        query_list: list[dict[str, Any]],
+        offset: int | None = None,
+        limit: int | None = None,
+        sort: list[str] | None = None,
+    ) -> FindMany[RequestTemplate]:
         """
         Получение списка шаблонов заявок
 
         Returns:
             list[RequestTemplate]: Список шаблонов заявок
         """
-        return await RequestTemplate.find({"provider_id": self.employee.provider.id}).to_list()
+        query_list.append({"provider_id": self.employee.provider.id})
+        templates = RequestTemplate.find(*query_list)
+        templates.sort(*sort if sort else ["-_id"])
+        if offset:
+            templates.skip(offset)
+        if limit:
+            templates.limit(limit)
+        return templates
 
     @staticmethod
     async def _check_categories_tree(

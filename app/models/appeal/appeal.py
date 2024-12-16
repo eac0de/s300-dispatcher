@@ -8,6 +8,7 @@ from models.appeal.constants import AppealSource, AppealStatus, AppealType
 from models.appeal.embs.appealer import Appealer
 from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import ObserversAS
+from models.appeal.embs.relations import RelationsAS
 from models.base.binds import DepartmentBinds
 from models.extra.attachment import ExpandedAttachment
 
@@ -38,6 +39,10 @@ class Appeal(Document):
     executor: EmployeeAS | None = Field(
         title="Исполнитель обращения",
     )
+    relations: RelationsAS = Field(
+        default_factory=RelationsAS,
+        title="Связи обращения",
+    )
     status: AppealStatus = Field(
         title="Статус обращения",
     )
@@ -59,11 +64,7 @@ class Appeal(Document):
     )
     add_answers: list[ExpandedAttachment] = Field(
         default_factory=list,
-        title="Комментарии к обращению",
-    )
-    comments: list[ExpandedAttachment] = Field(
-        default_factory=list,
-        title="Комментарии к обращению",
+        title="Дополнительные ответы на обращение",
     )
     category_ids: set[PydanticObjectId] = Field(
         default_factory=set,

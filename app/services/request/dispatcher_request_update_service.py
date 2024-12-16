@@ -62,16 +62,16 @@ from schemes.request.request_status import (
     ResourcesRequestDStatusUScheme,
 )
 from services.request.request_service import RequestService
-from utils.rollbacker import RollbackMixin
+from utils.rollbacker import Rollbacker
 
 
-class DispatcherRequestUpdateService(RequestService, RollbackMixin):
+class DispatcherRequestUpdateService(RequestService, Rollbacker):
     """
     Сервис для обновления заявки сотрудником
 
     Args:
         RequestService (_type_): Сервис работы с заявками не привязанный к пользователю
-        RollbackMixin (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
+        Rollbacker (_type_): Миксин для возможности отмены выполненной работы с заявкой при возникновении ошибок
     """
 
     def __init__(

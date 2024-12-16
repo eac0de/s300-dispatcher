@@ -4,12 +4,12 @@ from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 from models.appeal.appeal import Appeal
-from models.appeal.constants import AppealStatus, AppealType
+from models.appeal.constants import AppealType
 from models.base.binds import DepartmentBinds
 from schemes.extra.only_id import OnlyIdScheme
 
 
-class ObserversDCScheme(BaseModel):
+class ObserversDUCScheme(BaseModel):
     employees: list[OnlyIdScheme] = Field(
         default_factory=list,
     )
@@ -28,13 +28,28 @@ class AppealDCScheme(BaseModel):
     appealer: OnlyIdScheme = Field(
         title="Обращатор",
     )
-    status: AppealStatus = Field(
-        title="Статус обращения",
-    )
     type: AppealType = Field(
         title="Тип обращения",
     )
-    observers: ObserversDCScheme = Field(
+    observers: ObserversDUCScheme = Field(
+        title="Наблюдатели обращения",
+    )
+    category_ids: set[PydanticObjectId] = Field(
+        title="Идентификаторы категорий обращения",
+    )
+    incoming_number: str | None = Field(
+        title="Входящий номер",
+    )
+    incoming_at: datetime | None = Field(
+        title="Входящая дата",
+    )
+
+
+class AppealUCScheme(BaseModel):
+    type: AppealType = Field(
+        title="Тип обращения",
+    )
+    observers: ObserversDUCScheme = Field(
         title="Наблюдатели обращения",
     )
     category_ids: set[PydanticObjectId] = Field(

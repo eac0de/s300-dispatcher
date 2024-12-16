@@ -4,13 +4,14 @@ from typing import Any
 from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
 from fastapi import HTTPException
+from file_manager import File
 from starlette import status
 
 from client.s300.models.department import DepartmentS300
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.tenant import TenantS300
 from models.appeal.appeal import Appeal
-from models.appeal.constants import AppealSource
+from models.appeal.constants import AppealSource, AppealStatus
 from models.appeal.embs.appealer import Appealer
 from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import EmployeeObserverAS, ObserversAS
@@ -119,8 +120,8 @@ class DispatcherAppealService(AppealService):
             executor = EmployeeAS.model_validate(employee.model_dump(by_alias=True))
             binds.dp.add(employee.department.id)
         elif scheme.observers.departments or scheme.observers.employees:
-            for observer in scheme.observers.employees:
-                employee = await EmployeeS300.get(observer.id)
+            for e in scheme.observers.employees:
+                employee = await EmployeeS300.get(e.id)
                 if not employee:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -132,6 +133,7 @@ class DispatcherAppealService(AppealService):
                         detail="Employee from another provider",
                     )
                 observers.employees.append(EmployeeObserverAS.model_validate(employee.model_dump(by_alias=True)))
+                binds.dp.add(employee.department.id)
             for d in scheme.observers.departments:
                 department = await DepartmentS300.get(d.id)
                 if not department:
@@ -162,7 +164,7 @@ class DispatcherAppealService(AppealService):
             dispatcher=dispatcher,
             appealer=appealer,
             executor=executor,
-            status=scheme.status,
+            status=AppealStatus.RUN,
             _type=scheme.type,
             observers=observers,
             category_ids=scheme.category_ids,
@@ -175,3 +177,37 @@ class DispatcherAppealService(AppealService):
             deadline_at=deadline_at,
         )
         return appeal
+
+    async def delete_appeal(
+        self,
+        appeal_id: PydanticObjectId,
+    ):
+        appeal = await self.get_appeal(appeal_id)
+        await appeal.delete()
+
+    async def download_answer_file(
+        self,
+        appeal_id: PydanticObjectId,
+        answer_id: PydanticObjectId,
+        file_id: PydanticObjectId,
+    ) -> File:
+        appeal = await self.get_appeal(appeal_id)
+        if not appeal.answer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Answer not found",
+            )
+        if appeal.answer.id == answer_id:
+            for file in appeal.answer.files:
+                if file.id == file_id:
+                    return file
+        for answer in appeal.add_answers:
+            if answer.id != answer_id:
+                continue
+            for file in answer.files:
+                if file.id == file_id:
+                    return file
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Answer file not found",
+        )

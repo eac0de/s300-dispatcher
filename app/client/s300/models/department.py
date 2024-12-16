@@ -74,11 +74,11 @@ class DepartmentS300(DocumentCache):
             Будет подгружен первый, соответствующий запросу дом
         """
 
-        path = "providers/get/"
+        path = "departments/get/"
         status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
-            tag="load_provider",
+            tag="load_department",
             query_params=query,
             res_json=True,
         )
@@ -90,14 +90,14 @@ class DepartmentS300(DocumentCache):
                 status_code=status_code,
                 body=str(data)[:200],
             )
-        if not isinstance(data, dict) or data.get("provider") is None:
+        if not isinstance(data, dict) or data.get("department") is None:
             raise FailedDependencyError(
-                description="The data transmitted from the S300 does not contain an «provider» key",
+                description="The data transmitted from the S300 does not contain an «department» key",
             )
         try:
-            await cls(**data["provider"]).save()
+            await cls(**data["department"]).save()
         except pydantic_core.ValidationError as e:
             raise FailedDependencyError(
-                description="Provider data does not correspond to expected values",
+                description="Department data does not correspond to expected values",
                 error=str(e),
             ) from e

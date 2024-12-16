@@ -27,6 +27,7 @@ class RequestTemplate(Document):
         title="Название шаблона",
     )
     category: RequestCategory | None = Field(
+        default=None,
         title="Категория заявки",
     )
     subcategory: RequestSubcategory | None = Field(
