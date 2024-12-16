@@ -1,19 +1,17 @@
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile, status
+from fastapi.responses import StreamingResponse
 from file_manager import File
 
 from api.dependencies.auth import EmployeeDep
 from api.qp_translators.appeal_qp_translator import DispatcherAppealsQPTranslator
 from api.qp_translators.request_qp_translator import DispatcherRequestQPTranslator
+from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
 from schemes.appeal.dispatcher_appeal import (
     AppealDCScheme,
     AppealDLScheme,
     AppealDRScheme,
     AppealUCScheme,
-)
-from schemes.extra.attachment import (
-    ExpandedAttachmentCScheme,
-    ExpandedAttachmentUWithoutCommentScheme,
 )
 from services.appeal.dispatcher_appeal_service import DispatcherAppealService
 from services.appeal.dispatcher_appeal_update_service import (
@@ -133,7 +131,7 @@ async def delete_appeal(
 async def answer_appeal(
     employee: EmployeeDep,
     appeal_id: PydanticObjectId,
-    answer_scheme: ExpandedAttachmentCScheme,
+    answer_scheme: AnswerAppealDCScheme,
 ):
     """
     Получение обращения по идентификатору сотрудником
@@ -157,7 +155,7 @@ async def update_appeal_answer(
     employee: EmployeeDep,
     appeal_id: PydanticObjectId,
     answer_id: PydanticObjectId,
-    answer_scheme: ExpandedAttachmentUWithoutCommentScheme,
+    answer_scheme: AnswerAppealDUScheme,
 ):
     """
     Получение обращения по идентификатору сотрудником
@@ -177,7 +175,7 @@ async def update_appeal_answer(
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
-async def upload_requester_attachment_files(
+async def upload_answer_files(
     employee: EmployeeDep,
     appeal_id: PydanticObjectId,
     answer_id: PydanticObjectId,
@@ -200,18 +198,17 @@ async def upload_requester_attachment_files(
     path="/{appeal_id}/answer/{answer_id}/files/{file_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def download_requester_attachment_file(
+async def download_answer_file(
     employee: EmployeeDep,
-    request_id: PydanticObjectId,
+    appeal_id: PydanticObjectId,
+    answer_id: PydanticObjectId,
     file_id: PydanticObjectId,
 ):
-    """
-    Скачивание файла вложения жителя к заявке сотрудником
-    """
 
-    service = DispatcherRequestService(employee)
-    file = await service.download_requester_attachment_file(
-        request_id=request_id,
+    service = DispatcherAppealService(employee)
+    file = await service.download_answer_file(
+        appeal_id=appeal_id,
+        answer_id=answer_id,
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)

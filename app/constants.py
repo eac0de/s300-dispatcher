@@ -1,4 +1,13 @@
-MONTHS = {
+from typing import TypedDict
+
+
+class MonthData(TypedDict):
+    ru_genitive: str
+    ru_nominative: str
+    en: str
+
+
+MONTHS: dict[int, MonthData] = {
     1: {"ru_genitive": "января", "ru_nominative": "январь", "en": "january"},
     2: {"ru_genitive": "февраля", "ru_nominative": "февраль", "en": "february"},
     3: {"ru_genitive": "марта", "ru_nominative": "март", "en": "march"},

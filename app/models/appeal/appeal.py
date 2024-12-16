@@ -5,12 +5,12 @@ from file_manager import File
 from pydantic import Field
 
 from models.appeal.constants import AppealSource, AppealStatus, AppealType
+from models.appeal.embs.answer import AnswerAS
 from models.appeal.embs.appealer import Appealer
 from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import ObserversAS
 from models.appeal.embs.relations import RelationsAS
 from models.base.binds import DepartmentBinds
-from models.extra.attachment import ExpandedAttachment
 
 
 class Appeal(Document):
@@ -58,11 +58,11 @@ class Appeal(Document):
         default_factory=ObserversAS,
         title="Наблюдатели обращения",
     )
-    answer: ExpandedAttachment | None = Field(
+    answer: AnswerAS | None = Field(
         default=None,
         title="Ответ на обращение",
     )
-    add_answers: list[ExpandedAttachment] = Field(
+    add_answers: list[AnswerAS] = Field(
         default_factory=list,
         title="Дополнительные ответы на обращение",
     )

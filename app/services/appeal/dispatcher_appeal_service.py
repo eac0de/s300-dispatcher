@@ -15,6 +15,7 @@ from models.appeal.constants import AppealSource, AppealStatus
 from models.appeal.embs.appealer import Appealer
 from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import EmployeeObserverAS, ObserversAS
+from models.appeal_comment.appeal_comment import AppealComment
 from models.appeal_control_right.appeal_control_right import AppealControlRight
 from models.appeal_control_right.constants import AppealControlRightType
 from models.base.binds import DepartmentBinds
@@ -210,4 +211,25 @@ class DispatcherAppealService(AppealService):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Answer file not found",
+        )
+
+    async def download_comment_file(
+        self,
+        appeal_id: PydanticObjectId,
+        comment_id: PydanticObjectId,
+        file_id: PydanticObjectId,
+    ) -> File:
+        appeal = await self.get_appeal(appeal_id)
+        comment = await AppealComment.find_one({"_id": comment_id, "appeal_id": appeal.id})
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found",
+            )
+        for file in comment.files:
+            if file.id == file_id:
+                return file
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Comment file not found",
         )

@@ -31,7 +31,7 @@ class AppealComment(Document):
         default_factory=datetime.now,
         title="Время создания комментария",
     )
-    message: str = Field(
+    text: str = Field(
         title="Текст комментария",
     )
     files: list[File] = Field(

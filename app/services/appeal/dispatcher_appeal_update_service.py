@@ -2,21 +2,24 @@
 Модуль для обновления заявки сотрудником
 """
 
+import asyncio
+
 from beanie import PydanticObjectId
 from fastapi import HTTPException, UploadFile, status
+from file_manager import File
 
 from client.s300.models.department import DepartmentS300
 from client.s300.models.employee import EmployeeS300
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealStatus
+from models.appeal.embs.answer import AnswerAS, EmployeeAnswerAS
 from models.appeal.embs.observers import EmployeeObserverAS
-from models.extra.attachment import EmployeeExpandedAttachment, ExpandedAttachment
+from models.appeal_comment.appeal_comment import AppealComment, EmployeeAppealComment
+from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
+from schemes.appeal.appeal_comment import AppealCommentDCScheme
 from schemes.appeal.dispatcher_appeal import AppealUCScheme
-from schemes.extra.attachment import (
-    ExpandedAttachmentCScheme,
-    ExpandedAttachmentUWithoutCommentScheme,
-)
 from services.appeal.appeal_service import AppealService
+from utils.rollbacker import Rollbacker
 
 
 class DispatcherAppealUpdateService(AppealService):
@@ -90,15 +93,15 @@ class DispatcherAppealUpdateService(AppealService):
             self.appeal.observers.departments = [d for d in self.appeal.observers.departments if d.id not in deleted_observers_department_ids]
         return await self.appeal.save()
 
-    async def answer_appeal(self, answer_scheme: ExpandedAttachmentCScheme):
+    async def answer_appeal(self, answer_scheme: AnswerAppealDCScheme) -> Appeal:
         if self.appeal.executor and self.appeal.executor.id != self.employee.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You are not executor of this request",
             )
-        answer = ExpandedAttachment(
-            employee=EmployeeExpandedAttachment.model_validate(self.employee),
-            comment=answer_scheme.comment,
+        answer = AnswerAS(
+            employee=EmployeeAnswerAS.model_validate(self.employee),
+            text=answer_scheme.text,
         )
         if self.appeal.answer:
             self.appeal.add_answers.append(answer)
@@ -107,111 +110,158 @@ class DispatcherAppealUpdateService(AppealService):
             self.appeal.status = AppealStatus.PERFORMED
         return await self.appeal.save()
 
-    async def update_appeal_answer(self, answer_id: PydanticObjectId, answer_scheme: ExpandedAttachmentUWithoutCommentScheme) -> Appeal:
-        if not self.appeal.answer:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Answer not found",
-            )
-        if self.appeal.answer.id == answer_id:
-            if self.appeal.answer.employee.id != self.employee.id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="You are not creator of this answer",
-                )
-            deleted_file_ids = set(f.id for f in self.appeal.answer.files) - set(f.id for f in answer_scheme.files)
-            if not deleted_file_ids:
-                return self.appeal
-            new_answer_files = []
-            for file in self.appeal.answer.files:
-                if file.id in deleted_file_ids:
-                    await file.delete()
-                    continue
-                new_answer_files.append(file)
-            self.appeal.answer.files = new_answer_files
-            return await self.appeal.save()
-        for answer in self.appeal.add_answers:
-            if answer.id != answer_id:
-                continue
-            if answer.employee.id != self.employee.id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="You are not creator of this answer",
-                )
-            deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in answer_scheme.files)
-            if not deleted_file_ids:
-                return self.appeal
-            new_answer_files = []
-            for file in answer.files:
-                if file.id in deleted_file_ids:
-                    await file.delete()
-                    continue
-                new_answer_files.append(file)
-            answer.files = new_answer_files
-            break
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Answer not found",
-            )
-        return await self.appeal.save()
-
     async def upload_answer_files(
         self,
         answer_id: PydanticObjectId,
         files: list[UploadFile],
     ) -> list[File]:
-        rollbacker = Rollbacker()
+        answer = await self._get_answer(answer_id)
         if not files or [file for file in files if file.size == 0]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A file is required, and it cannot be empty (0 bytes)",
             )
+        new_files = []
+        rollbacker = Rollbacker()
+        try:
+            for file in files:
+                f = await File.create(
+                    file_content=await file.read(),
+                    filename=file.filename,
+                    tag=await self.get_filetag_for_answer(self.appeal.id),
+                )
+                rollbacker.add_rollback(f.delete)
+                new_files.append(f)
+            answer.files.extend(new_files)
+            await self.appeal.save()
+        except:
+            await rollbacker.rollback()
+            raise
+        return answer.files
 
+    async def update_appeal_answer(
+        self,
+        answer_id: PydanticObjectId,
+        answer_scheme: AnswerAppealDUScheme,
+    ) -> Appeal:
+        answer = await self._get_answer(answer_id)
+        deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in answer_scheme.files)
+        if not deleted_file_ids:
+            return self.appeal
+        new_answer_files = []
+        for file in answer.files:
+            if file.id in deleted_file_ids:
+                asyncio.create_task(file.delete())
+                continue
+            new_answer_files.append(file)
+        answer.files = new_answer_files
+        return await self.appeal.save()
+
+    async def _get_answer(self, answer_id: PydanticObjectId) -> AnswerAS:
         if not self.appeal.answer:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Answer not found",
             )
+        answer = None
         if self.appeal.answer.id == answer_id:
-            for file in self.appeal.answer.files:
-                if file.id == file_id:
-                    return file
-        for answer in appeal.add_answers:
-            if answer.id != answer_id:
-                continue
-            for file in answer.files:
-                if file.id == file_id:
-                    return file
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Answer file not found",
-        )
+            answer = self.appeal.answer
+        for a in self.appeal.add_answers:
+            if a.id == answer_id:
+                answer = a
+        if not answer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Answer not found",
+            )
+        if answer.employee.id != self.employee.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are not creator of this answer",
+            )
+        return answer
 
-    async def _create_files(files: list[UploadFile], rollbacker: Rollbacker,) -> list[File]:
-    new_files = []
-    try:
-        for file in files:
-            f = await File.create(
-                file_content=await file.read(),
-                filename=file.filename,
-                tag=await self.get_filetag_for_requester_attachment(self.request.id),
+    async def comment_appeal(self, comment_scheme: AppealCommentDCScheme) -> AppealComment:
+        if self.appeal.status != AppealStatus.RUN:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Comment can't be created because the appeal is not in the 'RUN' status",
             )
-            self.add_rollback(f.delete)
-            self.updated_fields.append(
-                UpdatedField(
-                    name="requester_attachment.files",
-                    value=f,
-                    name_display="Новый файл от жильца",
-                    value_display=f.name,
-                    link=f"/dispatcher/requests/{str(self.request.id)}/requester_attachment_files/{str(f.id)}",
+        if (
+            (self.appeal.executor and self.appeal.executor.id != self.employee.id)
+            and self.employee.department.id not in set(od.id for od in self.appeal.observers.departments)
+            and self.employee.id not in set(oe.id for oe in self.appeal.observers.employees)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ensure the employee is either the executor or an observer of the appeal",
+            )
+
+        comment = AppealComment(
+            employee=EmployeeAppealComment.model_validate(self.employee),
+            appeal_id=self.appeal.id,
+            text=comment_scheme.text,
+            read_by={self.employee.id},
+        )
+        return await comment.save()
+
+    async def update_appeal_comment(
+        self,
+        comment_id: PydanticObjectId,
+        comment_scheme: AnswerAppealDUScheme,
+    ) -> AppealComment:
+        comment = await self._get_comment(comment_id)
+        deleted_file_ids = set(f.id for f in comment.files) - set(f.id for f in comment_scheme.files)
+        if not deleted_file_ids:
+            return comment
+        new_comment_files = []
+        for file in comment.files:
+            if file.id in deleted_file_ids:
+                asyncio.create_task(file.delete())
+                continue
+            new_comment_files.append(file)
+        comment.files = new_comment_files
+        return await comment.save()
+
+    async def upload_comment_files(
+        self,
+        comment_id: PydanticObjectId,
+        files: list[UploadFile],
+    ) -> list[File]:
+        if not files or [file for file in files if file.size == 0]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A file is required, and it cannot be empty (0 bytes)",
+            )
+        comment = await self._get_comment(comment_id)
+        new_files = []
+        rollbacker = Rollbacker()
+        try:
+            for file in files:
+                f = await File.create(
+                    file_content=await file.read(),
+                    filename=file.filename,
+                    tag=await self.get_filetag_for_answer(self.appeal.id),
                 )
+                rollbacker.add_rollback(f.delete)
+                new_files.append(f)
+            comment.extend(new_files)
+            await comment.save()
+        except:
+            await rollbacker.rollback()
+            raise
+        return comment.files
+
+    async def _get_comment(self, comment_id: PydanticObjectId) -> AppealComment:
+        comment = await AppealComment.find_one({"_id": comment_id, "appeal_id": self.appeal.id})
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Comment not found",
             )
-            new_files.append(f)
-        self.request.requester_attachment.files.extend(new_files)
-        await self.request.save()
-    except:
-        await self.rollback()
-        raise
-    await self._update_request_history()
-    return self.request.requester_attachment.files
+        if comment.employee.id == self.employee.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are not creator of this comment",
+            )
+        return comment

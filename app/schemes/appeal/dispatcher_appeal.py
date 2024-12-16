@@ -9,7 +9,7 @@ from models.base.binds import DepartmentBinds
 from schemes.extra.only_id import OnlyIdScheme
 
 
-class ObserversDUCScheme(BaseModel):
+class ObserversAppealDUCScheme(BaseModel):
     employees: list[OnlyIdScheme] = Field(
         default_factory=list,
     )
@@ -31,7 +31,7 @@ class AppealDCScheme(BaseModel):
     type: AppealType = Field(
         title="Тип обращения",
     )
-    observers: ObserversDUCScheme = Field(
+    observers: ObserversAppealDUCScheme = Field(
         title="Наблюдатели обращения",
     )
     category_ids: set[PydanticObjectId] = Field(
@@ -49,7 +49,7 @@ class AppealUCScheme(BaseModel):
     type: AppealType = Field(
         title="Тип обращения",
     )
-    observers: ObserversDUCScheme = Field(
+    observers: ObserversAppealDUCScheme = Field(
         title="Наблюдатели обращения",
     )
     category_ids: set[PydanticObjectId] = Field(

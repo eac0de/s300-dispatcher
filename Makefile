@@ -9,8 +9,11 @@ clear_volumes:
 up:
 	docker-compose up --build
 
-req: # Создание/обновление файла requirements.txt в /app
+down:
+	docker-compose down
+
+req:
 	poetry export -f requirements.txt --output app/requirements.txt --without-hashes
 
-test: # Создание/обновление файла requirements.txt в /app
+test:
 	cd app && pytest -s -v
