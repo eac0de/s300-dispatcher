@@ -2,23 +2,18 @@
 Модуль с моделью стороннего лица 
 """
 
-from beanie import Document, PydanticObjectId
 from pydantic import EmailStr, Field
 
 from models.base.binds import ProviderBinds
+from models.base_document import BaseDocument
 from models.extra.phone_number import PhoneNumber
 
 
-class OtherPerson(Document):
+class OtherPerson(BaseDocument):
     """
     Модель стороннего лица
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     short_name: str = Field(
         title="Фамилия И.О. лица",
     )

@@ -5,10 +5,11 @@
 from datetime import datetime
 from typing import Any
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
+from models.base_document import BaseDocument
 from models.request_history.constants import UpdateUserType
 
 
@@ -74,16 +75,11 @@ class Update(BaseModel):
     )
 
 
-class RequestHistory(Document):
+class RequestHistory(BaseDocument):
     """
     Класс истории изменения заявки
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     request_id: PydanticObjectId = Field(
         title="Идентификатор заявки",
     )

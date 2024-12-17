@@ -5,8 +5,9 @@
 from collections.abc import Mapping
 from datetime import datetime
 
-from beanie import Document
 from pydantic import BaseModel, ConfigDict, Field
+
+from models.base_document import BaseDocument
 
 
 class ResponseInfo(BaseModel):
@@ -44,7 +45,7 @@ class RequestInfo(BaseModel):
     )
 
 
-class RequestLog(Document):
+class RequestLog(BaseDocument):
     """
     Класс лога запроса
     """

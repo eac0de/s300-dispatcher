@@ -1,14 +1,11 @@
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from pydantic import Field
 from pymongo import IndexModel
 
+from models.base_document import BaseDocument
 
-class AppealCategory(Document):
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
+
+class AppealCategory(BaseDocument):
     name: str = Field(
         title="Название категории",
     )
@@ -18,10 +15,6 @@ class AppealCategory(Document):
     provider_id: PydanticObjectId = Field(
         title="Идентификатор организации-владельца категории",
     )
-    for_beanie_err: None = Field(
-        default=None,
-        exclude=True,
-    )  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure
 
     class Settings:
         """

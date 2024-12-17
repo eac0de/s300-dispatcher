@@ -4,11 +4,12 @@
 
 from datetime import datetime
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from file_manager import File
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 
+from models.base_document import BaseDocument
 from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
 
 
@@ -26,16 +27,11 @@ class CatalogItemPrice(BaseModel):
     )
 
 
-class CatalogItem(Document):
+class CatalogItem(BaseDocument):
     """
     Модель позиции каталога
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     name: str = Field(
         title="Название позиции",
     )
@@ -80,10 +76,6 @@ class CatalogItem(Document):
     house_ids: set[PydanticObjectId] = Field(
         title="Идентификаторы домов к которым привязана позиция",
     )
-    for_beanie_err: None = Field(
-        default=None,
-        exclude=True,
-    )  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure
 
     class Settings:
         """

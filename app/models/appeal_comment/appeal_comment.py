@@ -1,8 +1,10 @@
 from datetime import datetime
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from file_manager import File
 from pydantic import BaseModel, Field
+
+from models.base_document import BaseDocument
 
 
 class EmployeeAppealComment(BaseModel):
@@ -18,12 +20,7 @@ class EmployeeAppealComment(BaseModel):
     )
 
 
-class AppealComment(Document):
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
+class AppealComment(BaseDocument):
     appeal_id: PydanticObjectId = Field(
         title="Идентификатор обращения",
     )

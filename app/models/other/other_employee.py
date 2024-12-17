@@ -2,23 +2,19 @@
 Модуль с моделью стороннего сотрудника 
 """
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from pydantic import EmailStr, Field
 
 from models.base.binds import ProviderBinds
+from models.base_document import BaseDocument
 from models.extra.phone_number import PhoneNumber
 
 
-class OtherEmployee(Document):
+class OtherEmployee(BaseDocument):
     """
     Модель стороннего сотрудника
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     short_name: str = Field(
         title="Фамилия И.О. стороннего сотрудника",
     )

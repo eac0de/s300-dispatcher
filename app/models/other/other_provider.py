@@ -1,19 +1,14 @@
-from beanie import Document, PydanticObjectId
 from pydantic import Field
 
 from models.base.binds import ProviderBinds
+from models.base_document import BaseDocument
 
 
-class OtherProvider(Document):
+class OtherProvider(BaseDocument):
     """
     Модель сторонней организации
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     name: str = Field(
         title="Название сторонней организации",
     )

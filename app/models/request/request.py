@@ -4,10 +4,10 @@
 
 from datetime import datetime
 
-from beanie import Document, PydanticObjectId
 from pydantic import Field
 
 from models.base.binds import ProviderHouseGroupBinds
+from models.base_document import BaseDocument
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
     RequestCategory,
@@ -41,16 +41,11 @@ from models.request.embs.requester import (
 from models.request.embs.resources import ResourcesRS
 
 
-class RequestModel(Document):
+class RequestModel(BaseDocument):
     """
     Класс заявки
     """
 
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
     binds: ProviderHouseGroupBinds = Field(
         alias="_binds",
         title="Привязки к организации и группе домов",
@@ -153,10 +148,6 @@ class RequestModel(Document):
         default_factory=MonitoringRS,
         title="Информация по надзору за заявкой",
     )
-    for_beanie_err: None = Field(
-        default=None,
-        exclude=True,
-    )  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure
 
     class Settings:
         """

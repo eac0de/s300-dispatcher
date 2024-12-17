@@ -1,15 +1,11 @@
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from pydantic import Field
 
 from models.appeal_control_right.constants import AppealControlRightType
+from models.base_document import BaseDocument
 
 
-class AppealControlRight(Document):
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
+class AppealControlRight(BaseDocument):
     employee_id: PydanticObjectId = Field(
         title="Идентификатор сотрудника",
     )

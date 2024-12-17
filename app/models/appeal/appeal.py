@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from beanie import Document, PydanticObjectId
+from beanie import PydanticObjectId
 from file_manager import File
 from pydantic import Field
 
@@ -11,14 +11,10 @@ from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import ObserversAS
 from models.appeal.embs.relations import RelationsAS
 from models.base.binds import DepartmentBinds
+from models.base_document import BaseDocument
 
 
-class Appeal(Document):
-    id: PydanticObjectId = Field(
-        default_factory=PydanticObjectId,
-        alias="_id",
-        description="MongoDB document ObjectID",
-    )
+class Appeal(BaseDocument):
     subject: str = Field(
         title="Тема обращения",
     )
@@ -98,7 +94,3 @@ class Appeal(Document):
     deadline_at: datetime = Field(
         title="Крайний срок выполнения обращения",
     )
-    for_beanie_err: None = Field(
-        default=None,
-        exclude=True,
-    )  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure  # При наличии keep_nulls = False в Settings класса, если при сохранении нету полей которые = None, beanie выдает ошибку pymongo.errors.OperationFailure

@@ -1,9 +1,8 @@
-from beanie import Document
 from file_manager import File
 from pydantic import BaseModel, Field
 
 
-class AppealCommentDCScheme(Document):
+class AppealCommentDCScheme(BaseModel):
     text: str = Field(
         title="Текст комментария",
     )
