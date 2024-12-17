@@ -153,13 +153,12 @@ class DispatcherCatalogItemService:
             **scheme.model_dump(by_alias=True, exclude={"house_ids", "house_group_ids", "fias"}),
         )
         try:
-            catalog_item = await catalog_item.save()
+            return await catalog_item.save()
         except RevisionIdWasChanged as e:
             raise HTTPException(
                 detail="The catalog item name or code cannot be repeated",
                 status_code=status.HTTP_400_BAD_REQUEST,
             ) from e
-        return catalog_item
 
     async def update_catalog_item(
         self,
@@ -200,13 +199,12 @@ class DispatcherCatalogItemService:
         if scheme.image:
             catalog_item.image = existing_catalog_item.image
         try:
-            catalog_item = await catalog_item.save()
+            return await catalog_item.save()
         except RevisionIdWasChanged as e:
             raise HTTPException(
                 detail="The catalog item name or code cannot be repeated",
                 status_code=status.HTTP_400_BAD_REQUEST,
             ) from e
-        return catalog_item
 
     async def delete_catalog_item(
         self,

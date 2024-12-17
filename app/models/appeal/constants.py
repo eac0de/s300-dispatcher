@@ -12,14 +12,41 @@ class AppealType(str, Enum):
     CONSULTATION = "consultation"
 
 
+APPEAL_TYPE_EN_RU = {
+    AppealType.STATEMENT: "Заявление",
+    AppealType.CLAIM: "Претензия",
+    AppealType.COMPLAINT: "Жалоба",
+    AppealType.NOTICE: "Уведомление",
+    AppealType.LETTER: "Письмо",
+    AppealType.PROPOSAL: "Предложение",
+    AppealType.ACKNOWLEDGEMENT: "Благодарность",
+    AppealType.CONSULTATION: "Консультации по общим вопросам ЖКХ",
+}
+
+
 class AppealStatus(str, Enum):
     ACCEPTED = "accepted"
     PERFORMED = "performed"
     RUN = "run"
-    RECALLED = "recalled"
+    REVOKED = "revoked"
+
+
+APPEAL_STATUS_EN_RU = {
+    AppealStatus.ACCEPTED: "Принято",
+    AppealStatus.PERFORMED: "Исполнено",
+    AppealStatus.RUN: "В работе",
+    AppealStatus.REVOKED: "Отозвано",
+}
 
 
 class AppealSource(str, Enum):
     TENANT = "tenant"
     DISPATCHER = "dispatcher"
     GIS = "gis"
+
+
+APPEAL_SOURCE_EN_RU = {
+    AppealSource.TENANT: "Самостоятельно жителем",
+    AppealSource.DISPATCHER: "Через диспетчерскую",
+    AppealSource.GIS: "Из ГИС",
+}

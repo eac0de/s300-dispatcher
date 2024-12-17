@@ -115,6 +115,10 @@ class RequestModel(Document):
         default=RequestStatus.ACCEPTED,
         title="Статус заявки",
     )
+    status_updated_at: datetime = Field(
+        default_factory=datetime.now,
+        title="Время смены заявки",
+    )
     relations: RelationsRS = Field(
         default_factory=RelationsRS,
         title="Связи с заявкой",

@@ -16,7 +16,7 @@ from models.appeal.embs.answer import AnswerAS, EmployeeAnswerAS
 from models.appeal.embs.observers import EmployeeObserverAS
 from models.appeal_comment.appeal_comment import AppealComment, EmployeeAppealComment
 from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
-from schemes.appeal.appeal_comment import AppealCommentDCScheme
+from schemes.appeal.appeal_comment import AppealCommentDCScheme, AppealCommentDUScheme
 from schemes.appeal.dispatcher_appeal import AppealUCScheme
 from services.appeal.appeal_service import AppealService
 from utils.rollbacker import Rollbacker
@@ -93,7 +93,7 @@ class DispatcherAppealUpdateService(AppealService):
             self.appeal.observers.departments = [d for d in self.appeal.observers.departments if d.id not in deleted_observers_department_ids]
         return await self.appeal.save()
 
-    async def answer_appeal(self, answer_scheme: AnswerAppealDCScheme) -> Appeal:
+    async def answer_appeal(self, scheme: AnswerAppealDCScheme) -> Appeal:
         if self.appeal.executor and self.appeal.executor.id != self.employee.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -101,7 +101,7 @@ class DispatcherAppealUpdateService(AppealService):
             )
         answer = AnswerAS(
             employee=EmployeeAnswerAS.model_validate(self.employee),
-            text=answer_scheme.text,
+            text=scheme.text,
         )
         if self.appeal.answer:
             self.appeal.add_answers.append(answer)
@@ -114,7 +114,7 @@ class DispatcherAppealUpdateService(AppealService):
         self,
         answer_id: PydanticObjectId,
         files: list[UploadFile],
-    ) -> list[File]:
+    ) -> Appeal:
         answer = await self._get_answer(answer_id)
         if not files or [file for file in files if file.size == 0]:
             raise HTTPException(
@@ -133,19 +133,18 @@ class DispatcherAppealUpdateService(AppealService):
                 rollbacker.add_rollback(f.delete)
                 new_files.append(f)
             answer.files.extend(new_files)
-            await self.appeal.save()
+            return await self.appeal.save()
         except:
             await rollbacker.rollback()
             raise
-        return answer.files
 
     async def update_appeal_answer(
         self,
         answer_id: PydanticObjectId,
-        answer_scheme: AnswerAppealDUScheme,
+        scheme: AnswerAppealDUScheme,
     ) -> Appeal:
         answer = await self._get_answer(answer_id)
-        deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in answer_scheme.files)
+        deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in scheme.files)
         if not deleted_file_ids:
             return self.appeal
         new_answer_files = []
@@ -181,7 +180,7 @@ class DispatcherAppealUpdateService(AppealService):
             )
         return answer
 
-    async def comment_appeal(self, comment_scheme: AppealCommentDCScheme) -> AppealComment:
+    async def comment_appeal(self, scheme: AppealCommentDCScheme) -> AppealComment:
         if self.appeal.status != AppealStatus.RUN:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -200,7 +199,7 @@ class DispatcherAppealUpdateService(AppealService):
         comment = AppealComment(
             employee=EmployeeAppealComment.model_validate(self.employee),
             appeal_id=self.appeal.id,
-            text=comment_scheme.text,
+            text=scheme.text,
             read_by={self.employee.id},
         )
         return await comment.save()
@@ -208,10 +207,10 @@ class DispatcherAppealUpdateService(AppealService):
     async def update_appeal_comment(
         self,
         comment_id: PydanticObjectId,
-        comment_scheme: AnswerAppealDUScheme,
+        scheme: AppealCommentDUScheme,
     ) -> AppealComment:
         comment = await self._get_comment(comment_id)
-        deleted_file_ids = set(f.id for f in comment.files) - set(f.id for f in comment_scheme.files)
+        deleted_file_ids = set(f.id for f in comment.files) - set(f.id for f in scheme.files)
         if not deleted_file_ids:
             return comment
         new_comment_files = []
@@ -221,7 +220,9 @@ class DispatcherAppealUpdateService(AppealService):
                 continue
             new_comment_files.append(file)
         comment.files = new_comment_files
-        return await comment.save()
+        await comment.save()
+        comment.read_by = {self.employee.id} if self.employee.id in comment.read_by else set()
+        return comment
 
     async def upload_comment_files(
         self,
@@ -251,6 +252,16 @@ class DispatcherAppealUpdateService(AppealService):
             await rollbacker.rollback()
             raise
         return comment.files
+
+    async def read_appeal_comment(
+        self,
+        comment_id: PydanticObjectId,
+    ) -> AppealComment:
+        comment = await self._get_comment(comment_id)
+        comment.read_by.add(self.employee.id)
+        await comment.save()
+        comment.read_by = {self.employee.id}
+        return comment
 
     async def _get_comment(self, comment_id: PydanticObjectId) -> AppealComment:
         comment = await AppealComment.find_one({"_id": comment_id, "appeal_id": self.appeal.id})

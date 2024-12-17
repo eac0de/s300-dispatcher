@@ -13,6 +13,10 @@ from client.s300.models.house import HouseS300
 from client.s300.models.provider import ProviderS300
 from client.s300.models.tenant import TenantS300
 from config import settings
+from models.appeal.appeal import Appeal
+from models.appeal_category.appeal_category import AppealCategory
+from models.appeal_comment.appeal_comment import AppealComment
+from models.appeal_control_right.appeal_control_right import AppealControlRight
 from models.catalog_item.catalog_item import CatalogItem
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
@@ -56,6 +60,10 @@ async def init_db(*docs: type[Document]):
             OtherPerson,
             OtherEmployee,
             OtherProvider,
+            Appeal,
+            AppealCategory,
+            AppealComment,
+            AppealControlRight,
             *docs,
         ],
     )

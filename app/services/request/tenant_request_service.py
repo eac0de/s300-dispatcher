@@ -230,8 +230,7 @@ class TenantRequestService(RequestService):
             _binds=binds,
             source=RequestSource.TENANT,
         )
-        request = await request.save()
-        return request
+        return await request.save()
 
     async def create_catalog_request(
         self,
@@ -319,8 +318,7 @@ class TenantRequestService(RequestService):
             _binds=binds,
             source=RequestSource.CATALOG,
         )
-        request = await request.save()
-        return request
+        return await request.save()
 
     async def _get_catalog_items(
         self,
@@ -398,8 +396,7 @@ class TenantRequestService(RequestService):
                 )
             )
         request.execution.evaluation_average = (sum(e.score for e in request.execution.evaluations) / len(request.execution.evaluations)) if request.execution.evaluations else 0
-        request = await request.save()
-        return request
+        return await request.save()
 
     async def upload_requester_attachments(
         self,
@@ -441,5 +438,5 @@ class TenantRequestService(RequestService):
             for f in request.requester_attachment.files:
                 await f.delete()
             raise
-        request = await request.save()
+        await request.save()
         return request.requester_attachment.files

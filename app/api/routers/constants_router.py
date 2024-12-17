@@ -5,8 +5,14 @@
 from fastapi import APIRouter, status
 from jsony_responses import JSONYResponse
 
+from models.appeal.constants import (
+    APPEAL_SOURCE_EN_RU,
+    APPEAL_STATUS_EN_RU,
+    APPEAL_TYPE_EN_RU,
+)
 from models.request.categories_tree import CATEGORY_SUBCATEGORY_WORK_AREA_TREE
 from models.request.constants import (
+    REQUEST_PAY_STATUS_EN_RU,
     REQUEST_STATUS_EN_RU,
     REQUEST_TAG_EN_RU,
     REQUEST_TYPE_EN_RU,
@@ -19,10 +25,27 @@ constants_router = APIRouter(
 
 
 @constants_router.get(
+    path="/appeals/",
+    status_code=status.HTTP_200_OK,
+)
+async def get_appeal_constants():
+    """
+    Получение констант обращений
+    """
+    results = {
+        "AppealType": [{"value": k, "text": v} for k, v in APPEAL_TYPE_EN_RU.items()],
+        "AppealStatus": [{"value": k, "text": v} for k, v in APPEAL_STATUS_EN_RU.items()],
+        "AppealSource": [{"value": k, "text": v} for k, v in APPEAL_SOURCE_EN_RU.items()],
+    }
+
+    return JSONYResponse(content={"results": results})
+
+
+@constants_router.get(
     path="/requests/",
     status_code=status.HTTP_200_OK,
 )
-async def get_requests_constants():
+async def get_request_constants():
     """
     Получение типов заявки
     """
@@ -32,6 +55,7 @@ async def get_requests_constants():
         # "RequestType": [{"value": k, "text": v} for k, v in REQUEST_TYPE_EN_RU.items()],
         # "RequestSupervisions": [{"value": "housing_supervision", "text": "004"}, {"value": "administrative_supervision", "text": "Администрация района"}],
         # "RequestTag": [{"value": k, "text": v} for k, v in REQUEST_TAG_EN_RU.items()],
+        "RequestPayStatus": [{"value": k, "text": v} for k, v in REQUEST_PAY_STATUS_EN_RU.items()],
         "RequestSamplesType": [{"value": k, "text": v} for k, v in TEMPLATE_TYPE_EN_RU.items()],
         "RequestStatus": [{"value": k, "text": v} for k, v in REQUEST_STATUS_EN_RU.items()],
         "RequestType": [{"value": k, "text": v} for k, v in REQUEST_TYPE_EN_RU.items()],
@@ -170,7 +194,7 @@ async def get_requests_constants():
     path="/requests/categories_tree/",
     status_code=status.HTTP_200_OK,
 )
-async def get_requests_categories_tree():
+async def get_request_categories_tree():
     """
     Получение дерева категорий, подкатегорий, областей работ и действий
     """

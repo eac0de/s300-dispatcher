@@ -10,7 +10,7 @@ from api.qp_translators.request_template_qp_translator import (
     DispatcherRequestTemplateQPTranslator,
 )
 from models.request_template.request_template import RequestTemplate
-from schemes.request_template_scheme import RequestTemplateCUScheme
+from schemes.request_template import RequestTemplateCUScheme
 from services.request_template_service import RequestTemplateService
 
 request_template_router = APIRouter(
@@ -32,7 +32,7 @@ async def create_request_template(
     """
 
     service = RequestTemplateService(employee)
-    return await service.create_template(scheme)
+    return await service.create_request_template(scheme)
 
 
 @request_template_router.get(
@@ -50,7 +50,7 @@ async def get_request_template_list(
     """
     params = await DispatcherRequestTemplateQPTranslator.parse(req.query_params)
     service = RequestTemplateService(employee)
-    templates = await service.get_templates(
+    templates = await service.get_request_templates(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
@@ -73,7 +73,7 @@ async def update_request_template(
     """
 
     service = RequestTemplateService(employee)
-    return await service.update_template(
+    return await service.update_request_template(
         request_template_id=request_template_id,
         scheme=scheme,
     )
@@ -92,4 +92,4 @@ async def delete_request_template(
     """
 
     service = RequestTemplateService(employee)
-    await service.delete_template(request_template_id)
+    await service.delete_request_template(request_template_id)

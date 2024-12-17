@@ -157,15 +157,14 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             RequestModel: Обновленная модель заявки
         """
         try:
-            if scheme.status == RequestStatus.ACCEPTED:
-                if self.request.status != RequestStatus.ACCEPTED:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Unable to change status to accepted",
-                    )
-                return self.request
+            if self.request.status == RequestStatus.ACCEPTED:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Unable to change status to accepted",
+                )
             if scheme.execution.provider.id != self.request.execution.provider.id:
                 await self._update_execution_provider(scheme.execution.provider.id)
+                await self._update_execution_employees([])
                 await self._update_request_history()
                 await self.request.save()
                 return self.request
@@ -213,6 +212,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     )
                 await self._update_execution_description(scheme.execution.description)
             if self.request.status != scheme.status:
+                self.request.status_updated_at = datetime.now()
                 self.request.status = scheme.status
                 self.updated_fields.append(
                     UpdatedField(
@@ -975,11 +975,11 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         if new == old:
             return
         add_employee_ids = new - old
-        delete_employee_ids = old - new
-        if delete_employee_ids:
+        deleted_employee_ids = old - new
+        if deleted_employee_ids:
             new_employee_list = []
             for e in self.request.execution.employees:
-                if e.id in delete_employee_ids:
+                if e.id in deleted_employee_ids:
                     self.updated_fields.append(
                         UpdatedField(
                             name="execution.employees",
@@ -991,7 +991,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     continue
                 new_employee_list.append(e)
             self.request.execution.employees = new_employee_list
-            self.request.monitoring.persons_in_charge = [p for p in self.request.monitoring.persons_in_charge if p.id not in delete_employee_ids and p.type == PersonInChargeType.EXECUTOR]
+            self.request.monitoring.persons_in_charge = [p for p in self.request.monitoring.persons_in_charge if p.id not in deleted_employee_ids and p.type == PersonInChargeType.EXECUTOR]
         if add_employee_ids:
             for employee_id in add_employee_ids:
                 employee = await EmployeeS300.get(employee_id)

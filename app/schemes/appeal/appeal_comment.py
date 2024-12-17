@@ -9,7 +9,7 @@ class AppealCommentDCScheme(Document):
     )
 
 
-class AnswerAppealDUScheme(BaseModel):
+class AppealCommentDUScheme(BaseModel):
     files: list[File] = Field(
         default_factory=list,
         title="Файлы вложения",

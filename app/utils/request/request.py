@@ -117,7 +117,7 @@ async def send_request_with_log(
                 error=error,
                 tag=tag,
             )
-            rl = await rl.save()
+            await rl.save()
             if error:
                 raise FailedDependencyError(description=error, tag=tag, request_log_id=rl.id)
         return status_code, res_body  # type: ignore

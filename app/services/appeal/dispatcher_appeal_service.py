@@ -19,7 +19,7 @@ from models.appeal_comment.appeal_comment import AppealComment
 from models.appeal_control_right.appeal_control_right import AppealControlRight
 from models.appeal_control_right.constants import AppealControlRightType
 from models.base.binds import DepartmentBinds
-from schemes.appeal.dispatcher_appeal import AppealDCScheme
+from schemes.appeal.dispatcher_appeal import AppealCommentStats, AppealDCScheme
 from services.appeal.appeal_service import AppealService
 
 
@@ -37,7 +37,7 @@ class DispatcherAppealService(AppealService):
         limit: int | None = None,
         sort: list[str] | None = None,
     ) -> FindMany[Appeal]:
-        query_list.append({"provider_id": self.employee.provider.id})
+        query_list.append({"provider._id": self.employee.provider.id})
         appeal_control_right = await AppealControlRight.find_one({"employee_id": self.employee.id})
         if appeal_control_right:
             if appeal_control_right.type == AppealControlRightType.DEPARTMENT:
@@ -58,13 +58,33 @@ class DispatcherAppealService(AppealService):
                     ]
                 }
             )
-        requests = Appeal.find(*query_list)
-        requests.sort(*sort if sort else ["-_id"])
+        appeals = Appeal.find(*query_list)
+        appeals.sort(*sort if sort else ["-_id"])
         if offset:
-            requests.skip(offset)
+            appeals.skip(offset)
         if limit:
-            requests.limit(limit)
-        return requests
+            appeals.limit(limit)
+        return appeals
+
+    async def get_comment_stats_dict(
+        self,
+        appeal_ids: list[PydanticObjectId],
+        employee_id: PydanticObjectId,
+    ) -> dict[PydanticObjectId, AppealCommentStats]:
+        pipeline = [
+            {"$match": {"appeal_id": {"$in": appeal_ids}}},
+            {
+                "$group": {
+                    "_id": "$appeal_id",
+                    "all": {"$sum": 1},
+                    "unread": {"$sum": {"$cond": [{"$not": [{"$in": [employee_id, "$read_by"]}]}, 1, 0]}},
+                }
+            },
+        ]
+
+        result = await AppealComment.aggregate(pipeline).to_list()
+        stats = {item["_id"]: AppealCommentStats(all=item["all"], unread=item["unread"]) for item in result}
+        return stats
 
     async def get_appeal(
         self,
@@ -177,7 +197,7 @@ class DispatcherAppealService(AppealService):
             incoming_at=scheme.incoming_at,
             deadline_at=deadline_at,
         )
-        return appeal
+        return await appeal.save()
 
     async def delete_appeal(
         self,
@@ -212,6 +232,31 @@ class DispatcherAppealService(AppealService):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Answer file not found",
         )
+
+    async def get_appeal_comments(
+        self,
+        appeal_id: PydanticObjectId,
+        query_list: list[dict[str, Any]],
+        offset: int | None = None,
+        limit: int | None = None,
+        sort: list[str] | None = None,
+    ) -> list[AppealComment]:
+        appeal = await self.get_appeal(appeal_id)
+        query_list.append({"appeal_id": appeal.id})
+        appeal_comments = AppealComment.find(*query_list)
+        appeal_comments.sort(*sort if sort else ["-_id"])
+        if offset:
+            appeal_comments.skip(offset)
+        if limit:
+            appeal_comments.limit(limit)
+        appeal_comment_list = await appeal_comments.to_list()
+        for comment in appeal_comment_list:
+            if self.employee.id in comment.read_by:
+                comment.read_by = {self.employee.id}
+            else:
+                comment.read_by = set()
+
+        return appeal_comment_list
 
     async def download_comment_file(
         self,

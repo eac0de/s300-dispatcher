@@ -63,11 +63,25 @@ class AppealUCScheme(BaseModel):
     )
 
 
+class AppealCommentStats(BaseModel):
+    all: int = Field(
+        default=0,
+        title="Всего комментариев",
+    )
+    unread: int = Field(
+        default=0,
+        title="Непрочитанных комментариев",
+    )
+
+
 class AppealDRScheme(Appeal):
     binds: DepartmentBinds = Field(
         alias="_binds",
         title="Привязки к организации и группе домов",
         exclude=True,
+    )
+    comment_stats: AppealCommentStats = Field(
+        title="Статистика комментариев",
     )
 
 
@@ -76,4 +90,7 @@ class AppealDLScheme(Appeal):
         alias="_binds",
         title="Привязки к организации и группе домов",
         exclude=True,
+    )
+    comment_stats: AppealCommentStats = Field(
+        title="Статистика комментариев",
     )

@@ -16,4 +16,4 @@ req:
 	poetry export -f requirements.txt --output app/requirements.txt --without-hashes
 
 test:
-	cd app && pytest -s -v
+	pytest -s -v app/

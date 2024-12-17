@@ -19,7 +19,7 @@ from models.request.categories_tree import (
 from models.request.request import RequestModel
 from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
-from schemes.request_template_scheme import RequestTemplateCUScheme
+from schemes.request_template import RequestTemplateCUScheme
 
 
 class RequestTemplateService:
@@ -39,7 +39,7 @@ class RequestTemplateService:
         """
         self.employee = employee
 
-    async def create_template(
+    async def create_request_template(
         self,
         scheme: RequestTemplateCUScheme,
     ) -> RequestTemplate:
@@ -59,12 +59,15 @@ class RequestTemplateService:
             if not scheme.category:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Request template with type 'request' requires a category",
+                    detail="Request request_template with type 'request' requires a category",
                 )
             await self._check_categories_tree(
                 category=scheme.category,
                 subcategory=scheme.subcategory,
             )
+        else:
+            scheme.category = None
+            scheme.subcategory = None
         request_template = RequestTemplate(
             provider_id=self.employee.provider.id,
             name=scheme.name,
@@ -74,15 +77,14 @@ class RequestTemplateService:
             body=scheme.body,
         )
         try:
-            request_template = await request_template.save()
+            return await request_template.save()
         except RevisionIdWasChanged as e:
             raise HTTPException(
-                detail="The request template name cannot be repeated",
+                detail="The request request_template name cannot be repeated",
                 status_code=status.HTTP_400_BAD_REQUEST,
             ) from e
-        return request_template
 
-    async def update_template(
+    async def update_request_template(
         self,
         request_template_id: PydanticObjectId,
         scheme: RequestTemplateCUScheme,
@@ -100,13 +102,13 @@ class RequestTemplateService:
         Returns:
             RequestTemplate: Созданный шаблон заявок
         """
-        request_template = await self._get_template(request_template_id)
+        request_template = await self._get_request_template(request_template_id)
         is_request_type = scheme.type == RequestTemplateType.REQUEST
         if is_request_type:
             if not scheme.category:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Request template with type 'request' requires a category",
+                    detail="Request request_template with type 'request' requires a category",
                 )
             await self._check_categories_tree(
                 category=scheme.category,
@@ -120,10 +122,15 @@ class RequestTemplateService:
             provider_id=request_template.provider_id,
             **scheme.model_dump(by_alias=True),
         )
-        request_template = await request_template.save()
-        return request_template
+        try:
+            return await request_template.save()
+        except RevisionIdWasChanged as e:
+            raise HTTPException(
+                detail="The request request_template name cannot be repeated",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            ) from e
 
-    async def delete_template(
+    async def delete_request_template(
         self,
         request_template_id: PydanticObjectId,
     ):
@@ -136,15 +143,15 @@ class RequestTemplateService:
         Raises:
             HTTPException: При неудовлетворительном запросе
         """
-        request_template = await self._get_template(request_template_id)
-        if await RequestModel.find({"relations.template_id": request_template.id}).exists():
+        request_template = await self._get_request_template(request_template_id)
+        if await RequestModel.find({"relations.request_template_id": request_template.id}).exists():
             raise HTTPException(
                 detail="Шаблон задействован в заявках",
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
             )
         await request_template.delete()
 
-    async def get_templates(
+    async def get_request_templates(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
@@ -158,13 +165,13 @@ class RequestTemplateService:
             list[RequestTemplate]: Список шаблонов заявок
         """
         query_list.append({"provider_id": self.employee.provider.id})
-        templates = RequestTemplate.find(*query_list)
-        templates.sort(*sort if sort else ["-_id"])
+        request_templates = RequestTemplate.find(*query_list)
+        request_templates.sort(*sort if sort else ["-_id"])
         if offset:
-            templates.skip(offset)
+            request_templates.skip(offset)
         if limit:
-            templates.limit(limit)
-        return templates
+            request_templates.limit(limit)
+        return request_templates
 
     @staticmethod
     async def _check_categories_tree(
@@ -190,7 +197,7 @@ class RequestTemplateService:
                     detail="Non-existent subcategory",
                 )
 
-    async def _get_template(
+    async def _get_request_template(
         self,
         request_template_id: PydanticObjectId,
     ) -> RequestTemplate:
@@ -202,7 +209,7 @@ class RequestTemplateService:
         )
         if not request_template:
             raise HTTPException(
-                detail="Request template not found",
+                detail="Request request_template not found",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         return request_template

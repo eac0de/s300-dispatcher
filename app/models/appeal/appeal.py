@@ -62,6 +62,12 @@ class Appeal(Document):
         default=None,
         title="Ответ на обращение",
     )
+    evaluation: int = Field(
+        default=0,
+        ge=0,
+        le=5,
+        title="Оценка жителя",
+    )
     add_answers: list[AnswerAS] = Field(
         default_factory=list,
         title="Дополнительные ответы на обращение",

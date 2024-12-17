@@ -56,12 +56,12 @@ class RequestPayStatus(str, Enum):
     PAID = "paid"
 
 
-REQUEST_PAY_STATUS_EN_RU = (
-    (RequestPayStatus.NO_CHARGE, "Не требует оплаты"),
-    (RequestPayStatus.WAIT, "Ожидание оплаты"),
-    (RequestPayStatus.PROCESSING, "Обработка отплаты"),
-    (RequestPayStatus.PAID, "Оплачена"),
-)
+REQUEST_PAY_STATUS_EN_RU = {
+    RequestPayStatus.NO_CHARGE: "Не требует оплаты",
+    RequestPayStatus.WAIT: "Ожидание оплаты",
+    RequestPayStatus.PROCESSING: "Обработка оплаты",
+    RequestPayStatus.PAID: "Оплачена",
+}
 
 
 class RequestTag(str, Enum):

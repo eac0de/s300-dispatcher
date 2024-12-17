@@ -22,13 +22,13 @@ class AppealService:
         start_of_year = current_time.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         start_of_next_year = start_of_year.replace(year=start_of_year.year + 1)
 
-        existing_appeal_count = Appeal.find(
+        existing_appeal_count = await Appeal.find(
             {
                 "provider._id": provider_id,
                 "created_at": {"$gte": start_of_year, "$lt": start_of_next_year},
             }
         ).count()
-        return f"{existing_appeal_count}-{current_time.strftime('%d')}/{current_time.year}"
+        return f"{existing_appeal_count+1}-{current_time.strftime('%m')}/{current_time.year}"
 
     @staticmethod
     async def get_filetag_for_answer(appeal_id: PydanticObjectId) -> str:

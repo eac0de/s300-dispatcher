@@ -30,6 +30,7 @@ from telegram_sender import TelegramSender, config_telegram_sender
 from template_renderer import config_template_renderer
 
 from api.middlewares.procces_time_middleware import ProcessTimeMiddleware
+from api.routers.appeal_category_router import appeal_category_router
 from api.routers.constants_router import constants_router
 from api.routers.dispatcher_appeal_router import dispatcher_appeal_router
 from api.routers.dispatcher_catalog_item_router import dispatcher_catalog_item_router
@@ -160,7 +161,6 @@ app.include_router(
     router=request_template_router,
     prefix="/dispatcher/request_templates",
 )
-
 app.include_router(
     router=dispatcher_catalog_item_router,
     prefix="/dispatcher/catalog",
@@ -184,6 +184,10 @@ app.include_router(
 app.include_router(
     router=dispatcher_appeal_router,
     prefix="/dispatcher/appeals",
+)
+app.include_router(
+    router=appeal_category_router,
+    prefix="/dispatcher/appeal_categories",
 )
 
 

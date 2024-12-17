@@ -88,3 +88,9 @@ class DispatcherAppealsQPTranslator(QPTranslator):
             description="Исполнитель заявки (Сотрудник)",
         ),
     }
+
+
+class DispatcherAppealCommentsQPTranslator(QPTranslator):
+    """
+    Класс с фильтрами для обращений диспетчера
+    """

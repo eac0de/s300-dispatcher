@@ -328,7 +328,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
                     }
                 )
                 self.add_rollback(related_request.update, {"$pull": {"relations.requests": {"_id": request.id}}})
-            request = await request.save()
+            await request.save()
         except:
             await self.rollback()
             raise

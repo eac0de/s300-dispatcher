@@ -12,7 +12,6 @@ from models.appeal_comment.appeal_comment import AppealComment
 from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
 from schemes.appeal.appeal_comment import AppealCommentDCScheme, AppealCommentDUScheme
 from schemes.appeal.dispatcher_appeal import (
-    AppealCommentStats,
     AppealDCScheme,
     AppealDLScheme,
     AppealDRScheme,
@@ -43,7 +42,7 @@ async def create_appeal(
 
     service = DispatcherAppealService(employee)
     appeal = await service.create_appeal(scheme)
-    return {**appeal.model_dump(by_alias=True), "comment_stats": AppealCommentStats(all=0, unread=0)}
+    return appeal
 
 
 @dispatcher_appeal_router.get(
@@ -69,12 +68,7 @@ async def get_appeal_list(
         limit=params.limit if params.limit and params.limit < 20 else 20,
         sort=params.sort,
     )
-    appeals_list = await appeals.to_list()
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[a.id for a in appeals_list],
-        employee_id=employee.id,
-    )
-    return [{**a.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(a.id, AppealCommentStats(all=0, unread=0))} for a in appeals_list]
+    return await appeals.to_list()
 
 
 @dispatcher_appeal_router.get(
@@ -91,12 +85,7 @@ async def get_appeal(
     """
 
     service = DispatcherAppealService(employee)
-    appeal = await service.get_appeal(appeal_id)
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[appeal.id],
-        employee_id=employee.id,
-    )
-    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+    return await service.get_appeal(appeal_id)
 
 
 @dispatcher_appeal_router.patch(
@@ -115,16 +104,11 @@ async def update_appeal(
 
     service = DispatcherAppealService(employee)
     appeal = await service.get_appeal(appeal_id)
-    update_service = DispatcherAppealUpdateService(
+    service = DispatcherAppealUpdateService(
         employee=employee,
         appeal=appeal,
     )
-    appeal = await update_service.update_appeal(scheme)
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[appeal.id],
-        employee_id=employee.id,
-    )
-    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+    return await service.update_appeal(scheme)
 
 
 @dispatcher_appeal_router.delete(
@@ -159,16 +143,11 @@ async def answer_appeal(
 
     service = DispatcherAppealService(employee)
     appeal = await service.get_appeal(appeal_id)
-    update_service = DispatcherAppealUpdateService(
+    service = DispatcherAppealUpdateService(
         employee=employee,
         appeal=appeal,
     )
-    appeal = await update_service.answer_appeal(scheme)
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[appeal.id],
-        employee_id=employee.id,
-    )
-    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+    return await service.answer_appeal(scheme)
 
 
 @dispatcher_appeal_router.patch(
@@ -188,22 +167,17 @@ async def update_appeal_answer(
 
     service = DispatcherAppealService(employee)
     appeal = await service.get_appeal(appeal_id)
-    update_service = DispatcherAppealUpdateService(
+    service = DispatcherAppealUpdateService(
         employee=employee,
         appeal=appeal,
     )
-    appeal = await update_service.update_appeal_answer(answer_id, scheme)
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[appeal.id],
-        employee_id=employee.id,
-    )
-    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+    return await service.update_appeal_answer(answer_id, scheme)
 
 
 @dispatcher_appeal_router.post(
     path="/{appeal_id}/answers/{answer_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=list[File],
 )
 async def upload_answer_files(
     employee: EmployeeDep,
@@ -221,12 +195,7 @@ async def upload_answer_files(
         employee=employee,
         appeal=appeal,
     )
-    appeal = await update_service.upload_answer_files(answer_id=answer_id, files=files)
-    comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[appeal.id],
-        employee_id=employee.id,
-    )
-    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+    return await update_service.upload_answer_files(answer_id=answer_id, files=files)
 
 
 @dispatcher_appeal_router.get(
