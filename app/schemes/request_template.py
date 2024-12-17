@@ -2,10 +2,12 @@
 Модуль со схемами для создания и обновления шаблона заявки
 """
 
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 from models.request.categories_tree import RequestCategory, RequestSubcategory
 from models.request_template.constants import RequestTemplateType
+from models.request_template.request_template import RequestTemplate
 
 
 class RequestTemplateCUScheme(BaseModel):
@@ -28,4 +30,11 @@ class RequestTemplateCUScheme(BaseModel):
     )
     body: str = Field(
         title="Тело шаблона",
+    )
+
+
+class RequestTemplateRLScheme(RequestTemplate):
+    provider_id: PydanticObjectId = Field(
+        title="Идентификатор организации-владельца категории",
+        exclude=True,
     )

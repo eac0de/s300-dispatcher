@@ -339,7 +339,7 @@ async def update_appeal_comment(
 
 
 @dispatcher_appeal_router.post(
-    path="/{appeal_id}/comments/{comment_id}/",
+    path="/{appeal_id}/comments/{comment_id}/files/",
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )

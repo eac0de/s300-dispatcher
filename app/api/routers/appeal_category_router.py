@@ -9,8 +9,7 @@ from api.dependencies.auth import EmployeeDep
 from api.qp_translators.appeal_category_qp_translator import (
     DispatcherAppealCategoryQPTranslator,
 )
-from models.appeal_category.appeal_category import AppealCategory
-from schemes.appeal_category import AppealCategoryCUScheme
+from schemes.appeal_category import AppealCategoryCUScheme, AppealCategoryRLScheme
 from services.appeal_category_service import AppealCategoryService
 
 appeal_category_router = APIRouter(
@@ -21,7 +20,7 @@ appeal_category_router = APIRouter(
 @appeal_category_router.post(
     path="/",
     status_code=status.HTTP_201_CREATED,
-    response_model=AppealCategory,
+    response_model=AppealCategoryRLScheme,
 )
 async def create_appeal_category(
     employee: EmployeeDep,
@@ -39,7 +38,7 @@ async def create_appeal_category(
     path="/",
     description="Получения списка заявок сотрудником.<br>" + DispatcherAppealCategoryQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
-    response_model=list[AppealCategory],
+    response_model=list[AppealCategoryRLScheme],
 )
 async def get_appeal_category_list(
     req: Request,
@@ -62,6 +61,7 @@ async def get_appeal_category_list(
 @appeal_category_router.patch(
     path="/{appeal_category_id}/",
     status_code=status.HTTP_200_OK,
+    response_model=AppealCategoryRLScheme,
 )
 async def update_appeal_category(
     employee: EmployeeDep,

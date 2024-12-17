@@ -9,8 +9,7 @@ from api.dependencies.auth import EmployeeDep
 from api.qp_translators.request_template_qp_translator import (
     DispatcherRequestTemplateQPTranslator,
 )
-from models.request_template.request_template import RequestTemplate
-from schemes.request_template import RequestTemplateCUScheme
+from schemes.request_template import RequestTemplateCUScheme, RequestTemplateRLScheme
 from services.request_template_service import RequestTemplateService
 
 request_template_router = APIRouter(
@@ -21,7 +20,7 @@ request_template_router = APIRouter(
 @request_template_router.post(
     path="/",
     status_code=status.HTTP_201_CREATED,
-    response_model=RequestTemplate,
+    response_model=RequestTemplateRLScheme,
 )
 async def create_request_template(
     employee: EmployeeDep,
@@ -39,7 +38,7 @@ async def create_request_template(
     path="/",
     description="Получения списка заявок сотрудником.<br>" + DispatcherRequestTemplateQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
-    response_model=list[RequestTemplate],
+    response_model=list[RequestTemplateRLScheme],
 )
 async def get_request_template_list(
     req: Request,
@@ -62,6 +61,7 @@ async def get_request_template_list(
 @request_template_router.patch(
     path="/{request_template_id}/",
     status_code=status.HTTP_200_OK,
+    response_model=RequestTemplateRLScheme,
 )
 async def update_request_template(
     employee: EmployeeDep,
