@@ -11,8 +11,8 @@ from api.qp_translators.request_qp_translator import TenantRequestQPTranslator
 from schemes.request.tenant_request import (
     RequestTCatalogCScheme,
     RequestTCScheme,
+    RequestTEvaluateUScheme,
     RequestTLScheme,
-    RequestTRateUScheme,
     RequestTRScheme,
 )
 from services.request.tenant_request_service import TenantRequestService
@@ -106,14 +106,14 @@ async def get_request(
 async def evaluate_request(
     tenant: TenantDep,
     request_id: PydanticObjectId,
-    scheme: RequestTRateUScheme,
+    scheme: RequestTEvaluateUScheme,
 ):
     """
     Оценивание выполнения заявки жителем
     """
 
     service = TenantRequestService(tenant)
-    return await service.rate_request(
+    return await service.evaluate_request(
         request_id=request_id,
         scheme=scheme,
     )

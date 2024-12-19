@@ -111,7 +111,7 @@ class ExecutionRequestTRateUScheme(BaseModel):
     )
 
 
-class RequestTRateUScheme(BaseModel):
+class RequestTEvaluateUScheme(BaseModel):
     """
     Класс схемы заявки для обновления ее оценки выполнения жителем
     """

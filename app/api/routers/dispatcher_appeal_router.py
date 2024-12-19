@@ -8,30 +8,49 @@ from api.qp_translators.appeal_qp_translator import (
     DispatcherAppealCommentsQPTranslator,
     DispatcherAppealsQPTranslator,
 )
+from models.appeal.appeal import Appeal
 from models.appeal_comment.appeal_comment import AppealComment
 from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
 from schemes.appeal.appeal_comment import AppealCommentDCScheme, AppealCommentDUScheme
+from schemes.appeal.appeal_stats import AppealStats
 from schemes.appeal.dispatcher_appeal import (
     AppealCommentStats,
     AppealDCScheme,
-    AppealDLScheme,
-    AppealDRScheme,
+    AppealDRLScheme,
+    AppealUAcceptScheme,
     AppealUCScheme,
 )
 from services.appeal.dispatcher_appeal_service import DispatcherAppealService
 from services.appeal.dispatcher_appeal_update_service import (
     DispatcherAppealUpdateService,
 )
+from utils.document_paginator import DocumentPagination
 
 dispatcher_appeal_router = APIRouter(
     tags=["dispatcher_appeals"],
 )
 
 
+@dispatcher_appeal_router.get(
+    path="/stats/",
+    status_code=status.HTTP_200_OK,
+    response_model=AppealStats,
+)
+async def get_appeal_stats(
+    employee: EmployeeDep,
+):
+    """
+    Получения статистики по обращениям сотрудником.
+    """
+    service = DispatcherAppealService(employee)
+    result = await service.get_appeal_stats()
+    return result
+
+
 @dispatcher_appeal_router.post(
     path="/",
     status_code=status.HTTP_201_CREATED,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def create_appeal(
     employee: EmployeeDep,
@@ -50,7 +69,7 @@ async def create_appeal(
     path="/",
     description="Получения списка обращений сотрудником.<br>" + DispatcherAppealsQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
-    response_model=list[AppealDLScheme],
+    response_model=DocumentPagination[AppealDRLScheme],
 )
 async def get_appeal_list(
     employee: EmployeeDep,
@@ -65,22 +84,31 @@ async def get_appeal_list(
     service = DispatcherAppealService(employee)
     appeals = await service.get_appeals(
         query_list=params.query_list,
-        offset=params.offset,
-        limit=params.limit if params.limit and params.limit < 20 else 20,
         sort=params.sort,
     )
-    appeals_list = await appeals.to_list()
+    pagination = await DocumentPagination[Appeal].from_find(
+        find=appeals,
+        limit=params.limit if params.limit else 100,
+        offset=params.offset,
+    )
     comment_stats_dict = await service.get_comment_stats_dict(
-        appeal_ids=[a.id for a in appeals_list],
+        appeal_ids=[a.id for a in pagination.result],
         employee_id=employee.id,
     )
-    return [{**a.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(a.id, AppealCommentStats(all=0, unread=0))} for a in appeals_list]
+    pagination.result = [  # type: ignore
+        {
+            **a.model_dump(by_alias=True),
+            "comment_stats": comment_stats_dict.get(a.id, AppealCommentStats(all=0, unread=0)),
+        }
+        for a in pagination.result
+    ]
+    return pagination
 
 
 @dispatcher_appeal_router.get(
     path="/{appeal_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def get_appeal(
     employee: EmployeeDep,
@@ -102,7 +130,7 @@ async def get_appeal(
 @dispatcher_appeal_router.patch(
     path="/{appeal_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def update_appeal(
     employee: EmployeeDep,
@@ -143,10 +171,38 @@ async def delete_appeal(
     await service.delete_appeal(appeal_id)
 
 
+@dispatcher_appeal_router.patch(
+    path="/{appeal_id}/accept/",
+    status_code=status.HTTP_200_OK,
+    response_model=AppealDRLScheme,
+)
+async def accept_appeal(
+    employee: EmployeeDep,
+    appeal_id: PydanticObjectId,
+    scheme: AppealUAcceptScheme,
+):
+    """
+    Принятие обращения
+    """
+
+    service = DispatcherAppealService(employee)
+    appeal = await service.get_appeal(appeal_id)
+    update_service = DispatcherAppealUpdateService(
+        employee=employee,
+        appeal=appeal,
+    )
+    appeal = await update_service.accept_appeal(scheme)
+    comment_stats_dict = await service.get_comment_stats_dict(
+        appeal_ids=[appeal.id],
+        employee_id=employee.id,
+    )
+    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+
+
 @dispatcher_appeal_router.post(
     path="/{appeal_id}/answers/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def answer_appeal(
     employee: EmployeeDep,
@@ -174,7 +230,7 @@ async def answer_appeal(
 @dispatcher_appeal_router.patch(
     path="/{appeal_id}/answers/{answer_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def update_appeal_answer(
     employee: EmployeeDep,
@@ -203,7 +259,7 @@ async def update_appeal_answer(
 @dispatcher_appeal_router.post(
     path="/{appeal_id}/answers/{answer_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=AppealDRScheme,
+    response_model=AppealDRLScheme,
 )
 async def upload_answer_files(
     employee: EmployeeDep,

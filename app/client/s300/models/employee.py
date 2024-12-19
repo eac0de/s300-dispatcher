@@ -3,19 +3,26 @@
 """
 
 from collections.abc import Mapping
+from enum import Enum
 from typing import Any, Self
 
 import pydantic_core
 from beanie import PydanticObjectId
-from client.s300.client import ClientS300
 from pydantic import BaseModel, Field
 from starlette import status
 
+from client.s300.client import ClientS300
 from errors import FailedDependencyError
 from models.extra.external_control import ExternalControl
 from models.extra.phone_number import PhoneNumber
 from utils.document_cache import DocumentCache
 from utils.request.constants import RequestMethod
+
+
+class AppealAccessLevel(str, Enum):
+    ALL = "all"
+    DEPARTMENT = "by_dept"
+    BASIC = "basic"
 
 
 class PositionES300S(BaseModel):
@@ -113,6 +120,9 @@ class EmployeeS300(DocumentCache):
     )
     is_super: bool = Field(
         title="Суперпользователь",
+    )
+    appeal_access_level: AppealAccessLevel = Field(
+        title="Права на контроль обращений",
     )
 
     @classmethod

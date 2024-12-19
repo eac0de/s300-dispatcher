@@ -138,6 +138,7 @@ async def auth_employee():
             "position": {"_id": "6266a35e0714690018b76001", "name": "Иванова Ирина Ивановна"},
             "provider": {"_id": "61b06a693b6d6e0019260942", "name": 'ТСЖ "На Примере"'},
             "short_name": "Тестовый П..",
+            "appeal_access_level": "basic",
         }
     )
     return await worker.save()

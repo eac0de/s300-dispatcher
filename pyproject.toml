@@ -31,6 +31,7 @@ telegram-sender = {git = "https://github.com/eac0de/u_utils.git", subdirectory =
 template-renderer = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "template_renderer"}
 file-manager = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "file_manager"}
 email-sender = {git = "https://github.com/eac0de/u_utils.git", subdirectory = "email_sender"}
+elasticsearch = {extras = ["async"], version = "^8.17.0"}
 
 [tool.poetry.group.dev.dependencies]
 aiodocker = "^0.24.0"

@@ -5,6 +5,7 @@
 """
 
 from beanie import Document, init_beanie
+from elasticsearch import AsyncElasticsearch
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from client.s300.models.area import AreaS300
@@ -16,7 +17,6 @@ from config import settings
 from models.appeal.appeal import Appeal
 from models.appeal_category.appeal_category import AppealCategory
 from models.appeal_comment.appeal_comment import AppealComment
-from models.appeal_control_right.appeal_control_right import AppealControlRight
 from models.catalog_item.catalog_item import CatalogItem
 from models.other.other_employee import OtherEmployee
 from models.other.other_person import OtherPerson
@@ -25,6 +25,7 @@ from models.request.archived_request import ArchivedRequestModel
 from models.request.request import RequestModel
 from models.request_history.request_history import RequestHistory
 from models.request_template.request_template import RequestTemplate
+from utils.document_es import DocumentES
 from utils.request.request_log import RequestLog
 
 
@@ -43,29 +44,35 @@ async def init_db(*docs: type[Document]):
     3. Инициализируются модели документов для базы данных логов.
     """
     client = AsyncIOMotorClient(str(settings.MONGO_URI))
+    document_models = [
+        RequestModel,
+        ArchivedRequestModel,
+        TenantS300,
+        EmployeeS300,
+        HouseS300,
+        AreaS300,
+        ProviderS300,
+        RequestHistory,
+        CatalogItem,
+        RequestTemplate,
+        OtherPerson,
+        OtherEmployee,
+        OtherProvider,
+        Appeal,
+        AppealCategory,
+        AppealComment,
+        *docs,
+    ]
+
+    es = AsyncElasticsearch(settings.ELASTICSEARCH_HOSTS)
+
+    for model in document_models:
+        if issubclass(model, DocumentES):
+            await model.init_es(es)
 
     await init_beanie(
         database=client.get_database(settings.MAIN_DB),
-        document_models=[
-            RequestModel,
-            ArchivedRequestModel,
-            TenantS300,
-            EmployeeS300,
-            HouseS300,
-            AreaS300,
-            ProviderS300,
-            RequestHistory,
-            CatalogItem,
-            RequestTemplate,
-            OtherPerson,
-            OtherEmployee,
-            OtherProvider,
-            Appeal,
-            AppealCategory,
-            AppealComment,
-            AppealControlRight,
-            *docs,
-        ],
+        document_models=document_models,
     )
     await init_beanie(
         database=client.get_database(settings.LOGS_DB),

@@ -144,7 +144,7 @@ class RequestTemplateService:
             HTTPException: При неудовлетворительном запросе
         """
         request_template = await self._get_request_template(request_template_id)
-        if await RequestModel.find({"relations.request_template_id": request_template.id}).exists():
+        if await RequestModel.find({"relations.template_id": request_template.id}).exists():
             raise HTTPException(
                 detail="Шаблон задействован в заявках",
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,

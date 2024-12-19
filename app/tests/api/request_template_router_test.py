@@ -57,7 +57,7 @@ class TestRequestTemplateRouter:
         request.relations.template_id = request_template.id
         await request.save()
         resp = await api_employee_client.delete(f"/dispatcher/request_templates/{request_template.id}/")
-        assert resp.status_code == status.HTTP_403_FORBIDDEN
+        assert resp.status_code == status.HTTP_406_NOT_ACCEPTABLE
 
         request.relations.template_id = None
         await request.save()

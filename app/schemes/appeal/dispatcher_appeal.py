@@ -46,19 +46,35 @@ class AppealDCScheme(BaseModel):
 
 
 class AppealUCScheme(BaseModel):
-    type: AppealType = Field(
+    type: AppealType | None = Field(
+        default=None,
         title="Тип обращения",
     )
-    observers: ObserversAppealDUCScheme = Field(
+    observers: ObserversAppealDUCScheme | None = Field(
+        default=None,
         title="Наблюдатели обращения",
     )
-    category_ids: set[PydanticObjectId] = Field(
+    category_ids: set[PydanticObjectId] | None = Field(
+        default=None,
         title="Идентификаторы категорий обращения",
     )
     incoming_number: str | None = Field(
+        default=None,
         title="Входящий номер",
     )
     incoming_at: datetime | None = Field(
+        default=None,
+        title="Входящая дата",
+    )
+
+
+class AppealUAcceptScheme(BaseModel):
+    incoming_number: str | None = Field(
+        default=None,
+        title="Входящий номер",
+    )
+    incoming_at: datetime | None = Field(
+        default=None,
         title="Входящая дата",
     )
 
@@ -74,18 +90,7 @@ class AppealCommentStats(BaseModel):
     )
 
 
-class AppealDRScheme(Appeal):
-    binds: DepartmentBinds = Field(
-        alias="_binds",
-        title="Привязки к организации и группе домов",
-        exclude=True,
-    )
-    comment_stats: AppealCommentStats = Field(
-        title="Статистика комментариев",
-    )
-
-
-class AppealDLScheme(Appeal):
+class AppealDRLScheme(Appeal):
     binds: DepartmentBinds = Field(
         alias="_binds",
         title="Привязки к организации и группе домов",

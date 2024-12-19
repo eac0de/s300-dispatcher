@@ -33,6 +33,7 @@ class Appeal(BaseDocument):
         title="Обращатор",
     )
     executor: EmployeeAS | None = Field(
+        default=None,
         title="Исполнитель обращения",
     )
     relations: RelationsAS = Field(
@@ -86,9 +87,11 @@ class Appeal(BaseDocument):
         title="Источник обращения",
     )
     incoming_number: str | None = Field(
+        default=None,
         title="Входящий номер",
     )
     incoming_at: datetime | None = Field(
+        default=None,
         title="Входящая дата",
     )
     deadline_at: datetime = Field(

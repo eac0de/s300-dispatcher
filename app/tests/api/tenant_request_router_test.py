@@ -79,7 +79,7 @@ class TestTenantRequestRouter:
         assert isinstance(resp_json, dict)
         assert resp_json["_id"] == str(request.id)
 
-    async def test_rate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
+    async def test_evaluate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
         request = requests[0]
         evaluation_score = 5
         data = {

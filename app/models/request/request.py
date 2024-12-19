@@ -155,4 +155,3 @@ class RequestModel(BaseDocument):
         """
 
         name = "Request"
-        keep_nulls = False

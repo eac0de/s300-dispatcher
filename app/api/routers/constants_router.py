@@ -17,6 +17,7 @@ from models.request.constants import (
     REQUEST_TAG_EN_RU,
     REQUEST_TYPE_EN_RU,
 )
+from models.request.embs.action import ACTION_TYPE_EN_RU
 from models.request_template.constants import TEMPLATE_TYPE_EN_RU
 
 constants_router = APIRouter(
@@ -56,9 +57,10 @@ async def get_request_constants():
         # "RequestSupervisions": [{"value": "housing_supervision", "text": "004"}, {"value": "administrative_supervision", "text": "Администрация района"}],
         # "RequestTag": [{"value": k, "text": v} for k, v in REQUEST_TAG_EN_RU.items()],
         "RequestPayStatus": [{"value": k, "text": v} for k, v in REQUEST_PAY_STATUS_EN_RU.items()],
-        "RequestSamplesType": [{"value": k, "text": v} for k, v in TEMPLATE_TYPE_EN_RU.items()],
+        "RequestTemplateType": [{"value": k, "text": v} for k, v in TEMPLATE_TYPE_EN_RU.items()],
         "RequestStatus": [{"value": k, "text": v} for k, v in REQUEST_STATUS_EN_RU.items()],
         "RequestType": [{"value": k, "text": v} for k, v in REQUEST_TYPE_EN_RU.items()],
+        "RequestActionType": [{"value": k, "text": v} for k, v in ACTION_TYPE_EN_RU.items()],
         "RequestSupervision": [{"value": "housing_supervision", "text": "004"}, {"value": "administrative_supervision", "text": "Администрация района"}],
         "IntercomStatusChoices": [{"value": k, "text": v} for k, v in REQUEST_TAG_EN_RU.items()],
         "AccrualsSectorType": [

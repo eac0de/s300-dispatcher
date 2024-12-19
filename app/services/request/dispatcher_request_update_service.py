@@ -157,7 +157,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             RequestModel: Обновленная модель заявки
         """
         try:
-            if self.request.status == RequestStatus.ACCEPTED:
+            if scheme.status == RequestStatus.ACCEPTED:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Unable to change status to accepted",

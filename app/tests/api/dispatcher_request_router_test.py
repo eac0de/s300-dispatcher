@@ -220,7 +220,7 @@ class TestDispatcherRequestRouter:
     async def test_download_requester_attachment_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         file_content = b"file_content_1"
-        file = await File.create(file_content, "file1.txt", f"requester_attachment {request.id}")
+        file = await File.create(file_content, "file1.txt", f"request requester_attachment {request.id}")
         request.requester_attachment.files.append(file)
         await request.save()
         resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/requester_attachment_files/{file.id}/")
@@ -243,8 +243,8 @@ class TestDispatcherRequestRouter:
     async def test_download_execution_attachment_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         file_content = b"file_content_1"
-        file = await File.create(file_content, "file1.txt", f"execution_attachment {request.id}")
-        request.requester_attachment.files.append(file)
+        file = await File.create(file_content, "file1.txt", f"request execution_attachment {request.id}")
+        request.execution.attachment.files.append(file)
         await request.save()
         resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_attachment_files/{file.id}/")
         assert resp.status_code == status.HTTP_200_OK
@@ -266,8 +266,8 @@ class TestDispatcherRequestRouter:
     async def test_download_execution_act_file(self, api_employee_client: AsyncClient, requests: list[RequestModel]):
         request = requests[0]
         file_content = b"file_content_1"
-        file = await File.create(file_content, "file1.txt", f"execution_act {request.id}")
-        request.requester_attachment.files.append(file)
+        file = await File.create(file_content, "file1.txt", f"request execution_act {request.id}")
+        request.execution.act.files.append(file)
         await request.save()
         resp = await api_employee_client.get(f"/dispatcher/requests/{request.id}/execution_act_files/{file.id}/")
         assert resp.status_code == status.HTTP_200_OK

@@ -13,11 +13,12 @@ from client.s300.models.employee import EmployeeS300
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealStatus
 from models.appeal.embs.answer import AnswerAS, EmployeeAnswerAS
+from models.appeal.embs.employee import EmployeeAS
 from models.appeal.embs.observers import EmployeeObserverAS
 from models.appeal_comment.appeal_comment import AppealComment, EmployeeAppealComment
 from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
 from schemes.appeal.appeal_comment import AppealCommentDCScheme, AppealCommentDUScheme
-from schemes.appeal.dispatcher_appeal import AppealUCScheme
+from schemes.appeal.dispatcher_appeal import AppealUAcceptScheme, AppealUCScheme
 from services.appeal.appeal_service import AppealService
 from utils.rollbacker import Rollbacker
 
@@ -108,6 +109,18 @@ class DispatcherAppealUpdateService(AppealService):
         else:
             self.appeal.answer = answer
             self.appeal.status = AppealStatus.PERFORMED
+        return await self.appeal.save()
+
+    async def accept_appeal(self, scheme: AppealUAcceptScheme) -> Appeal:
+        if self.appeal.status != AppealStatus.ACCEPTED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="To be accepted, the appeal must be in an 'accepted' status",
+            )
+        self.appeal.incoming_number = scheme.incoming_number
+        self.appeal.incoming_at = scheme.incoming_at
+        self.appeal.status = AppealStatus.RUN
+        self.appeal.executor = EmployeeAS.model_validate(self.employee.model_dump(by_alias=True))
         return await self.appeal.save()
 
     async def upload_answer_files(

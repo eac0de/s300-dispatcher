@@ -94,3 +94,8 @@ class DispatcherAppealCommentsQPTranslator(QPTranslator):
     """
     Класс с фильтрами для обращений диспетчера
     """
+
+class TenantAppealsQPTranslator(QPTranslator):
+    """
+    Класс с фильтрами для обращений диспетчера
+    """

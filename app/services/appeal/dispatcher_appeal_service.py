@@ -8,7 +8,7 @@ from file_manager import File
 from starlette import status
 
 from client.s300.models.department import DepartmentS300
-from client.s300.models.employee import EmployeeS300
+from client.s300.models.employee import AppealAccessLevel, EmployeeS300
 from client.s300.models.tenant import TenantS300
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealSource, AppealStatus
@@ -16,9 +16,8 @@ from models.appeal.embs.appealer import Appealer
 from models.appeal.embs.employee import DispatcherAS, EmployeeAS, ProviderAS
 from models.appeal.embs.observers import EmployeeObserverAS, ObserversAS
 from models.appeal_comment.appeal_comment import AppealComment
-from models.appeal_control_right.appeal_control_right import AppealControlRight
-from models.appeal_control_right.constants import AppealControlRightType
 from models.base.binds import DepartmentBinds
+from schemes.appeal.appeal_stats import AppealStats
 from schemes.appeal.dispatcher_appeal import AppealCommentStats, AppealDCScheme
 from services.appeal.appeal_service import AppealService
 
@@ -30,6 +29,64 @@ class DispatcherAppealService(AppealService):
         super().__init__()
         self.employee = employee
 
+    async def get_appeal_stats(
+        self,
+    ) -> AppealStats:
+        """
+        Получение статистики по заявкам
+
+        Returns:
+            RequestStats: Результат
+        """
+        current_time = datetime.now()
+        pipeline = [
+            {
+                "$match": {
+                    "provider._id": self.employee.provider.id,
+                }
+            },
+            {
+                "$addFields": {
+                    "is_overdue": {
+                        "$cond": {
+                            "if": {"$lt": ["$deadline_at", current_time]},
+                            "then": True,
+                            "else": False,
+                        }
+                    }
+                }
+            },
+            {
+                "$facet": {
+                    "accepted": [
+                        {"$match": {"status": AppealStatus.ACCEPTED}},
+                        {"$count": "count"},
+                    ],
+                    "run": [
+                        {"$match": {"status": AppealStatus.RUN}},
+                        {"$count": "count"},
+                    ],
+                    "overdue": [
+                        {"$match": {"is_overdue": True}},
+                        {"$count": "count"},
+                    ],
+                    "performed": [
+                        {"$match": {"status": AppealStatus.PERFORMED}},
+                        {"$count": "count"},
+                    ],
+                }
+            },
+        ]
+
+        result = await Appeal.aggregate(pipeline).to_list()
+        stats = result[0] if result else {}
+        return AppealStats(
+            accepted=stats["accepted"][0].get("count", 0) if stats.get("accepted") else 0,
+            run=stats["run"][0].get("count", 0) if stats.get("run") else 0,
+            overdue=stats["overdue"][0].get("count", 0) if stats.get("overdue") else 0,
+            performed=stats["performed"][0].get("count", 0) if stats.get("performed") else 0,
+        )
+
     async def get_appeals(
         self,
         query_list: list[dict[str, Any]],
@@ -37,27 +94,7 @@ class DispatcherAppealService(AppealService):
         limit: int | None = None,
         sort: list[str] | None = None,
     ) -> FindMany[Appeal]:
-        query_list.append({"provider._id": self.employee.provider.id})
-        appeal_control_right = await AppealControlRight.find_one({"employee_id": self.employee.id})
-        if appeal_control_right:
-            if appeal_control_right.type == AppealControlRightType.DEPARTMENT:
-                query_list.append(
-                    {
-                        "$or": [
-                            {"_binds.dp": self.employee.department.id},
-                            {"dispatcher._id": self.employee.id},
-                        ]
-                    }
-                )
-        else:
-            query_list.append(
-                {
-                    "$or": [
-                        {"observers.departments": [], "observers.employees": []},
-                        {"dispatcher._id": self.employee.id},
-                    ]
-                }
-            )
+        query_list.append(await self._get_employee_query_binds())
         appeals = Appeal.find(*query_list)
         appeals.sort(*sort if sort else ["-_id"])
         if offset:
@@ -90,20 +127,10 @@ class DispatcherAppealService(AppealService):
         self,
         appeal_id: PydanticObjectId,
     ) -> Appeal:
-        query: dict = {"_id": appeal_id, "provider_id": self.employee.provider.id}
-        appeal_control_right = await AppealControlRight.find_one({"employee_id": self.employee.id})
-        if appeal_control_right:
-            if appeal_control_right.type == AppealControlRightType.DEPARTMENT:
-                query["$or"] = [
-                    {"_binds.dp": self.employee.department.id},
-                    {"dispatcher._id": self.employee.id},
-                ]
-
-        else:
-            query["$or"] = [
-                {"observers.departments": [], "observers.employees": []},
-                {"dispatcher._id": self.employee.id},
-            ]
+        query: dict = {
+            "_id": appeal_id,
+        }
+        query.update(await self._get_employee_query_binds())
         appeal = await Appeal.find_one(query)
         if not appeal:
             raise HTTPException(
@@ -185,7 +212,7 @@ class DispatcherAppealService(AppealService):
             dispatcher=dispatcher,
             appealer=appealer,
             executor=executor,
-            status=AppealStatus.RUN,
+            status=AppealStatus.RUN if executor else AppealStatus.ACCEPTED,
             _type=scheme.type,
             observers=observers,
             category_ids=scheme.category_ids,
@@ -278,3 +305,27 @@ class DispatcherAppealService(AppealService):
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Comment file not found",
         )
+
+    async def _get_employee_query_binds(self) -> dict:
+        query_binds: dict = {"provider._id": self.employee.provider.id}
+
+        if self.employee.appeal_access_level != AppealAccessLevel.BASIC:
+            if self.employee.appeal_access_level == AppealAccessLevel.DEPARTMENT:
+                query_binds.update(
+                    {
+                        "$or": [
+                            {"_binds.dp": self.employee.department.id},
+                            {"dispatcher._id": self.employee.id},
+                        ]
+                    }
+                )
+        else:
+            query_binds.update(
+                {
+                    "$or": [
+                        {"observers.departments": [], "observers.employees": []},
+                        {"dispatcher._id": self.employee.id},
+                    ]
+                }
+            )
+        return query_binds

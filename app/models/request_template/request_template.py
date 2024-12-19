@@ -43,7 +43,6 @@ class RequestTemplate(BaseDocument):
         Настройки модели позиции каталога
         """
 
-        keep_nulls = False
         indexes = [
             IndexModel(
                 keys=["provider_id", "name"],

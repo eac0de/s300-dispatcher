@@ -74,15 +74,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
         current_time = datetime.now()
         pipeline = [
             {
-                "$match": {
-                    "_binds.pr": self.employee.binds_permissions.pr,
-                    "_binds.hg": self.employee.binds_permissions.hg,
-                    "$or": [
-                        {"status": RequestStatus.ACCEPTED},
-                        {"status": RequestStatus.RUN},
-                        {"category": RequestCategory.EMERGENCY},
-                    ],
-                }
+                "$match": await self._get_employee_query_binds(),
             },
             {
                 "$addFields": {
@@ -150,12 +142,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
         Returns:
             FindMany[RequestModel]: Список заявок
         """
-        query_list.append(
-            {
-                "_binds.pr": self.employee.binds_permissions.pr,
-                "_binds.hg": self.employee.binds_permissions.hg,
-            }
-        )
+        query_list.append(await self._get_employee_query_binds())
         requests = RequestModel.find(*query_list)
         requests.sort(*sort if sort else ["-_id"])
         if offset:
@@ -181,12 +168,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
             RequestModel: Заявка
         """
         query = {"_id": request_id}
-        query.update(
-            {
-                "_binds.pr": self.employee.binds_permissions.pr,
-                "_binds.hg": self.employee.binds_permissions.hg,
-            }
-        )
+        query.update(await self._get_employee_query_binds())
         request = await RequestModel.find_one(query)
         if not request:
             raise HTTPException(
@@ -408,8 +390,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
             return []
         start_at = start_at.replace(hour=0, minute=0, second=0, microsecond=0)
         query = {
-            "_binds.pr": self.employee.binds_permissions.pr,
-            "_binds.hg": self.employee.binds_permissions.hg,
+            **await self._get_employee_query_binds(),
             "execution.start_at": {"$lt": start_at + timedelta(days=7)},
             "execution.end_at": {"$gte": start_at},
             "execution.employees._id": {"$in": employee_ids},
@@ -482,8 +463,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
 
         # Запрос для получения всех заявок в заданный диапазон
         query = {
-            "_binds.pr": self.employee.binds_permissions.pr,
-            "_binds.hg": self.employee.binds_permissions.hg,
+            **await self._get_employee_query_binds(),
             "execution.start_at": {"$lt": start_at + timedelta(days=1)},
             "execution.end_at": {"$gte": start_at},
             "execution.employees._id": {"$in": employee_ids},
@@ -620,3 +600,10 @@ class DispatcherRequestService(RequestService, Rollbacker):
                 detail="File not found",
             )
         return f
+
+    async def _get_employee_query_binds(self) -> dict:
+        query_binds: dict = {
+            "_binds.pr": self.employee.binds_permissions.pr,
+            "_binds.hg": self.employee.binds_permissions.hg,
+        }
+        return query_binds

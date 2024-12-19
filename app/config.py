@@ -63,5 +63,10 @@ class Settings(BaseSettings):
     TG_BOT_TOKEN: str = "7807646643:AAG4Bmro_dBzznHqq3ys90zs4pe_tFnSv3M"
     REQUEST_SERVICE_CHAT_ID: int = -1002457675475
 
+    # es
+    ELASTICSEARCH_HOSTS: list[str] = [
+        "http://elasticsearch:9200",
+    ]
+
 
 settings = Settings()

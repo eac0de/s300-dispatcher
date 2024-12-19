@@ -35,7 +35,7 @@ from schemes.request.tenant_request import (
     CatalogItemCommerceRequestTCatalogCScheme,
     RequestTCatalogCScheme,
     RequestTCScheme,
-    RequestTRateUScheme,
+    RequestTEvaluateUScheme,
 )
 from services.dispatcher_catalog_item_service import DispatcherCatalogItemService
 from services.request.request_service import RequestService
@@ -357,17 +357,17 @@ class TenantRequestService(RequestService):
             )
         return catalog_items
 
-    async def rate_request(
+    async def evaluate_request(
         self,
         request_id: PydanticObjectId,
-        scheme: RequestTRateUScheme,
+        scheme: RequestTEvaluateUScheme,
     ) -> RequestModel:
         """
         Оценка выполнения заявки
 
         Args:
             request_id (PydanticObjectId): Идентификатор заявки
-            scheme (RequestTRateUScheme): Схема для проставления оценки
+            scheme (RequestTEvaluateUScheme): Схема для проставления оценки
 
         Raises:
             HTTPException: _description_

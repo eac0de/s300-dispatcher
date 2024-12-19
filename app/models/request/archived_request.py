@@ -43,4 +43,3 @@ class ArchivedRequestModel(RequestModel):
         """
 
         name = "ArchivedRequest"
-        keep_nulls = False
