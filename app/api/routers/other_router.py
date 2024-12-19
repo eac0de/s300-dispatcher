@@ -32,6 +32,7 @@ other_router = APIRouter(
 
 @other_router.get(
     path="/persons/",
+    description="Получение списка сторонних лиц.<br>" + OtherPersonQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[OtherPersonRScheme],
 )
@@ -46,13 +47,13 @@ async def get_other_person_list(
 
     params = await OtherPersonQPTranslator.parse(req.query_params)
     service = OtherService(employee)
-    other_person_list = await service.get_other_person_list(
+    other_persons = await service.get_other_persons(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_person_list
+    return await other_persons.to_list()
 
 
 @other_router.post(
@@ -128,13 +129,13 @@ async def get_other_employee_list(
 
     params = await OtherEmployeeQPTranslator.parse(req.query_params)
     service = OtherService(employee)
-    other_employee_list = await service.get_other_employee_list(
+    other_employees = await service.get_other_employees(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_employee_list
+    return await other_employees.to_list()
 
 
 @other_router.post(
@@ -195,6 +196,7 @@ async def delete_other_employee(
 
 @other_router.get(
     path="/providers/",
+    description="Получение списка сторонних организаций.<br>" + OtherProviderQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,
     response_model=list[OtherProviderRScheme],
 )
@@ -209,13 +211,13 @@ async def get_other_provider_list(
 
     params = await OtherProviderQPTranslator.parse(req.query_params)
     service = OtherService(employee)
-    other_provider_list = await service.get_other_provider_list(
+    other_providers = await service.get_other_providers(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
-    return other_provider_list
+    return await other_providers.to_list()
 
 
 @other_router.post(

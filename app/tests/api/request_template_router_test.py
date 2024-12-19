@@ -31,6 +31,7 @@ class TestRequestTemplateRouter:
         assert isinstance(resp_json, list)
         assert len(resp_json) == 1
         assert resp_json[0]["_id"] == str(request_template.id)
+        
 
     async def test_update_request_template(self, api_employee_client: AsyncClient, request_templates: list[RequestTemplate]):
         request_template = request_templates[0]

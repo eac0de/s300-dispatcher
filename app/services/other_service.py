@@ -5,6 +5,7 @@
 from typing import Any
 
 from beanie import PydanticObjectId
+from beanie.odm.queries.find import FindMany
 from fastapi import HTTPException
 from starlette import status
 
@@ -37,13 +38,13 @@ class OtherService:
         """
         self.employee = employee
 
-    async def get_other_person_list(
+    async def get_other_persons(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
         limit: int | None = None,
         sort: list[str] | None = None,
-    ) -> list[OtherPerson]:
+    ) -> FindMany[OtherPerson]:
         """
         Получение списка сторонних лиц
 
@@ -54,14 +55,14 @@ class OtherService:
             sort (list[str] | None, optional): Список полей для сортировки. Defaults to None
 
         Returns:
-            list[OtherPerson]: Список сторонних лиц
+            FindMany[OtherPerson]: Список сторонних лиц
         """
         query_list.append({"_binds.pr": self.employee.binds_permissions.pr})
         other_persons = OtherPerson.find(*query_list)
         other_persons.sort(*sort if sort else ["-_id"])
         other_persons.skip(0 if offset is None else offset)
         other_persons.limit(20 if limit is None else limit)
-        return await other_persons.to_list()
+        return other_persons
 
     async def create_other_person(
         self,
@@ -143,13 +144,13 @@ class OtherService:
             )
         return other_person
 
-    async def get_other_employee_list(
+    async def get_other_employees(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
         limit: int | None = None,
         sort: list[str] | None = None,
-    ) -> list[OtherEmployee]:
+    ) -> FindMany[OtherEmployee]:
         """
         Получение списка сторонних сотрудников
 
@@ -160,14 +161,14 @@ class OtherService:
             sort (list[str] | None, optional): Список полей для сортировки. Defaults to None
 
         Returns:
-            list[OtherEmployee]: Список сторонних сотрудников
+            FindMany[OtherEmployee]: Список сторонних сотрудников
         """
         query_list.append({"_binds.pr": self.employee.binds_permissions.pr})
         other_employees = OtherEmployee.find(*query_list)
         other_employees.sort(*sort if sort else ["-_id"])
         other_employees.skip(0 if offset is None else offset)
         other_employees.limit(20 if limit is None else limit)
-        return await other_employees.to_list()
+        return other_employees
 
     async def create_other_employee(
         self,
@@ -262,13 +263,13 @@ class OtherService:
             )
         return other_employee
 
-    async def get_other_provider_list(
+    async def get_other_providers(
         self,
         query_list: list[dict[str, Any]],
         offset: int | None = None,
         limit: int | None = None,
         sort: list[str] | None = None,
-    ) -> list[OtherProvider]:
+    ) -> FindMany[OtherProvider]:
         """
         Получение списка сторонних организаций
 
@@ -279,14 +280,14 @@ class OtherService:
             sort (list[str] | None, optional): Список полей для сортировки. Defaults to None
 
         Returns:
-            list[OtherProvider]: Список сторонних организаций
+            FindMany[OtherProvider]: Список сторонних организаций
         """
         query_list.append({"_binds.pr": self.employee.binds_permissions.pr})
         other_providers = OtherProvider.find(*query_list)
         other_providers.sort(*sort if sort else ["-_id"])
         other_providers.skip(0 if offset is None else offset)
         other_providers.limit(20 if limit is None else limit)
-        return await other_providers.to_list()
+        return other_providers
 
     async def create_other_provider(
         self,
