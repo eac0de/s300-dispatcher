@@ -12,7 +12,6 @@ from starlette import status
 from client.s300.models.tenant import TenantS300
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealStatus
-from schemes.appeal.tenant_appeal import AppealTEvaluateUScheme
 from services.appeal.appeal_service import AppealService
 
 
@@ -50,16 +49,16 @@ class TenantAppealService(AppealService):
             )
         return appeal
 
-    async def evaluate_appeal(
+    async def rate_appeal(
         self,
         appeal_id: PydanticObjectId,
-        scheme: AppealTEvaluateUScheme,
+        score: int,
     ) -> Appeal:
         appeal = await self.get_appeal(appeal_id)
         if appeal.status != AppealStatus.PERFORMED:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Appeal can only be evaluated once it has been performed",
+                detail="Appeal can only be rated once it has been performed",
             )
-        appeal.evaluation = scheme.evaluation
+        appeal.rate = score
         return await appeal.save()

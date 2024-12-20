@@ -11,7 +11,7 @@ from models.base.binds import ProviderHouseGroupBinds
 from models.extra.attachment import Attachment
 from models.request.constants import RequestType
 from models.request.embs.employee import DispatcherRS
-from models.request.embs.evaluation import EvaluationRS
+from models.request.embs.execution import RateRS
 from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.resources import ResourcesRS
@@ -88,39 +88,6 @@ class RequestTCatalogCScheme(BaseModel):
     )
 
 
-class EvaluationExecutionRequestTRateUScheme(BaseModel):
-    """
-    Класс схемы оценки выполнения для ее обновления в заявке жителем
-    """
-
-    score: int = Field(
-        ge=1,
-        le=5,
-        title="Оценка заявки данным жителем",
-    )
-
-
-class ExecutionRequestTRateUScheme(BaseModel):
-    """
-    Класс схемы модели выполнения для обновления оценки выполнения заявки жителем
-    """
-
-    evaluations: list[EvaluationExecutionRequestTRateUScheme] = Field(
-        default_factory=list,
-        title="Список оценок выполнения заявки",
-    )
-
-
-class RequestTEvaluateUScheme(BaseModel):
-    """
-    Класс схемы заявки для обновления ее оценки выполнения жителем
-    """
-
-    execution: ExecutionRequestTRateUScheme = Field(
-        title="Для выставления оценки",
-    )
-
-
 class ExecutionRequestTRLScheme(BaseModel):
     """
     Класс схемы модели выполнения для отображения заявки жителю
@@ -154,11 +121,11 @@ class ExecutionRequestTRLScheme(BaseModel):
         default=None,
         title="Гарантия по",
     )
-    evaluations: list[EvaluationRS] = Field(
+    rates: list[RateRS] = Field(
         default_factory=list,
         title="Список оценок выполнения заявки",
     )
-    evaluation_average: float = Field(
+    average_rating: float = Field(
         ge=0,
         le=5,
         default=0,

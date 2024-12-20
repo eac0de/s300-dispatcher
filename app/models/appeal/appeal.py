@@ -59,7 +59,7 @@ class Appeal(BaseDocument):
         default=None,
         title="Ответ на обращение",
     )
-    evaluation: int = Field(
+    rate: int = Field(
         default=0,
         ge=0,
         le=5,

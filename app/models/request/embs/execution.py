@@ -4,11 +4,30 @@
 
 from datetime import datetime
 
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 from models.extra.attachment import Attachment
 from models.request.embs.employee import EmployeeRS, ProviderRS
-from models.request.embs.evaluation import EvaluationRS
+
+
+class RateRS(BaseModel):
+    """
+    Класс оценки выполненных по заявке работ
+    """
+
+    tenant_id: PydanticObjectId = Field(
+        title="Идентификатор человека проставившего оценку",
+    )
+    score: int = Field(
+        ge=1,
+        le=5,
+        title="Оценка выполнения заявки (от 1 до 5)",
+    )
+    rated_at: datetime = Field(
+        default_factory=datetime.now,
+        title="Дата и время выставления оценки",
+    )
 
 
 class ExecutionRS(BaseModel):
@@ -59,11 +78,11 @@ class ExecutionRS(BaseModel):
         default=None,
         title="Гарантия по",
     )
-    evaluations: list[EvaluationRS] = Field(
+    rates: list[RateRS] = Field(
         default_factory=list,
         title="Список оценок выполнения работы по заявке",
     )
-    evaluation_average: float = Field(
+    average_rating: float = Field(
         ge=0,
         le=5,
         default=0,

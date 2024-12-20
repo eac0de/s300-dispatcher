@@ -3,11 +3,11 @@
 """
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Query, Request, status
 
 from api.dependencies.auth import TenantDep
 from api.qp_translators.appeal_qp_translator import TenantAppealsQPTranslator
-from schemes.appeal.tenant_appeal import AppealTEvaluateUScheme, AppealTRLScheme
+from schemes.appeal.tenant_appeal import AppealTRLScheme
 from services.appeal.tenant_appeal_service import TenantAppealService
 
 tenant_appeal_router = APIRouter(
@@ -56,17 +56,17 @@ async def get_appeal(
 
 
 @tenant_appeal_router.patch(
-    path="/{appeal_id}/evaluate/",
+    path="/{appeal_id}/rate/",
     status_code=status.HTTP_200_OK,
     response_model=AppealTRLScheme,
 )
-async def evaluate_appeal(
+async def rate_appeal(
     tenant: TenantDep,
     appeal_id: PydanticObjectId,
-    scheme: AppealTEvaluateUScheme,
+    score: int = Query(ge=0, le=5, title="Оценка обращения"),
 ):
     service = TenantAppealService(tenant)
-    return await service.evaluate_appeal(
+    return await service.rate_appeal(
         appeal_id=appeal_id,
-        scheme=scheme,
+        score=score,
     )

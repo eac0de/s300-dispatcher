@@ -252,13 +252,13 @@ class DispatcherRequestQPTranslator(QPTranslator):
             many=True,
             description="Исполнитель заявки (Сотрудник)",
         ),
-        "execution__evaluation_average__lte": Filter[float](
-            q_func=lambda x: {"execution.evaluation_average": {"$lte": x}},
+        "execution__average_rating__lte": Filter[float](
+            q_func=lambda x: {"execution.average_rating": {"$lte": x}},
             t_parser=str_parsers.get_type_parser(float),
             description="Рейтинг заявки (От)",
         ),
-        "execution__evaluation_average__gte": Filter[float](
-            q_func=lambda x: {"execution.evaluation_average": {"$gte": x}},
+        "execution__average_rating__gte": Filter[float](
+            q_func=lambda x: {"execution.average_rating": {"$gte": x}},
             t_parser=str_parsers.get_type_parser(float),
             description="Рейтинг заявки (До)",
         ),

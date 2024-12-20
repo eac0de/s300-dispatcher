@@ -79,30 +79,30 @@ class TestTenantRequestRouter:
         assert isinstance(resp_json, dict)
         assert resp_json["_id"] == str(request.id)
 
-    async def test_evaluate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
+    async def test_rate_request(self, api_tenant_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
         request = requests[0]
-        evaluation_score = 5
-        data = {
-            "execution": {"evaluations": [{"score": evaluation_score}]},
+        rate_score = 5
+        params = {
+            "score": rate_score,
         }
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=jsony.normalize(data))
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/rate/", params=params)
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
         request.status = RequestStatus.PERFORMED
         await request.save()
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=data)
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/rate/", params=params)
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
-        assert len(request.execution.evaluations) == 1
-        evaluation = request.execution.evaluations[0]
-        assert evaluation.tenant_id == auth_tenant.id
-        assert evaluation.score == evaluation_score
+        assert len(request.execution.rates) == 1
+        rate = request.execution.rates[0]
+        assert rate.tenant_id == auth_tenant.id
+        assert rate.score == rate_score
 
-        data["execution"] = {"evaluations": []}
-        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/evaluate/", json=data)
+        params = {"score": 0}
+        resp = await api_tenant_client.patch(f"/tenant/requests/{request.id}/rate/", params=params)
         assert resp.status_code == status.HTTP_200_OK
         await request.sync()
-        assert len(request.execution.evaluations) == 0
+        assert len(request.execution.rates) == 0
 
     # Тест для upload_requester_attachment_files
     async def test_upload_requester_attachment_files(self, api_tenant_client: AsyncClient, requests: list[RequestModel]):

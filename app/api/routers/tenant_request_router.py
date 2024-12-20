@@ -3,7 +3,7 @@
 """
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Request, UploadFile, status
+from fastapi import APIRouter, Query, Request, UploadFile, status
 from file_manager import File
 
 from api.dependencies.auth import TenantDep
@@ -11,7 +11,6 @@ from api.qp_translators.request_qp_translator import TenantRequestQPTranslator
 from schemes.request.tenant_request import (
     RequestTCatalogCScheme,
     RequestTCScheme,
-    RequestTEvaluateUScheme,
     RequestTLScheme,
     RequestTRScheme,
 )
@@ -99,23 +98,23 @@ async def get_request(
 
 
 @tenant_request_router.patch(
-    path="/{request_id}/evaluate/",
+    path="/{request_id}/rate/",
     status_code=status.HTTP_200_OK,
     response_model=RequestTRScheme,
 )
-async def evaluate_request(
+async def rate_request(
     tenant: TenantDep,
     request_id: PydanticObjectId,
-    scheme: RequestTEvaluateUScheme,
+    score: int = Query(ge=0, le=5, title="Оценка обращения"),
 ):
     """
     Оценивание выполнения заявки жителем
     """
 
     service = TenantRequestService(tenant)
-    return await service.evaluate_request(
+    return await service.rate_request(
         request_id=request_id,
-        scheme=scheme,
+        score=score,
     )
 
 

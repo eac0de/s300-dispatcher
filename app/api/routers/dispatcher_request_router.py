@@ -115,6 +115,22 @@ async def get_request_stats(
 
 
 @dispatcher_request_router.get(
+    path="/tenant_stats/",
+    status_code=status.HTTP_200_OK,
+    response_model=RequestStats,
+)
+async def get_request_tenant_stats(
+    employee: EmployeeDep,
+):
+    """
+    Получения статистики по заявкам сотрудником.
+    """
+    service = DispatcherRequestService(employee)
+    result = await service.get_request_stats()
+    return result
+
+
+@dispatcher_request_router.get(
     path="/",
     description="Получения списка заявок сотрудником.<br>" + DispatcherRequestQPTranslator.get_docs(),
     status_code=status.HTTP_200_OK,

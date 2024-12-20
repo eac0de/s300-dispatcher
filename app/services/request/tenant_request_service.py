@@ -26,8 +26,7 @@ from models.request.constants import (
 from models.request.embs.area import AreaRS
 from models.request.embs.commerce import CatalogItemCommerceRS, CommerceRS
 from models.request.embs.employee import ProviderRS
-from models.request.embs.evaluation import EvaluationRS
-from models.request.embs.execution import ExecutionRS
+from models.request.embs.execution import ExecutionRS, RateRS
 from models.request.embs.house import HouseRS
 from models.request.embs.requester import RequesterType, TenantRequester
 from models.request.request import RequestModel
@@ -35,7 +34,6 @@ from schemes.request.tenant_request import (
     CatalogItemCommerceRequestTCatalogCScheme,
     RequestTCatalogCScheme,
     RequestTCScheme,
-    RequestTEvaluateUScheme,
 )
 from services.dispatcher_catalog_item_service import DispatcherCatalogItemService
 from services.request.request_service import RequestService
@@ -98,7 +96,7 @@ class TenantRequestService(RequestService):
         requests.limit(20 if limit is None else limit)
         result = []
         async for request in requests:
-            request.execution.evaluations = await self._get_request_evaluations(request)
+            request.execution.rates = await self._get_request_rates(request)
             result.append(request)
         return result
 
@@ -119,7 +117,7 @@ class TenantRequestService(RequestService):
             RequestModel: Заявка
         """
         request = await self._get_request(request_id)
-        request.execution.evaluations = await self._get_request_evaluations(request)
+        request.execution.rates = await self._get_request_rates(request)
         return request
 
     async def _get_request(
@@ -147,11 +145,11 @@ class TenantRequestService(RequestService):
             )
         return request
 
-    async def _get_request_evaluations(
+    async def _get_request_rates(
         self,
         request: RequestModel,
-    ) -> list[EvaluationRS]:
-        for e in request.execution.evaluations:
+    ) -> list[RateRS]:
+        for e in request.execution.rates:
             if e.tenant_id == self.tenant.id:
                 return [e]
         return []
@@ -357,17 +355,17 @@ class TenantRequestService(RequestService):
             )
         return catalog_items
 
-    async def evaluate_request(
+    async def rate_request(
         self,
         request_id: PydanticObjectId,
-        scheme: RequestTEvaluateUScheme,
+        score: int,
     ) -> RequestModel:
         """
         Оценка выполнения заявки
 
         Args:
             request_id (PydanticObjectId): Идентификатор заявки
-            scheme (RequestTEvaluateUScheme): Схема для проставления оценки
+            score (int): Схема для проставления оценки
 
         Raises:
             HTTPException: _description_
@@ -382,20 +380,20 @@ class TenantRequestService(RequestService):
                 detail="Request can only be rated once it has been performed",
             )
 
-        existing_evaluation = next((e for e in request.execution.evaluations if e.tenant_id == self.tenant.id), None)
-        if existing_evaluation:
-            if scheme.execution.evaluations:
-                existing_evaluation.score = scheme.execution.evaluations[0].score
+        existing_rate = next((e for e in request.execution.rates if e.tenant_id == self.tenant.id), None)
+        if existing_rate:
+            if score > 0:
+                existing_rate.score = score
             else:
-                request.execution.evaluations.remove(existing_evaluation)
-        elif scheme.execution.evaluations:
-            request.execution.evaluations.append(
-                EvaluationRS(
+                request.execution.rates.remove(existing_rate)
+        else:
+            request.execution.rates.append(
+                RateRS(
                     tenant_id=self.tenant.id,
-                    score=scheme.execution.evaluations[0].score,
+                    score=score,
                 )
             )
-        request.execution.evaluation_average = (sum(e.score for e in request.execution.evaluations) / len(request.execution.evaluations)) if request.execution.evaluations else 0
+        request.execution.average_rating = (sum(e.score for e in request.execution.rates) / len(request.execution.rates)) if request.execution.rates else 0
         return await request.save()
 
     async def upload_requester_attachments(
