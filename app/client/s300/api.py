@@ -11,9 +11,11 @@ from pydantic import UUID4, TypeAdapter
 from starlette import status
 
 from client.s300.client import ClientS300
+from client.s300.models.employee import EmployeeS300
 from errors import FailedDependencyError
 from models.request.embs.commerce import CatalogItemCommerceRS
 from models.request.embs.resources import WarehouseResourcesRS
+from schemes.tenant_stats import DebtTenantStats
 from utils.request.constants import RequestMethod
 
 
@@ -24,18 +26,17 @@ class S300API:
 
     @staticmethod
     async def upsert_storage_docs_out(
+        employee: EmployeeS300,
         request_id: PydanticObjectId,
-        provider_id: PydanticObjectId,
         warehouses: dict[str, dict[str, float]] | None = None,
         is_rollback: bool = False,
     ) -> list[WarehouseResourcesRS]:
         if warehouses is None:
             warehouses = {}
         tag = "upsert_storage_docs_out"
-        path = "storage_docs_out/"
+        path = "worker/storage_docs_out/"
         body = {
             "request_id": str(request_id),
-            "provider_id": str(provider_id),
             "warehouses": warehouses,
             "is_rollback": is_rollback,
         }
@@ -44,6 +45,7 @@ class S300API:
             method=RequestMethod.PUT,
             tag=tag,
             body=body,
+            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
         )
         if status_code == 400:
             raise HTTPException(
@@ -119,7 +121,7 @@ class S300API:
 
     @staticmethod
     async def get_allowed_worker_ids(
-        employee_number: str,
+        employee: EmployeeS300,
         worker_ids: Iterable[PydanticObjectId],
     ) -> set[PydanticObjectId]:
         """
@@ -137,16 +139,16 @@ class S300API:
         """
 
         tag = "get_allowed_worker_ids"
-        path = "workers/get_allowed_ids/"
+        path = "worker/workers/get_allowed_ids/"
         query_params = {
-            "profile": employee_number,
-            "ids": worker_ids,
+            "ids": set(worker_ids),
         }
         status_code, data = await ClientS300.send_request(
             path=path,
             method=RequestMethod.GET,
             tag=tag,
             query_params=query_params,
+            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
         )
         if status_code != 200:
             raise FailedDependencyError(
@@ -170,7 +172,7 @@ class S300API:
 
     @staticmethod
     async def get_allowed_house_ids(
-        provider_id: PydanticObjectId,
+        employee: EmployeeS300,
         house_ids: set[PydanticObjectId] | None = None,
         house_group_ids: set[PydanticObjectId] | None = None,
         fias: set[UUID4] | None = None,
@@ -180,9 +182,8 @@ class S300API:
             return result
 
         tag = "get_allowed_house_ids"
-        path = "houses/get_allowed_ids/"
+        path = "worker/houses/get_allowed_ids/"
         query_params = {
-            "provider_id": provider_id,
             "house_ids": house_ids if house_ids else [],
             "house_group_ids": house_group_ids if house_group_ids else [],
             "fias": fias if fias else [],
@@ -192,6 +193,7 @@ class S300API:
             method=RequestMethod.GET,
             tag=tag,
             query_params=query_params,
+            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
         )
         if status_code != 200:
             raise FailedDependencyError(
@@ -259,3 +261,40 @@ class S300API:
                 status_code=status_code,
                 body=str(data)[:200],
             )
+
+    @staticmethod
+    async def get_tenant_debts(
+        employee: EmployeeS300,
+        tenant_id: PydanticObjectId,
+    ) -> list[DebtTenantStats]:
+        tag = "get_tenant_debts"
+        path = "worker/tenant_debts/get/"
+        query_params = {
+            "_id": tenant_id,
+        }
+        status_code, data = await ClientS300.send_request(
+            path=path,
+            method=RequestMethod.GET,
+            tag=tag,
+            query_params=query_params,
+            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
+        )
+        if status_code != 200:
+            raise FailedDependencyError(
+                description=f"{tag}: Unsatisfactory response from S300",
+                status_code=status_code,
+                body=str(data)[:200],
+            )
+        if not isinstance(data, dict) or data.get("tenant_debts") is None:
+            raise FailedDependencyError(
+                description="The data transmitted from the S300 does not contain an tenant_debts key",
+            )
+        try:
+            ta = TypeAdapter(list[DebtTenantStats])
+            tenant_debts = ta.validate_python(data["tenant_debts"])
+            return tenant_debts
+        except pydantic_core.ValidationError as e:
+            raise FailedDependencyError(
+                description="AllowedHouseIds data does not correspond to expected values",
+                error=str(e),
+            ) from e

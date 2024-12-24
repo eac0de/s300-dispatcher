@@ -2,6 +2,8 @@
 Модуль с роутером для работы с позициями каталога для сотрудников
 """
 
+from urllib.parse import quote
+
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import StreamingResponse
@@ -151,5 +153,5 @@ async def download_catalog_item_image(
     service = DispatcherCatalogItemService(employee)
     file = await service.download_catalog_item_image(catalog_item_id)
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response

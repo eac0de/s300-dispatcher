@@ -20,7 +20,7 @@ async def send_request_with_log(
     method: RequestMethod,
     tag: str,
     body: Mapping[str, Any] | None = None,
-    query_params: Mapping[str, str | list[str] | set[str]] | None = None,
+    query_params: Mapping[str, Any | list[Any] | set[Any]] | None = None,
     headers: dict | None = None,
     req_json: bool = True,
     res_json: bool = True,

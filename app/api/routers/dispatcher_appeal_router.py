@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -17,7 +19,6 @@ from schemes.appeal.dispatcher_appeal import (
     AppealCommentStats,
     AppealDCScheme,
     AppealDRLScheme,
-    AppealUAcceptScheme,
     AppealUCScheme,
 )
 from services.appeal.dispatcher_appeal_service import DispatcherAppealService
@@ -171,6 +172,50 @@ async def delete_appeal(
     await service.delete_appeal(appeal_id)
 
 
+@dispatcher_appeal_router.post(
+    path="/{appeal_id}/appealer_files/",
+    status_code=status.HTTP_200_OK,
+    response_model=list[File],
+)
+async def upload_appealer_files(
+    employee: EmployeeDep,
+    appeal_id: PydanticObjectId,
+    files: list[UploadFile],
+):
+    """
+    Загрузка файлов вложения жителя к заявке сотрудником
+    """
+
+    service = DispatcherAppealService(employee)
+    appeal = await service.get_appeal(appeal_id)
+    update_service = DispatcherAppealUpdateService(
+        employee=employee,
+        appeal=appeal,
+    )
+    appealer_files = await update_service.upload_appealer_files(files=files)
+    return appealer_files
+
+
+@dispatcher_appeal_router.get(
+    path="/{appeal_id}/appealer_files/{file_id}/",
+    status_code=status.HTTP_200_OK,
+)
+async def download_appealer_file(
+    employee: EmployeeDep,
+    appeal_id: PydanticObjectId,
+    file_id: PydanticObjectId,
+):
+
+    service = DispatcherAppealService(employee)
+    file = await service.download_appealer_file(
+        appeal_id=appeal_id,
+        file_id=file_id,
+    )
+    response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
+    return response
+
+
 @dispatcher_appeal_router.patch(
     path="/{appeal_id}/accept/",
     status_code=status.HTTP_200_OK,
@@ -179,7 +224,6 @@ async def delete_appeal(
 async def accept_appeal(
     employee: EmployeeDep,
     appeal_id: PydanticObjectId,
-    scheme: AppealUAcceptScheme,
 ):
     """
     Принятие обращения
@@ -191,7 +235,7 @@ async def accept_appeal(
         employee=employee,
         appeal=appeal,
     )
-    appeal = await update_service.accept_appeal(scheme)
+    appeal = await update_service.accept_appeal()
     comment_stats_dict = await service.get_comment_stats_dict(
         appeal_ids=[appeal.id],
         employee_id=employee.id,
@@ -220,6 +264,34 @@ async def answer_appeal(
         appeal=appeal,
     )
     appeal = await update_service.answer_appeal(scheme)
+    comment_stats_dict = await service.get_comment_stats_dict(
+        appeal_ids=[appeal.id],
+        employee_id=employee.id,
+    )
+    return {**appeal.model_dump(by_alias=True), "comment_stats": comment_stats_dict.get(appeal.id, AppealCommentStats(all=0, unread=0))}
+
+
+@dispatcher_appeal_router.patch(
+    path="/{appeal_id}/answers/{answer_id}/publish/",
+    status_code=status.HTTP_200_OK,
+    response_model=AppealDRLScheme,
+)
+async def publish_appeal_answer(
+    employee: EmployeeDep,
+    appeal_id: PydanticObjectId,
+    answer_id: PydanticObjectId,
+):
+    """
+    Получение обращения по идентификатору сотрудником
+    """
+
+    service = DispatcherAppealService(employee)
+    appeal = await service.get_appeal(appeal_id)
+    update_service = DispatcherAppealUpdateService(
+        employee=employee,
+        appeal=appeal,
+    )
+    appeal = await update_service.publish_answer_appeal(answer_id)
     comment_stats_dict = await service.get_comment_stats_dict(
         appeal_ids=[appeal.id],
         employee_id=employee.id,
@@ -257,7 +329,7 @@ async def update_appeal_answer(
 
 
 @dispatcher_appeal_router.post(
-    path="/{appeal_id}/answers/{answer_id}/",
+    path="/{appeal_id}/answers/{answer_id}/files",
     status_code=status.HTTP_200_OK,
     response_model=AppealDRLScheme,
 )
@@ -303,7 +375,7 @@ async def download_answer_file(
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response
 
 
@@ -435,5 +507,5 @@ async def download_comment_file(
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response

@@ -382,7 +382,7 @@ class TenantRequestService(RequestService):
 
         existing_rate = next((e for e in request.execution.rates if e.tenant_id == self.tenant.id), None)
         if existing_rate:
-            if score > 0:
+            if score:
                 existing_rate.score = score
             else:
                 request.execution.rates.remove(existing_rate)

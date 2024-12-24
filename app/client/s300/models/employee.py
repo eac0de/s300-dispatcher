@@ -115,6 +115,7 @@ class EmployeeS300(DocumentCache):
         title="Доступ сотрудника",
     )
     external_control: ExternalControl | None = Field(
+        exclude=True,
         default=None,
         title="Внешнее управление",
     )

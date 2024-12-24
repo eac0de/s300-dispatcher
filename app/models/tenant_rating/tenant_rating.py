@@ -11,5 +11,11 @@ class TenantRating(BaseDocument):
     provider_id: PydanticObjectId = Field(
         title="Идентификатор организации",
     )
-    up: set[PydanticObjectId]
-    down: set[PydanticObjectId]
+    up: set[PydanticObjectId] = Field(
+        default_factory=set,
+        title="Идентификатор организации",
+    )
+    down: set[PydanticObjectId] = Field(
+        default_factory=set,
+        title="Идентификатор организации",
+    )

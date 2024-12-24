@@ -2,6 +2,8 @@
 Модуль с роутером для работы с заявками для сотрудников
 """
 
+from urllib.parse import quote
+
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -23,6 +25,7 @@ from schemes.request.dispatcher_request import (
 from schemes.request.request_stats import RequestStats
 from schemes.request.request_status import RequestDStatusUScheme
 from schemes.request_history import UpdateRequestHistoryRScheme
+from schemes.tenant_stats import TenantStatsWithRequestStats
 from services.request.dispatcher_request_report_service import (
     DispatcherRequestReportService,
 )
@@ -82,8 +85,7 @@ async def download_pdf_blank(
 @dispatcher_request_router.post(
     path="/",
     status_code=status.HTTP_201_CREATED,
-    response_model_exclude={"binds"},
-    response_model=RequestModel,
+    response_model=RequestDRScheme,
 )
 async def create_request(
     employee: EmployeeDep,
@@ -115,18 +117,19 @@ async def get_request_stats(
 
 
 @dispatcher_request_router.get(
-    path="/tenant_stats/",
+    path="/tenant_stats/{tenant_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=RequestStats,
+    response_model=TenantStatsWithRequestStats,
 )
 async def get_request_tenant_stats(
     employee: EmployeeDep,
+    tenant_id: PydanticObjectId,
 ):
     """
     Получения статистики по заявкам сотрудником.
     """
     service = DispatcherRequestService(employee)
-    result = await service.get_request_stats()
+    result = await service.get_tenant_stats(tenant_id)
     return result
 
 
@@ -317,7 +320,7 @@ async def download_requester_attachment_file(
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response
 
 
@@ -363,7 +366,7 @@ async def download_execution_attachment_file(
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response
 
 
@@ -409,5 +412,5 @@ async def download_execution_act_file(
         file_id=file_id,
     )
     response = StreamingResponse(await file.open_stream(), media_type=file.content_type)
-    response.headers["Content-Disposition"] = f"attachment; filename={file.name}"
+    response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(file.name)}"
     return response

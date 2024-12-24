@@ -40,7 +40,7 @@ class RequestHistoryService:
         if not request_history:
             return []
         allowed_worker_ids = await S300API.get_allowed_worker_ids(
-            employee_number=self.employee.number,
+            employee=self.employee,
             worker_ids=[ch.user.id for ch in request_history.updates],
         )
         updates: list[UpdateRequestHistoryRScheme] = []

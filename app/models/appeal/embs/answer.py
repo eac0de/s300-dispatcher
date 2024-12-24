@@ -40,3 +40,7 @@ class AnswerAS(BaseModel):
         default_factory=datetime.now,
         title="Время создания вложения",
     )
+    is_published: bool = Field(
+        default=False,
+        title="Опубликован ли ответ",
+    )

@@ -35,6 +35,7 @@ from api.routers.constants_router import constants_router
 from api.routers.dispatcher_appeal_router import dispatcher_appeal_router
 from api.routers.dispatcher_catalog_item_router import dispatcher_catalog_item_router
 from api.routers.dispatcher_request_router import dispatcher_request_router
+from api.routers.dispatcher_tenant_rating_router import dispatcher_tenant_rating_router
 from api.routers.employee_schedule_router import employee_schedule_router
 from api.routers.gateway_request_router import gateway_request_router
 from api.routers.other_router import other_router
@@ -188,6 +189,10 @@ app.include_router(
 app.include_router(
     router=appeal_category_router,
     prefix="/dispatcher/appeal_categories",
+)
+app.include_router(
+    router=dispatcher_tenant_rating_router,
+    prefix="/dispatcher/tenant_rating",
 )
 
 

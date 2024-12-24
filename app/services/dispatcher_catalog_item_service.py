@@ -142,7 +142,7 @@ class DispatcherCatalogItemService:
 
         await self._validate_catalog_item_scheme(scheme)
         house_ids = await S300API.get_allowed_house_ids(
-            provider_id=self.employee.provider.id,
+            employee=self.employee,
             house_ids=scheme.house_ids,
             house_group_ids=scheme.house_group_ids,
             fias=scheme.fias,
@@ -185,8 +185,8 @@ class DispatcherCatalogItemService:
         house_ids = existing_catalog_item.house_ids
         if scheme.house_ids != existing_catalog_item.house_ids or scheme.house_group_ids or scheme.fias:
             house_ids = await S300API.get_allowed_house_ids(
+                employee=self.employee,
                 house_ids=scheme.house_ids,
-                provider_id=self.employee.provider.id,
                 house_group_ids=scheme.house_group_ids,
                 fias=scheme.fias,
             )

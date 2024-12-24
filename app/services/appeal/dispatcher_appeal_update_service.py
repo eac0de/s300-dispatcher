@@ -18,7 +18,7 @@ from models.appeal.embs.observers import EmployeeObserverAS
 from models.appeal_comment.appeal_comment import AppealComment, EmployeeAppealComment
 from schemes.appeal.appeal_answer import AnswerAppealDCScheme, AnswerAppealDUScheme
 from schemes.appeal.appeal_comment import AppealCommentDCScheme, AppealCommentDUScheme
-from schemes.appeal.dispatcher_appeal import AppealUAcceptScheme, AppealUCScheme
+from schemes.appeal.dispatcher_appeal import AppealUCScheme
 from services.appeal.appeal_service import AppealService
 from utils.rollbacker import Rollbacker
 
@@ -34,7 +34,7 @@ class DispatcherAppealUpdateService(AppealService):
         self.employee = employee
         self.appeal = appeal
 
-    async def update_appeal(self, scheme: AppealUCScheme):
+    async def update_appeal(self, scheme: AppealUCScheme) -> Appeal:
         """
         Обновление обращения
         """
@@ -43,12 +43,16 @@ class DispatcherAppealUpdateService(AppealService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You are not executor of this request",
             )
+        if scheme.executor and scheme.executor.id != self.employee.id:
+            await self._update_executor(scheme.executor.id)
+            return await self.appeal.save()
+
         updated_appeal = self.appeal.model_copy(
             deep=True,
             update=scheme.model_dump(
                 by_alias=True,
                 exclude_unset=True,
-                exclude={"observers"},
+                exclude={"observers", "executor"},
             ),
         )
         if new_category_ids := set(updated_appeal.category_ids) - set(self.appeal.category_ids):
@@ -71,8 +75,8 @@ class DispatcherAppealUpdateService(AppealService):
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Employee from another provider",
                     )
-                self.appeal.observers.employees.append(EmployeeObserverAS.model_validate(employee.model_dump(by_alias=True)))
-                self.appeal.binds.dp.add(employee.department.id)
+                updated_appeal.observers.employees.append(EmployeeObserverAS.model_validate(employee.model_dump(by_alias=True)))
+                updated_appeal.binds.dp.add(employee.department.id)
         if added_observers_departments := updated_observers_department_ids - existing_observers_department_ids:
             for department_id in added_observers_departments:
                 department = await DepartmentS300.get(department_id)
@@ -86,12 +90,73 @@ class DispatcherAppealUpdateService(AppealService):
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Department from another provider",
                     )
-                self.appeal.observers.employees.append(EmployeeObserverAS.model_validate(employee.model_dump(by_alias=True)))
-                self.appeal.binds.dp.add(department.id)
+                updated_appeal.observers.employees.append(EmployeeObserverAS.model_validate(employee.model_dump(by_alias=True)))
+                updated_appeal.binds.dp.add(department.id)
         if deleted_observers_employee_ids := existing_observers_employee_ids - updated_observers_employee_ids:
-            self.appeal.observers.employees = [e for e in self.appeal.observers.employees if e.id not in deleted_observers_employee_ids]
+            updated_appeal.observers.employees = [e for e in self.appeal.observers.employees if e.id not in deleted_observers_employee_ids]
         if deleted_observers_department_ids := existing_observers_department_ids - updated_observers_department_ids:
-            self.appeal.observers.departments = [d for d in self.appeal.observers.departments if d.id not in deleted_observers_department_ids]
+            updated_appeal.observers.departments = [d for d in self.appeal.observers.departments if d.id not in deleted_observers_department_ids]
+        return await updated_appeal.save()
+
+    async def _update_executor(self, new_executor_id: PydanticObjectId):
+        if self.appeal.answer:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can't pass on an appeal after a answer",
+            )
+        new_executor = await EmployeeS300.get(new_executor_id)
+        if not new_executor:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Employee not found",
+            )
+        if new_executor.provider.id != self.employee.provider.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Employee from another provider",
+            )
+        self.appeal.executor = EmployeeAS.model_validate(new_executor.model_dump(by_alias=True))
+        self.appeal.binds.dp.add(new_executor.department.id)
+        if self.appeal.answer and not self.appeal.answer.is_published:
+            self.appeal.answer = None
+        if self.appeal.add_answers:
+            self.appeal.add_answers = [a for a in self.appeal.add_answers if a.is_published]
+
+    async def upload_appealer_files(
+        self,
+        files: list[UploadFile],
+    ) -> list[File]:
+        if not files or [file for file in files if file.size == 0]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="A file is required, and it cannot be empty (0 bytes)",
+            )
+        new_files = []
+        rollbacker = Rollbacker()
+        try:
+            for file in files:
+                f = await File.create(
+                    file_content=await file.read(),
+                    filename=file.filename,
+                    tag=await self.get_filetag_for_answer(self.appeal.id),
+                )
+                rollbacker.add_rollback(f.delete)
+                new_files.append(f)
+            self.appeal.appealer_files.extend(new_files)
+            await self.appeal.save()
+        except:
+            await rollbacker.rollback()
+            raise
+        return self.appeal.appealer_files
+
+    async def accept_appeal(self) -> Appeal:
+        if self.appeal.status != AppealStatus.ACCEPTED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="To be accepted, the appeal must be in an 'accepted' status",
+            )
+        self.appeal.status = AppealStatus.RUN
+        self.appeal.executor = EmployeeAS.model_validate(self.employee.model_dump(by_alias=True))
         return await self.appeal.save()
 
     async def answer_appeal(self, scheme: AnswerAppealDCScheme) -> Appeal:
@@ -100,27 +165,35 @@ class DispatcherAppealUpdateService(AppealService):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You are not executor of this request",
             )
+        if self.appeal.executor and self.appeal.executor.id != self.employee.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are not executor of this request",
+            )
+        if self.appeal.answer and not self.appeal.answer.is_published or [a for a in self.appeal.add_answers if not a.is_published]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can't create a answer without publishing the previous one",
+            )
         answer = AnswerAS(
-            employee=EmployeeAnswerAS.model_validate(self.employee),
+            employee=EmployeeAnswerAS.model_validate(self.employee.model_dump(by_alias=True)),
             text=scheme.text,
         )
         if self.appeal.answer:
             self.appeal.add_answers.append(answer)
         else:
             self.appeal.answer = answer
-            self.appeal.status = AppealStatus.PERFORMED
         return await self.appeal.save()
 
-    async def accept_appeal(self, scheme: AppealUAcceptScheme) -> Appeal:
-        if self.appeal.status != AppealStatus.ACCEPTED:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="To be accepted, the appeal must be in an 'accepted' status",
-            )
-        self.appeal.incoming_number = scheme.incoming_number
-        self.appeal.incoming_at = scheme.incoming_at
-        self.appeal.status = AppealStatus.RUN
-        self.appeal.executor = EmployeeAS.model_validate(self.employee.model_dump(by_alias=True))
+    async def publish_answer_appeal(
+        self,
+        answer_id: PydanticObjectId,
+    ) -> Appeal:
+        answer = await self._get_answer(answer_id)
+        if answer.is_published:
+            return self.appeal
+        answer.is_published = True
+        self.appeal.status = AppealStatus.PERFORMED
         return await self.appeal.save()
 
     async def upload_answer_files(
@@ -129,6 +202,11 @@ class DispatcherAppealUpdateService(AppealService):
         files: list[UploadFile],
     ) -> Appeal:
         answer = await self._get_answer(answer_id)
+        if answer.is_published:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Can't update a published appeal",
+            )
         if not files or [file for file in files if file.size == 0]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,16 +235,21 @@ class DispatcherAppealUpdateService(AppealService):
         scheme: AnswerAppealDUScheme,
     ) -> Appeal:
         answer = await self._get_answer(answer_id)
+        if answer.is_published:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Can't update a published appeal",
+            )
         deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in scheme.files)
-        if not deleted_file_ids:
-            return self.appeal
-        new_answer_files = []
-        for file in answer.files:
-            if file.id in deleted_file_ids:
-                asyncio.create_task(file.delete())
-                continue
-            new_answer_files.append(file)
-        answer.files = new_answer_files
+        if deleted_file_ids:
+            new_answer_files = []
+            for file in answer.files:
+                if file.id in deleted_file_ids:
+                    asyncio.create_task(file.delete())
+                    continue
+                new_answer_files.append(file)
+            answer.files = new_answer_files
+        answer.text = scheme.text
         return await self.appeal.save()
 
     async def _get_answer(self, answer_id: PydanticObjectId) -> AnswerAS:

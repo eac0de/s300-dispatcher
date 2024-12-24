@@ -15,6 +15,7 @@ from client.s300.api import S300API
 from client.s300.models.area import AreaS300
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.house import HouseS300
+from client.s300.models.tenant import TenantS300
 from models.request.archived_request import ArchivedRequestModel, ArchiverType
 from models.request.categories_tree import RequestCategory
 from models.request.constants import RequestSource, RequestStatus, RequestType
@@ -38,7 +39,13 @@ from schemes.request_employee_schedule import (
     RequestEmployeeDailySchedule,
     RequestEmployeeWeeklySchedule,
 )
+from schemes.tenant_stats import (
+    RatesTenantStats,
+    TenantRequestStats,
+    TenantStatsWithRequestStats,
+)
 from services.request.request_service import RequestService
+from services.tenant_rating_service import TenantRatingService
 from utils.rollbacker import Rollbacker
 
 
@@ -77,51 +84,82 @@ class DispatcherRequestService(RequestService, Rollbacker):
                 "$match": await self._get_employee_query_binds(),
             },
             {
-                "$addFields": {
-                    "is_overdue": {
-                        "$cond": {
-                            "if": {
-                                "$and": [
-                                    {"$eq": ["$status", RequestStatus.RUN]},
-                                    {"$lt": ["$execution.end_at", current_time]},
-                                ]
-                            },
-                            "then": True,
-                            "else": False,
-                        }
-                    }
-                }
-            },
-            {
-                "$facet": {
-                    "accepted": [
-                        {"$match": {"status": RequestStatus.ACCEPTED}},
-                        {"$count": "count"},
-                    ],
-                    "run": [
-                        {"$match": {"status": RequestStatus.RUN}},
-                        {"$count": "count"},
-                    ],
-                    "overdue": [
-                        {"$match": {"is_overdue": True}},
-                        {"$count": "count"},
-                    ],
-                    "emergency": [
-                        {"$match": {"category": RequestCategory.EMERGENCY}},
-                        {"$count": "count"},
-                    ],
+                "$group": {
+                    "_id": None,
+                    "accepted": {"$sum": {"$cond": [{"$eq": ["$status", RequestStatus.ACCEPTED]}, 1, 0]}},
+                    "run": {"$sum": {"$cond": [{"$eq": ["$status", RequestStatus.RUN]}, 1, 0]}},
+                    "overdue": {"$sum": {"$cond": [{"$and": [{"$eq": ["$status", RequestStatus.RUN]}, {"$lt": ["$execution.end_at", current_time]}]}, 1, 0]}},
+                    "emergency": {"$sum": {"$cond": [{"$eq": ["$category", RequestCategory.EMERGENCY]}, 1, 0]}},
                 }
             },
         ]
-
         result = await RequestModel.aggregate(pipeline).to_list()
         stats = result[0] if result else {}
         return RequestStats(
-            accepted=stats["accepted"][0].get("count", 0) if stats.get("accepted") else 0,
-            run=stats["run"][0].get("count", 0) if stats.get("run") else 0,
-            overdue=stats["overdue"][0].get("count", 0) if stats.get("overdue") else 0,
-            emergency=stats["emergency"][0].get("count", 0) if stats.get("emergency") else 0,
+            accepted=stats.get("accepted", 0),
+            run=stats.get("run", 0),
+            overdue=stats.get("overdue", 0),
+            emergency=stats.get("emergency", 0),
         )
+
+    async def get_tenant_stats(
+        self,
+        tenant_id: PydanticObjectId,
+    ) -> TenantStatsWithRequestStats:
+        """
+        Getting statistics on requests
+
+        Returns:
+            RequestStats: Result
+        """
+        tenant = await TenantS300.get(tenant_id)
+        if not tenant:
+            raise HTTPException(
+                detail="Tenant not found",
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
+        tenant_rating = await TenantRatingService(employee=self.employee, tenant=tenant).get_tenant_rating()
+        debts = await S300API.get_tenant_debts(self.employee, tenant_id)
+        pipeline = [
+            {
+                "$match": {
+                    "house._id": tenant.house.id,
+                    **await self._get_employee_query_binds(),
+                },
+            },
+            {
+                "$group": {
+                    "_id": "$house._id",
+                    "tenant": {
+                        "$sum": {"$cond": [{"$eq": ["$requester._id", tenant.id]}, 1, 0]},
+                    },
+                    "area": {
+                        "$sum": {"$cond": [{"$and": ["$area", {"$eq": ["$area._id", tenant.area.id]}]}, 1, 0]},
+                    },
+                    "house": {"$sum": 1},
+                    "type_area": {
+                        "$sum": {"$cond": [{"$eq": ["$_type", RequestType.AREA]}, 1, 0]},
+                    },
+                }
+            },
+        ]
+        result = await RequestModel.aggregate(pipeline).to_list()
+        request_stats = result[0] if result else {}
+        tenant_stats = TenantStatsWithRequestStats(
+            rates=RatesTenantStats(
+                up=len(tenant_rating.up),
+                down=len(tenant_rating.down),
+                current_rate="up" if self.employee.id in tenant_rating.up else "down" if self.employee.id in tenant_rating.down else None,
+            ),
+            debts=debts,
+            request_stats=TenantRequestStats(
+                tenant=request_stats.get("tenant", 0),
+                area=request_stats.get("area", 0),
+                house=request_stats.get("house", 0),
+                type_area=request_stats.get("type_area", 0),
+            ),
+        )
+        return tenant_stats
 
     async def get_requests(
         self,
@@ -383,7 +421,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
             list[RequestEmployeeWeeklySchedule]: Список недельных графиков работы сотрудников
         """
         employee_ids = await S300API.get_allowed_worker_ids(
-            employee_number=self.employee.number,
+            employee=self.employee,
             worker_ids=employee_ids,
         )
         if not employee_ids:
@@ -454,7 +492,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
             list[RequestEmployeeWeeklySchedule]: Список недельных графиков работы сотрудников
         """
         employee_ids = await S300API.get_allowed_worker_ids(
-            employee_number=self.employee.number,
+            employee=self.employee,
             worker_ids=employee_ids,
         )
         if not employee_ids:
@@ -601,7 +639,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
             )
         return f
 
-    async def _get_employee_query_binds(self) -> dict:
+    async def _get_employee_query_binds(self) -> dict[str, PydanticObjectId]:
         query_binds: dict = {
             "_binds.pr": self.employee.binds_permissions.pr,
             "_binds.hg": self.employee.binds_permissions.hg,

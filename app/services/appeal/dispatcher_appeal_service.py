@@ -196,10 +196,8 @@ class DispatcherAppealService(AppealService):
                     )
                 binds.dp.add(department.id)
         else:
-            department = await DepartmentS300.get_by_is_accepting_appeals(
-                is_accepting_appeals=True,
-                provider_id=self.employee.provider.id,
-            )
+            department = await DepartmentS300.get_by_is_accepting_appeals(self.employee)
+
             if department:
                 binds.dp.add(department.id)
             else:
@@ -232,6 +230,20 @@ class DispatcherAppealService(AppealService):
     ):
         appeal = await self.get_appeal(appeal_id)
         await appeal.delete()
+
+    async def download_appealer_file(
+        self,
+        appeal_id: PydanticObjectId,
+        file_id: PydanticObjectId,
+    ) -> File:
+        appeal = await self.get_appeal(appeal_id)
+        for file in appeal.appealer_files:
+            if file.id == file_id:
+                return file
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Appealer file not found",
+        )
 
     async def download_answer_file(
         self,

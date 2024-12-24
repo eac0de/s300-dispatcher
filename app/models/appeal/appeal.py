@@ -59,6 +59,14 @@ class Appeal(BaseDocument):
         default=None,
         title="Ответ на обращение",
     )
+    is_answer_required: bool = Field(
+        default=True,
+        title="Нужен ли ответ на обращение",
+    )
+    revoked_at: datetime | None = Field(
+        default=None,
+        title="Время отзыва обращения",
+    )
     rate: int = Field(
         default=0,
         ge=0,

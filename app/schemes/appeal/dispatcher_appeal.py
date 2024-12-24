@@ -50,6 +50,10 @@ class AppealUCScheme(BaseModel):
         default=None,
         title="Тип обращения",
     )
+    executor: OnlyIdScheme | None = Field(
+        default=None,
+        title="Исполнитель",
+    )
     observers: ObserversAppealDUCScheme | None = Field(
         default=None,
         title="Наблюдатели обращения",
@@ -58,17 +62,10 @@ class AppealUCScheme(BaseModel):
         default=None,
         title="Идентификаторы категорий обращения",
     )
-    incoming_number: str | None = Field(
+    is_answer_required: bool | None = Field(
         default=None,
-        title="Входящий номер",
+        title="Нужен ли ответ на обращение",
     )
-    incoming_at: datetime | None = Field(
-        default=None,
-        title="Входящая дата",
-    )
-
-
-class AppealUAcceptScheme(BaseModel):
     incoming_number: str | None = Field(
         default=None,
         title="Входящий номер",

@@ -5,7 +5,8 @@
 """
 
 from beanie import Document, init_beanie
-from elasticsearch import AsyncElasticsearch
+
+# from elasticsearch import AsyncElasticsearch
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from client.s300.models.area import AreaS300
@@ -25,7 +26,9 @@ from models.request.archived_request import ArchivedRequestModel
 from models.request.request import RequestModel
 from models.request_history.request_history import RequestHistory
 from models.request_template.request_template import RequestTemplate
-from utils.document_es import DocumentES
+
+# from utils.document_es import DocumentES
+from models.tenant_rating.tenant_rating import TenantRating
 from utils.request.request_log import RequestLog
 
 
@@ -61,14 +64,15 @@ async def init_db(*docs: type[Document]):
         Appeal,
         AppealCategory,
         AppealComment,
+        TenantRating,
         *docs,
     ]
 
-    es = AsyncElasticsearch(settings.ELASTICSEARCH_HOSTS)
+    # es = AsyncElasticsearch(settings.ELASTICSEARCH_HOSTS)
 
-    for model in document_models:
-        if issubclass(model, DocumentES):
-            await model.init_es(es)
+    # for model in document_models:
+    #     if issubclass(model, DocumentES):
+    #         await model.init_es(es)
 
     await init_beanie(
         database=client.get_database(settings.MAIN_DB),

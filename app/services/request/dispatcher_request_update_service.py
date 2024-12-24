@@ -850,8 +850,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         if existing_warehouses == new_warehouses:
             return
         warehouses = await S300API.upsert_storage_docs_out(
+            employee=self.employee,
             request_id=self.request.id,
-            provider_id=self.employee.provider.id,
             warehouses=new_warehouses,
         )
         self.add_rollback(
