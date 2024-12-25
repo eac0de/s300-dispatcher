@@ -35,17 +35,12 @@ from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
 from schemes.request.dispatcher_request import RequestDCScheme
 from schemes.request.request_stats import RequestStats
+from schemes.request.request_tenant_stats import TenantRequestStats
 from schemes.request_employee_schedule import (
     RequestEmployeeDailySchedule,
     RequestEmployeeWeeklySchedule,
 )
-from schemes.tenant_stats import (
-    RatesTenantStats,
-    TenantRequestStats,
-    TenantStatsWithRequestStats,
-)
 from services.request.request_service import RequestService
-from services.tenant_rating_service import TenantRatingService
 from utils.rollbacker import Rollbacker
 
 
@@ -105,7 +100,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
     async def get_tenant_stats(
         self,
         tenant_id: PydanticObjectId,
-    ) -> TenantStatsWithRequestStats:
+    ) -> TenantRequestStats:
         """
         Getting statistics on requests
 
@@ -118,8 +113,6 @@ class DispatcherRequestService(RequestService, Rollbacker):
                 detail="Tenant not found",
                 status_code=status.HTTP_404_NOT_FOUND,
             )
-        tenant_rating = await TenantRatingService(employee=self.employee, tenant=tenant).get_tenant_rating()
-        debts = await S300API.get_tenant_debts(self.employee, tenant_id)
         pipeline = [
             {
                 "$match": {
@@ -145,19 +138,11 @@ class DispatcherRequestService(RequestService, Rollbacker):
         ]
         result = await RequestModel.aggregate(pipeline).to_list()
         request_stats = result[0] if result else {}
-        tenant_stats = TenantStatsWithRequestStats(
-            rates=RatesTenantStats(
-                up=len(tenant_rating.up),
-                down=len(tenant_rating.down),
-                current_rate="up" if self.employee.id in tenant_rating.up else "down" if self.employee.id in tenant_rating.down else None,
-            ),
-            debts=debts,
-            request_stats=TenantRequestStats(
-                tenant=request_stats.get("tenant", 0),
-                area=request_stats.get("area", 0),
-                house=request_stats.get("house", 0),
-                type_area=request_stats.get("type_area", 0),
-            ),
+        tenant_stats = TenantRequestStats(
+            tenant=request_stats.get("tenant", 0),
+            area=request_stats.get("area", 0),
+            house=request_stats.get("house", 0),
+            type_area=request_stats.get("type_area", 0),
         )
         return tenant_stats
 

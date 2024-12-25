@@ -4,9 +4,23 @@
 
 from datetime import datetime
 
+from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
 from models.request.embs.employee import PersonInChargeRS
+
+
+class ControlMessageSender(BaseModel):
+    id: PydanticObjectId = Field(
+        alias="_id",
+        title="Идентификатор связанной заявки",
+    )
+    short_name: str = Field(
+        title="Фамилия И.О. сотрудника",
+    )
+    position_name: str = Field(
+        title="Название должности сотрудника",
+    )
 
 
 class ControlMessageRS(BaseModel):
@@ -17,14 +31,8 @@ class ControlMessageRS(BaseModel):
     message: str = Field(
         title="Сообщение",
     )
-    controller_short_name: str = Field(
-        title="Фамилия И.О. контролирующего лица",
-    )
-    controller_position_name: str = Field(
-        title="Название должности контролирующего лица",
-    )
-    controller_provider_name: str = Field(
-        title="Название организации контролирующего лица",
+    employee: ControlMessageSender = Field(
+        title="Создатель сообщения",
     )
     created_at: datetime = Field(
         default_factory=datetime.now,

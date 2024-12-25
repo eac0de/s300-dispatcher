@@ -277,11 +277,6 @@ class DispatcherAppealUpdateService(AppealService):
         return answer
 
     async def comment_appeal(self, scheme: AppealCommentDCScheme) -> AppealComment:
-        if self.appeal.status != AppealStatus.RUN:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Comment can't be created because the appeal is not in the 'RUN' status",
-            )
         if (
             (self.appeal.executor and self.appeal.executor.id != self.employee.id)
             and self.employee.department.id not in set(od.id for od in self.appeal.observers.departments)
@@ -293,7 +288,11 @@ class DispatcherAppealUpdateService(AppealService):
             )
 
         comment = AppealComment(
-            employee=EmployeeAppealComment.model_validate(self.employee),
+            employee=EmployeeAppealComment(
+                _id=self.employee.id,
+                position_name=self.employee.position.name,
+                short_name=self.employee.short_name,
+            ),
             appeal_id=self.appeal.id,
             text=scheme.text,
             read_by={self.employee.id},

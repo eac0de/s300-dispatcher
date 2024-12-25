@@ -24,8 +24,8 @@ from schemes.request.dispatcher_request import (
 )
 from schemes.request.request_stats import RequestStats
 from schemes.request.request_status import RequestDStatusUScheme
+from schemes.request.request_tenant_stats import TenantRequestStats
 from schemes.request_history import UpdateRequestHistoryRScheme
-from schemes.tenant_stats import TenantStatsWithRequestStats
 from services.request.dispatcher_request_report_service import (
     DispatcherRequestReportService,
 )
@@ -117,9 +117,9 @@ async def get_request_stats(
 
 
 @dispatcher_request_router.get(
-    path="/tenant_stats/{tenant_id}/",
+    path="/stats/tenant/{tenant_id}/",
     status_code=status.HTTP_200_OK,
-    response_model=TenantStatsWithRequestStats,
+    response_model=TenantRequestStats,
 )
 async def get_request_tenant_stats(
     employee: EmployeeDep,
