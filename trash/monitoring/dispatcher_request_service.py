@@ -22,10 +22,13 @@ from models.request.constants import RequestSource, RequestStatus, RequestType
 from models.request.embs.area import AreaRS
 from models.request.embs.employee import (
     DispatcherRS,
+    PersonInChargeRS,
+    PersonInChargeType,
     ProviderRS,
 )
 from models.request.embs.execution import ExecutionRS
 from models.request.embs.house import HouseRS
+from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS, RequestRelationsRS
 from models.request.request import RequestModel
 from models.request_template.constants import RequestTemplateType
@@ -264,6 +267,13 @@ class DispatcherRequestService(RequestService, Rollbacker):
             )
             dispatcher = DispatcherRS.model_validate(self.employee.model_dump(by_alias=True))
             house_rs = HouseRS.model_validate(house.model_dump(by_alias=True))
+            persons_in_charge = [
+                PersonInChargeRS(
+                    _type=PersonInChargeType.DISPATCHER,
+                    **dispatcher.model_dump(by_alias=True),
+                )
+            ]
+            monitoring = MonitoringRS(persons_in_charge=persons_in_charge)
             if scheme.relations.template_id:
                 template = await RequestTemplate.find_one(
                     {
@@ -299,6 +309,7 @@ class DispatcherRequestService(RequestService, Rollbacker):
                 is_public=scheme.is_public,
                 tag=scheme.tag,
                 _binds=binds,
+                monitoring=monitoring,
                 dispatcher=dispatcher,
                 source=RequestSource.DISPATCHER,
             )

@@ -35,7 +35,12 @@ from models.request.embs.action import (
     LiftShutdownActionRS,
     StandpipeShutdownActionRS,
 )
-from models.request.embs.employee import EmployeeRS, ProviderRS
+from models.request.embs.employee import (
+    EmployeeRS,
+    PersonInChargeRS,
+    PersonInChargeType,
+    ProviderRS,
+)
 from models.request.embs.relations import RequestRelationsRS
 from models.request.request import RequestModel
 from models.request_history.request_history import (
@@ -986,6 +991,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     continue
                 new_employee_list.append(e)
             self.request.execution.employees = new_employee_list
+            self.request.monitoring.persons_in_charge = [p for p in self.request.monitoring.persons_in_charge if p.id not in deleted_employee_ids and p.type == PersonInChargeType.EXECUTOR]
         if add_employee_ids:
             for employee_id in add_employee_ids:
                 employee = await EmployeeS300.get(employee_id)
@@ -1009,6 +1015,12 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
                 employee_rs = EmployeeRS(**employee.model_dump(by_alias=True))
                 self.request.execution.employees.append(employee_rs)
+                self.request.monitoring.persons_in_charge.append(
+                    PersonInChargeRS(
+                        _type=PersonInChargeType.EXECUTOR,
+                        **employee_rs.model_dump(by_alias=True),
+                    )
+                )
 
     async def _update_execution_times(
         self,

@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     S300_TOKEN: str = "YOAmBevZHkYk3zPjfQp4"
 
     # hosts
-    REDIS_BROKER_URL: RedisDsn = "redis://localhost:6379/0"  # type: ignore
+    REDIS_URL: RedisDsn = "redis://localhost:6379/0"  # type: ignore
     MONGO_URI: MongoDsn = "mongodb://10.1.1.221:27017"  # type: ignore
 
     # dbs

@@ -88,8 +88,8 @@ class Celery(celery.Celery):
 
 celery_app = Celery(
     settings.PROJECT_NAME,
-    broker=str(settings.REDIS_BROKER_URL),
-    backend=str(settings.REDIS_BROKER_URL),
+    broker=str(settings.REDIS_URL),
+    backend=str(settings.REDIS_URL),
     include=[
         "tasks.send_mail",
     ],

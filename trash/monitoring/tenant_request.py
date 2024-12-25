@@ -12,6 +12,7 @@ from models.extra.attachment import Attachment
 from models.request.constants import RequestType
 from models.request.embs.employee import DispatcherRS
 from models.request.embs.execution import RateRS
+from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.resources import ResourcesRS
 from models.request.request import RequestModel
@@ -183,6 +184,11 @@ class RequestTRScheme(RequestModel):
         title="Ресурсы заявки",
         exclude=True,
     )
+    monitoring: MonitoringRS = Field(
+        default_factory=MonitoringRS,
+        title="Информация по надзору за заявкой",
+        exclude=True,
+    )
 
 
 class RequestTLScheme(RequestModel):
@@ -225,5 +231,10 @@ class RequestTLScheme(RequestModel):
     resources: ResourcesRS = Field(
         default_factory=ResourcesRS,
         title="Ресурсы заявки",
+        exclude=True,
+    )
+    monitoring: MonitoringRS = Field(
+        default_factory=MonitoringRS,
+        title="Информация по надзору за заявкой",
         exclude=True,
     )

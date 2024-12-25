@@ -40,9 +40,16 @@ from models.request.constants import (
 from models.request.embs.action import ActionRS, ActionRSType
 from models.request.embs.area import AreaRS
 from models.request.embs.commerce import CommerceRS
-from models.request.embs.employee import DispatcherRS, EmployeeRS, ProviderRS
+from models.request.embs.employee import (
+    DispatcherRS,
+    EmployeeRS,
+    PersonInChargeRS,
+    PersonInChargeType,
+    ProviderRS,
+)
 from models.request.embs.execution import ExecutionRS
 from models.request.embs.house import HouseRS
+from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.requester import RequesterType, TenantRequester
 from models.request.embs.resources import (
@@ -353,6 +360,10 @@ async def requests(auth_employee: EmployeeS300, auth_tenant: TenantS300):
             house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
             housing_supervision=True,
             is_public=False,
+            monitoring=MonitoringRS(
+                control_messages=[],
+                persons_in_charge=[PersonInChargeRS.model_validate({**auth_employee_dict, "_type": PersonInChargeType.DISPATCHER})],
+            ),
             number="7837582401630",
             provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
             relations=RelationsRS(),
@@ -396,6 +407,10 @@ async def requests(auth_employee: EmployeeS300, auth_tenant: TenantS300):
             house=HouseRS.model_validate(auth_tenant.house.model_dump(by_alias=True)),
             housing_supervision=True,
             is_public=False,
+            monitoring=MonitoringRS(
+                control_messages=[],
+                persons_in_charge=[PersonInChargeRS.model_validate({**auth_employee_dict, "_type": PersonInChargeType.DISPATCHER})],
+            ),
             number="7837582401631",
             provider=ProviderRS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
             relations=RelationsRS(),

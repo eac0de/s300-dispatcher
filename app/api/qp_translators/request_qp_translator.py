@@ -267,11 +267,6 @@ class DispatcherRequestQPTranslator(QPTranslator):
             t_parser=str_parsers.get_type_parser(PydanticObjectId),
             description="Рейтинг заявки (Шаблон заявки)",
         ),
-        "monitoring__control_messages__0__exists": Filter[bool](
-            q_func=lambda x: {"monitoring.control_messages.0": {"$exists": x}},
-            t_parser=str_parsers.get_type_parser(bool),
-            description="Статус контроля",
-        ),
     }
 
 

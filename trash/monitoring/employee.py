@@ -2,6 +2,8 @@
 Модуль с дополнительными классами для заявки связанные с сотрудниками
 """
 
+from enum import Enum
+
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
 
@@ -94,4 +96,28 @@ class DispatcherRS(EmployeeRS):
     external_control: ExternalControl | None = Field(
         default=None,
         title="Внешнее управление",
+    )
+
+
+class PersonInChargeType(str, Enum):
+    """
+    Типы ответственных сотрудников.
+    Нужны для того чтобы различать одного и того же человека в разных статусах, например:
+    диспетчер также является исполнителем, но если я попытаюсь удалить ответственное лицо по id
+    удалятся все, диспетчер в роли диспетчера и диспетчер в роли исполнителя, хотя первый должен остаться
+    """
+
+    EXECUTOR = "executor"
+    DISPATCHER = "dispatcher"
+    SUPERVISOR = "supervisor"
+
+
+class PersonInChargeRS(EmployeeRS):
+    """
+    Класс ответственного сотрудника за исполнение заявки
+    """
+
+    type: PersonInChargeType = Field(
+        alias="_type",
+        title="Тип ответственного человека",
     )

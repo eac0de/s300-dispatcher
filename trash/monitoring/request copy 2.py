@@ -30,6 +30,7 @@ from models.request.embs.commerce import CommerceRS
 from models.request.embs.employee import DispatcherRS, ProviderRS
 from models.request.embs.execution import ExecutionRS
 from models.request.embs.house import HouseRS
+from models.request.embs.monitoring import MonitoringRS
 from models.request.embs.relations import RelationsRS
 from models.request.embs.requester import (
     EmployeeRequester,
@@ -142,6 +143,10 @@ class RequestModel(BaseDocument):
     resources: ResourcesRS = Field(
         default_factory=ResourcesRS,
         title="Ресурсы заявки",
+    )
+    monitoring: MonitoringRS = Field(
+        default_factory=MonitoringRS,
+        title="Информация по надзору за заявкой",
     )
 
     class Settings:
