@@ -190,3 +190,10 @@ class EmployeeS300(DocumentCache):
                 description="Worker data does not correspond to expected values",
                 error=str(e),
             ) from e
+
+    @property
+    def s300_headers(self) -> dict[str, str]:
+        return {
+            "User-ID": str(self.id),
+            "User-EC-ID": str(self.external_control.id) if self.external_control else "",
+        }

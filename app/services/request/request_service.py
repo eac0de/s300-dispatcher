@@ -177,7 +177,7 @@ class RequestService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="The work area does not contain any possible actions",
                 )
-            for action in actions:
+            for action in list({a.id: a for a in actions}.values()):
                 a = wa["actions"].get(action.type)
                 if not a:
                     raise HTTPException(
@@ -190,14 +190,18 @@ class RequestService:
                         detail="The start time of an action cannot be later than its end time",
                     )
                 if action.type == ActionRSType.LIFT:
-                    lift = house.get_lift(action.lift.id)
+                    if not action.lift:
+                        continue
+                    lift = await house.get_lift(action.lift.id)
                     if not lift:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Lift with this id was not found in the house",
                         )
                 elif action.type == ActionRSType.CENTRAL_HEATING or action.type == ActionRSType.CWS or action.type == ActionRSType.HWS:
-                    standpipe = house.get_standpipe(action.standpipe.id)
+                    if not action.standpipe:
+                        continue
+                    standpipe = await house.get_standpipe(action.standpipe.id)
                     if not standpipe:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,

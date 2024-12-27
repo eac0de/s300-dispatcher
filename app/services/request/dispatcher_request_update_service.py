@@ -440,27 +440,37 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         relations: RelationsRequestDCUScheme,
     ):
         if self.request.relations.template_id != relations.template_id:
-            template = await RequestTemplate.find_one(
-                {
-                    "_id": relations.template_id,
-                    "_type": RequestTemplateType.REQUEST,
-                    "provider_id": self.employee.provider.id,
-                }
-            )
-            if not template:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Request template not found",
+            if relations.template_id:
+                template = await RequestTemplate.find_one(
+                    {
+                        "_id": relations.template_id,
+                        "_type": RequestTemplateType.REQUEST,
+                        "provider_id": self.employee.provider.id,
+                    }
+                )
+                if not template:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Request template not found",
+                    )
+                self.updated_fields.append(
+                    UpdatedField(
+                        name="template_id",
+                        value=relations.template_id,
+                        name_display="Шаблон заявки",
+                        value_display=template.name,
+                    )
+                )
+            else:
+                self.updated_fields.append(
+                    UpdatedField(
+                        name="template_id",
+                        value=relations.template_id,
+                        name_display="Шаблон заявки",
+                        value_display="Не выбран",
+                    )
                 )
             self.request.relations.template_id = relations.template_id
-            self.updated_fields.append(
-                UpdatedField(
-                    name="template_id",
-                    value=relations.template_id,
-                    name_display="Шаблон",
-                    value_display=template.name,
-                )
-            )
         new = {r.id for r in relations.requests if r.id != self.request.id}
         old = {r.id for r in self.request.relations.requests}
         if new == old:
@@ -628,17 +638,10 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if self.request.actions or actions:
-            existed_actions = {
-                a.type: {
-                    "start_at": a.start_at,
-                    "end_at": a.end_at,
-                    "lift": getattr(a, "lift", None),
-                    "standpipe": getattr(a, "standpipe", None),
-                }
-                for a in self.request.actions
-            }
+            actions = list({a.id: a for a in actions}.values())
+            existing_actions = {a.id: a for a in self.request.actions}
             for action in actions:
-                if action.type not in existed_actions:
+                if action.id not in existing_actions:
                     start_at = f" c {action.start_at.strftime('%H:%M %d.%m.%Y')}" if action.start_at else ""
                     end_at = f" до {action.end_at.strftime('%H:%M %d.%m.%Y')}" if action.end_at else ""
                     self.updated_fields.append(
@@ -650,8 +653,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         )
                     )
                     continue
-                a = existed_actions.pop(action.type)
-                if action.end_at != a["end_at"]:
+                a = existing_actions.pop(action.id)
+                if action.end_at != a.end_at:
                     self.updated_fields.append(
                         UpdatedField(
                             name="actions.end_at",
@@ -660,7 +663,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=action.end_at.strftime("%H:%M %d.%m.%Y") if action.end_at else "Нет",
                         )
                     )
-                if action.start_at != a["start_at"]:
+                if action.start_at != a.start_at:
                     self.updated_fields.append(
                         UpdatedField(
                             name="actions.start_at",
@@ -669,33 +672,33 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=action.start_at.strftime("%H:%M %d.%m.%Y") if action.start_at else "Нет",
                         )
                     )
-                if action.type == ActionRSType.LIFT and action.lift.id != a["lift"].id:  # type: ignore
+                if action.type == ActionRSType.LIFT and getattr(getattr(action, "lift", None), "id", None) != getattr(getattr(a, "lift", None), "id", None):
                     self.updated_fields.append(
                         UpdatedField(
                             name="actions.lift",
                             value=action.start_at,
                             name_display="Отключаемый лифт",
-                            value_display=str(action.lift.id),
+                            value_display=str(action.lift.id) if action.lift else "Не выбран",
                         )
                     )
-                if (action.type == ActionRSType.CENTRAL_HEATING or action.type == ActionRSType.CWS or action.type == ActionRSType.HWS) and action.standpipe.id != a["standpipe"].id:  # type: ignore
+                if (action.type == ActionRSType.CENTRAL_HEATING or action.type == ActionRSType.CWS or action.type == ActionRSType.HWS) and getattr(getattr(action, "standpipe", None), "id", None) != getattr(getattr(a, "standpipe", None), "id", None):  # type: ignore
                     self.updated_fields.append(
                         UpdatedField(
                             name="actions.lift",
                             value=action.start_at,
                             name_display=f"Отключаемый стояк {ACTION_TYPE_EN_RU[action.type]}",
-                            value_display=str(action.standpipe.id),
+                            value_display=str(action.standpipe.id) if action.standpipe else "Не выбран",
                         )
                     )
-            for _type, dct in existed_actions.items():
-                start_at = f" c {dct['start_at'].strftime('%H:%M %d.%m.%Y')}" if dct.get("start_at") else ""
-                end_at = f" до {dct['end_at'].strftime('%H:%M %d.%m.%Y')}" if dct.get("end_at") else ""
+            for action in existing_actions.values():
+                start_at = f" c {action.start_at.strftime('%H:%M %d.%m.%Y')}" if action.start_at else ""
+                end_at = f" до {action.end_at.strftime('%H:%M %d.%m.%Y')}" if action.end_at else ""
                 self.updated_fields.append(
                     UpdatedField(
                         name="actions",
                         value=None,
                         name_display="Удалено действие",
-                        value_display=f"{ACTION_TYPE_EN_RU[_type]}{start_at}{end_at}",
+                        value_display=f"{ACTION_TYPE_EN_RU[action.type]}{start_at}{end_at}",
                     )
                 )
             self.request.actions = actions
@@ -752,9 +755,10 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         resources: ResourcesRequestDStatusUScheme,
     ):
         if self.request.resources.materials or resources.materials:
-            existed_materials = {m.name: {"price": m.price, "quantity": m.quantity} for m in self.request.resources.materials}
+            resources.materials = list({m.name: m for m in resources.materials}.values())
+            existing_materials = {m.name: m for m in self.request.resources.materials}
             for material in resources.materials:
-                if material.name not in existed_materials:
+                if material.name not in existing_materials:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.materials",
@@ -764,8 +768,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         )
                     )
                     continue
-                m = existed_materials.pop(material.name)
-                if material.quantity != m["quantity"]:
+                m = existing_materials.pop(material.name)
+                if material.quantity != m.quantity:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.materials.quantity",
@@ -774,7 +778,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=str(material.quantity),
                         )
                     )
-                if material.price != m["price"]:
+                if material.price != m.price:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.materials.price",
@@ -783,20 +787,21 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=str(material.price),
                         )
                     )
-            for name, dct in existed_materials.items():
+            for name, m in existing_materials.items():
                 self.updated_fields.append(
                     UpdatedField(
                         name="resources.materials",
                         value=None,
                         name_display="Удален вручную добавленная материал",
-                        value_display=f"{name}, кол-во - {dct['quantity']}, {round(dct['price']/100, 2)} р. за ед.",
+                        value_display=f"{name}, кол-во - {m.quantity}, {round(m.price/100, 2)} р. за ед.",
                     )
                 )
             self.request.resources.materials = resources.materials
         if self.request.resources.services or resources.services:
-            existed_services = {s.name: {"price": s.price, "quantity": s.quantity} for s in self.request.resources.services}
+            resources.services = list({s.name: s for s in resources.services}.values())
+            existing_services = {s.name: s for s in self.request.resources.services}
             for service in resources.services:
-                if service.name not in existed_services:
+                if service.name not in existing_services:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.services",
@@ -806,8 +811,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         )
                     )
                     continue
-                s = existed_services.pop(service.name)
-                if service.quantity != s["quantity"]:
+                s = existing_services.pop(service.name)
+                if service.quantity != s.quantity:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.services.quantity",
@@ -816,7 +821,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=str(service.quantity),
                         )
                     )
-                if service.price != s["price"]:
+                if service.price != s.price:
                     self.updated_fields.append(
                         UpdatedField(
                             name="resources.services.price",
@@ -825,13 +830,13 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                             value_display=str(service.price),
                         )
                     )
-            for name, dct in existed_services.items():
+            for name, s in existing_services.items():
                 self.updated_fields.append(
                     UpdatedField(
                         name="resources.services",
                         value=None,
                         name_display="Удалена вручную добавленная услуга",
-                        value_display=f"{name}, кол-во - {dct['quantity']}, {round(dct['price']/100, 2)} р. за ед.",
+                        value_display=f"{name}, кол-во - {s.quantity}, {round(s.price/100, 2)} р. за ед.",
                     )
                 )
             self.request.resources.services = resources.services
@@ -839,9 +844,9 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             return
 
         existing_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in self.request.resources.warehouses}
+        new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
         item_names_map: dict[str, str] = {str(i.id): i.name for w in self.request.resources.warehouses for i in w.items}
         warehouse_names_map: dict[str, str] = {str(w.id): w.name for w in self.request.resources.warehouses}
-        new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
         if existing_warehouses == new_warehouses:
             return
         warehouses = await S300API.upsert_storage_docs_out(
@@ -1083,8 +1088,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         requester_attachment: Attachment,
     ):
         file_ids = {f.id for f in requester_attachment.files}
-        existed_file_ids = {f.id for f in self.request.requester_attachment.files}
-        deleted_file_ids = existed_file_ids - file_ids
+        existing_file_ids = {f.id for f in self.request.requester_attachment.files}
+        deleted_file_ids = existing_file_ids - file_ids
         if deleted_file_ids:
             requester_attachment_files = []
             for f in self.request.requester_attachment.files:
@@ -1117,8 +1122,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         execution_attachment: Attachment,
     ):
         file_ids = {f.id for f in execution_attachment.files}
-        existed_file_ids = {f.id for f in self.request.execution.attachment.files}
-        deleted_file_ids = existed_file_ids - file_ids
+        existing_file_ids = {f.id for f in self.request.execution.attachment.files}
+        deleted_file_ids = existing_file_ids - file_ids
         if deleted_file_ids:
             execution_attachment_files = []
             for f in self.request.execution.attachment.files:
@@ -1150,8 +1155,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         execution_act: Attachment,
     ):
         file_ids = {f.id for f in execution_act.files}
-        existed_file_ids = {f.id for f in self.request.execution.act.files}
-        deleted_file_ids = existed_file_ids - file_ids
+        existing_file_ids = {f.id for f in self.request.execution.act.files}
+        deleted_file_ids = existing_file_ids - file_ids
         if deleted_file_ids:
             execution_act_files = []
             for f in self.request.execution.act.files:

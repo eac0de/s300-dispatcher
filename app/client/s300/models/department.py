@@ -52,7 +52,7 @@ class DepartmentS300(DocumentCache):
             path=path,
             method=RequestMethod.GET,
             tag="load_department_by_is_accepting_appeals",
-            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
+            headers=employee.s300_headers,
         )
         if status_code == status.HTTP_404_NOT_FOUND:
             return

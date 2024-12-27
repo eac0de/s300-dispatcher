@@ -81,6 +81,12 @@ class DispatcherRequestQPTranslator(QPTranslator):
             t_parser=str_parsers.get_type_parser(PydanticObjectId),
             description="Адреса домов",
         ),
+        "area__id__in": Filter[PydanticObjectId](
+            q_func=lambda x: {"area._id": {"$in": x}},
+            many=True,
+            t_parser=str_parsers.get_type_parser(PydanticObjectId),
+            description="Квартиры по идентификатору",
+        ),
         "area_range": Filter[str](
             q_func=lambda x: {"area.number": {"$in": x}},
             t_parser=area_range_parser,

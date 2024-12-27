@@ -36,6 +36,11 @@ class ActionRS(BaseModel):
     Класс действия
     """
 
+    id: PydanticObjectId = Field(
+        alias="_id",
+        default_factory=PydanticObjectId,
+        title="Идентификатор лифта",
+    )
     start_at: datetime | None = Field(
         default=None,
         title="С какого времени",
@@ -70,7 +75,8 @@ class LiftShutdownActionRS(ActionRS):
         alias="_type",
         title="Тип действия",
     )
-    lift: LiftActionRS = Field(
+    lift: LiftActionRS | None = Field(
+        default=None,
         title="Лифт",
     )
 
@@ -99,6 +105,7 @@ class StandpipeShutdownActionRS(ActionRS):
         alias="_type",
         title="Тип действия",
     )
-    standpipe: StandpipeActionRS = Field(
+    standpipe: StandpipeActionRS | None = Field(
+        default=None,
         title="Стояк",
     )

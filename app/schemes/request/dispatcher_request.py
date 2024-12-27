@@ -47,9 +47,11 @@ class RelationsRequestDCUScheme(BaseModel):
     """
 
     template_id: PydanticObjectId | None = Field(
+        default=None,
         title="Ссылка на шаблон тела заявки",
     )
     requests: list[OnlyIdScheme] = Field(
+        default_factory=list,
         title="Список связанных заявок",
     )
 
@@ -79,6 +81,7 @@ class RequestDCScheme(BaseModel):
         title="Тип заявки работником",
     )
     area: OnlyIdScheme | None = Field(
+        default=None,
         title="Квартира по заявке",
     )
     house: OnlyIdScheme = Field(
@@ -94,12 +97,15 @@ class RequestDCScheme(BaseModel):
         title="Категория заявки работником",
     )
     subcategory: RequestSubcategory | None = Field(
+        default=None,
         title="Подкатегория заявки работником",
     )
     work_area: RequestWorkArea | None = Field(
+        default=None,
         title="Область работ по заявке",
     )
     actions: list[ActionRS | LiftShutdownActionRS | StandpipeShutdownActionRS] = Field(
+        default_factory=list,
         title="Действия по заявке",
         description="Если необходимы какие-то отключения, например отключение электроснабжения или стояка",
     )
@@ -113,6 +119,7 @@ class RequestDCScheme(BaseModel):
         title="Тег заявки работником",
     )
     relations: RelationsRequestDCUScheme = Field(
+        default_factory=RelationsRequestDCUScheme,
         title="Связанные заявки работником",
     )
     is_public: bool = Field(

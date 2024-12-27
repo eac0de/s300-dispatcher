@@ -44,7 +44,7 @@ class S300API:
             method=RequestMethod.PUT,
             tag=tag,
             body=body,
-            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
+            headers=employee.s300_headers,
         )
         if status_code == 400:
             raise HTTPException(
@@ -147,7 +147,7 @@ class S300API:
             method=RequestMethod.GET,
             tag=tag,
             query_params=query_params,
-            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
+            headers=employee.s300_headers,
         )
         if status_code != 200:
             raise FailedDependencyError(
@@ -192,7 +192,7 @@ class S300API:
             method=RequestMethod.GET,
             tag=tag,
             query_params=query_params,
-            headers={"User-ID": str(employee.id), "User-EC-ID": str(employee.external_control.id) if employee.external_control else ""},
+            headers=employee.s300_headers,
         )
         if status_code != 200:
             raise FailedDependencyError(
