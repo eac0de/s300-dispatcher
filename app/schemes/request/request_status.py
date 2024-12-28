@@ -3,6 +3,7 @@
 """
 
 from datetime import datetime
+from typing import Literal
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
@@ -18,27 +19,35 @@ class ExecutionRequestDStatusUScheme(BaseModel):
     """
 
     start_at: datetime | None = Field(
+        default=None,
         title="Фактическое время начала выполнения заявки",
     )
     end_at: datetime | None = Field(
+        default=None,
         title="Фактическое время окончания выполнения заявки",
     )
-    provider: OnlyIdScheme = Field(
+    provider: OnlyIdScheme | None = Field(
+        default=None,
         title="Организация исполняющая заявку",
     )
-    employees: list[OnlyIdScheme] = Field(
+    employees: list[OnlyIdScheme] | None = Field(
+        default=None,
         title="Сотрудники исполняющие заявку",
     )
     description: str | None = Field(
+        default=None,
         title="Описание выполненных работ",
     )
-    is_partially: bool = Field(
+    is_partially: bool | None = Field(
+        default=None,
         title="Выполнена частично",
     )
     delayed_until: datetime | None = Field(
+        default=None,
         title="Время до которого перенесено выполнение заявки",
     )
     warranty_until: datetime | None = Field(
+        default=None,
         title="Гарантия по",
     )
 
@@ -79,14 +88,16 @@ class ResourcesRequestDStatusUScheme(BaseModel):
     Класс схемы ресурсов для обновления статуса и ресурсов заявки работником
     """
 
-    materials: list[ManuallyAddedItemResourcesRS] = Field(
+    materials: list[ManuallyAddedItemResourcesRS] | None = Field(
+        default=None,
         title="Вручную добавленные материалы",
     )
-    services: list[ManuallyAddedItemResourcesRS] = Field(
+    services: list[ManuallyAddedItemResourcesRS] | None = Field(
+        default=None,
         title="Вручную добавленные услуги",
     )
-    warehouses: list[WarehouseResourcesRequestDStatusUScheme] = Field(
-        default_factory=list,
+    warehouses: list[WarehouseResourcesRequestDStatusUScheme] | None = Field(
+        default=None,
         title="Позиции со склада",
     )
 
@@ -96,12 +107,15 @@ class RequestDStatusUScheme(BaseModel):
     Класс схемы заявки для обновления ее статуса и ресурсов работником
     """
 
-    status: RequestStatus = Field(
+    status: Literal[RequestStatus.ABANDONMENT, RequestStatus.DELAYED, RequestStatus.HIDDEN, RequestStatus.PERFORMED, RequestStatus.REFUSAL, RequestStatus.RUN] | None = Field(
+        default=None,
         title="Статус заявки",
     )
-    execution: ExecutionRequestDStatusUScheme = Field(
+    execution: ExecutionRequestDStatusUScheme | None = Field(
+        default=None,
         title="Выполнение заявки",
     )
-    resources: ResourcesRequestDStatusUScheme = Field(
+    resources: ResourcesRequestDStatusUScheme | None = Field(
+        default=None,
         title="Ресурсы заявки",
     )

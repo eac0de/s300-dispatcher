@@ -144,8 +144,8 @@ class TestDispatcherRequestRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
         await request.sync()
-        assert request.execution.description is None
-        assert request.execution.is_partially is False
+        assert request.execution.description == test_execution_description
+        assert request.execution.is_partially is True
         assert request.execution.employees[0].short_name == auth_employee.short_name
 
         data["resources"]["warehouses"] = [

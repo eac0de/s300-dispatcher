@@ -164,7 +164,7 @@ class TestDispatcherCatalogItemRouter:
 
         resp = await api_employee_client.get(f"/dispatcher/catalog/{catalog_item.id}/image/")
         assert resp.status_code == status.HTTP_200_OK
-        assert resp.headers["Content-Disposition"] == f"attachment; filename={TEST_FILENAME}"
+        assert resp.headers["Content-Disposition"] == f"attachment; filename*=UTF-8''{TEST_FILENAME}"
         assert resp.headers["Content-Type"] == "image/jpeg"
         assert resp.content == file_content
 

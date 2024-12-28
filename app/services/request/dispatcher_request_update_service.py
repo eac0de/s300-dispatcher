@@ -13,6 +13,7 @@ from client.s300.api import S300API
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.house import HouseS300
 from client.s300.models.provider import ProviderS300
+from models.base.binds import ProviderHouseGroupBinds
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
     REQUEST_CATEGORY_EN_RU,
@@ -36,7 +37,7 @@ from models.request.embs.action import (
     StandpipeShutdownActionRS,
 )
 from models.request.embs.employee import EmployeeRS, ProviderRS
-from models.request.embs.relations import RequestRelationsRS
+from models.request.embs.relations import RelationsRS, RequestRelationsRS
 from models.request.request import RequestModel
 from models.request_history.request_history import (
     RequestHistory,
@@ -105,35 +106,67 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             RequestModel: Обновленная заявка
         """
         try:
-            await self._update_description(scheme.description)
-            await self._update_desired_execution_times(
-                execution_desired_start_at=scheme.execution.desired_start_at,
-                execution_desired_end_at=scheme.execution.desired_end_at,
-            )
-            await self._update_category_subcategory_work_area(
-                category=scheme.category,
-                subcategory=scheme.subcategory,
-                work_area=scheme.work_area,
-                actions=scheme.actions,
-            )
-            await self._update_tag(scheme.tag)
-            await self._update_is_public(scheme.is_public)
-            await self._update_add_params(
-                administrative_supervision=scheme.administrative_supervision,
-                housing_supervision=scheme.housing_supervision,
-            )
-            await self._update_relations(scheme.relations)
+            update = scheme.model_dump(by_alias=True, exclude_unset=True, exclude={"relations", "actions", "execution", "requester_attachment"})
+            if scheme.relations:
+                update["relations"] = await self._get_updated_relations(scheme.relations)
+            if scheme.actions is not None:
+                update["actions"] = list({a.id: a for a in scheme.actions}.values())
+            if scheme.execution:
+                execution_update = scheme.execution.model_dump(by_alias=True, exclude_unset=True, exclude={"act", "attachment"})
+                if scheme.execution.act:
+                    execution_update["act"] = await self._get_updated_execution_act(scheme.execution.act)
+                if scheme.execution.attachment:
+                    execution_update["attachment"] = await self._get_updated_execution_attachment(scheme.execution.attachment)
+                update["execution"] = self.request.execution.model_copy(deep=True, update=execution_update)
+            if scheme.requester_attachment:
+                execution_update["attachment"] = await self._get_upd_requester_attachment(scheme.requester_attachment)
+            upd_request = self.request.model_copy(deep=True, update=update)
+            if (
+                upd_request.category == self.request.category
+                and upd_request.work_area == self.request.work_area
+                and upd_request.subcategory == self.request.subcategory
+                and not self.request.actions
+                and not scheme.actions
+            ):
+                house = await HouseS300.get(self.request.house.id)
+                if not house:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Дом не найден",
+                    )
 
-            await self._update_execution_act(scheme.execution.act)
-            await self._update_execution_attachment(scheme.execution.attachment)
-            await self._update_requester_attachment(scheme.requester_attachment)
+                await self._check_categories_tree(
+                    house=house,
+                    category=upd_request.category,
+                    subcategory=upd_request.subcategory,
+                    work_area=upd_request.work_area,
+                    actions=upd_request.actions,
+                )
+                await self._update_category_subcategory_work_area_actions_in_history(
+                    category=upd_request.category,
+                    subcategory=upd_request.subcategory,
+                    work_area=upd_request.work_area,
+                    actions=upd_request.actions,
+                )
+            await self._update_description_in_history(upd_request.description)
+            await self._update_desired_execution_times_in_history(
+                execution_desired_start_at=upd_request.execution.desired_start_at,
+                execution_desired_end_at=upd_request.execution.desired_end_at,
+            )
 
-            await self.request.save()
+            await self._update_tag_history(upd_request.tag)
+            await self._update_is_public_history(upd_request.is_public)
+            await self._update_add_params_history(
+                administrative_supervision=upd_request.administrative_supervision,
+                housing_supervision=upd_request.housing_supervision,
+            )
+
+            await upd_request.save()
+            await self._update_request_history()
+            return upd_request
         except:
             await self.rollback()
             raise
-        await self._update_request_history()
-        return self.request
 
     async def update_request_status(
         self,
@@ -152,78 +185,74 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             RequestModel: Обновленная модель заявки
         """
         try:
-            if scheme.status == RequestStatus.ACCEPTED:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Unable to change status to accepted",
-                )
-            if scheme.execution.provider.id != self.request.execution.provider.id:
-                await self._update_execution_provider(scheme.execution.provider.id)
-                await self._update_execution_employees([])
+            if scheme.execution and scheme.execution.provider and scheme.execution.provider.id != self.request.execution.provider.id:
+                self.request.execution.provider, self.request.binds = await self._get_updated_execution_provider_and_binds(scheme.execution.provider.id)
+                self.request.execution.employees = await self._get_updated_execution_employees([])
                 await self._update_request_history()
-                await self.request.save()
-                return self.request
-            if scheme.status == RequestStatus.RUN:
-                if not scheme.execution.start_at or not scheme.execution.end_at or not scheme.execution.employees:
+                return await self.request.save()
+            update = scheme.model_dump(by_alias=True, exclude_unset=True, exclude={"execution", "resources"})
+            if scheme.resources:
+                update["resources"] = await self._get_updated_resources(scheme.resources)
+                print(update["resources"])
+            if scheme.execution:
+                execution_update = scheme.execution.model_dump(by_alias=True, exclude_unset=True, exclude={"provider", "employees"})
+                update["execution"] = self.request.execution.model_copy(deep=True, update=execution_update)
+            upd_request = self.request.model_copy(deep=True, update=update)
+
+            if upd_request.status == RequestStatus.RUN:
+                if scheme.execution is not None and scheme.execution.employees is not None:
+                    upd_request.execution.employees = await self._get_updated_execution_employees(scheme.execution.employees)
+                if not upd_request.execution.start_at or not upd_request.execution.end_at or not upd_request.execution.employees:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="With 'run' status, you must include start and end times and at least 1 employee",
                     )
-                await self._update_execution_times(
-                    execution_start_at=scheme.execution.start_at,
-                    execution_end_at=scheme.execution.end_at,
-                )
-                await self._update_execution_employees(scheme.execution.employees)
-                await self._update_resources(scheme.resources)
-            elif scheme.status == RequestStatus.DELAYED:
-                if not scheme.execution.delayed_until or not scheme.execution.description:
+            elif upd_request.status == RequestStatus.DELAYED:
+                if not upd_request.execution.delayed_until or not upd_request.execution.description:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="With 'delayed' status, you must include delayed_until time and reason",
                     )
-                await self._update_execution_delayed_until(scheme.execution.delayed_until)
-                await self._update_execution_description(scheme.execution.description)
-                await self._update_resources(scheme.resources)
-            elif scheme.status == RequestStatus.PERFORMED:
-                if not scheme.execution.start_at or not scheme.execution.end_at or not scheme.execution.employees or not scheme.execution.description:
+            elif upd_request.status == RequestStatus.PERFORMED:
+                if not upd_request.execution.start_at or not upd_request.execution.end_at or not upd_request.execution.employees or not upd_request.execution.description:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="With 'performed' status, you must include start and end times, at least 1 employee and work description",
                     )
-                await self._update_execution_times(
-                    execution_start_at=scheme.execution.start_at,
-                    execution_end_at=scheme.execution.end_at,
-                )
-                await self._update_execution_employees(scheme.execution.employees)
-                await self._update_execution_description(scheme.execution.description)
-                await self._update_execution_is_partially(scheme.execution.is_partially)
-                await self._update_warranty_until(scheme.execution.warranty_until)
-                await self._update_resources(scheme.resources)
             else:
-                if not scheme.execution.description:
+                if not upd_request.execution.description:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="With 'abandonment' or 'refusal' status, you must include reason",
                     )
-                await self._update_execution_description(scheme.execution.description)
-            if self.request.status != scheme.status:
+
+            await self._update_execution_is_partially_in_history(upd_request.execution.is_partially)
+            await self._update_execution_delayed_until_in_history(upd_request.execution.delayed_until)
+            await self._update_execution_description_in_history(upd_request.execution.description)
+            await self._update_execution_times_in_history(
+                execution_start_at=upd_request.execution.start_at,
+                execution_end_at=upd_request.execution.end_at,
+            )
+            await self._update_warranty_until(upd_request.execution.warranty_until)
+
+            if self.request.status != upd_request.status:
                 self.request.status_updated_at = datetime.now()
-                self.request.status = scheme.status
+                self.request.status = upd_request.status
                 self.updated_fields.append(
                     UpdatedField(
                         name="status",
                         value=scheme.status,
                         name_display="Статус",
-                        value_display=REQUEST_STATUS_EN_RU[scheme.status],
+                        value_display=REQUEST_STATUS_EN_RU[upd_request.status],
                     )
                 )
 
-            await self.request.save()
+            await upd_request.save()
         except:
             await self.rollback()
             raise
         await self._update_request_history(tag="status")
-        return self.request
+        return upd_request
 
     async def upload_requester_attachment_files(
         self,
@@ -403,13 +432,12 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
         )
         await request_history.save()
 
-    async def _update_description(
+    async def _update_description_in_history(
         self,
         description: str,
     ):
         if self.request.description == description:
             return
-        self.request.description = description
         self.updated_fields.append(
             UpdatedField(
                 name="description",
@@ -419,13 +447,12 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             )
         )
 
-    async def _update_tag(
+    async def _update_tag_history(
         self,
         tag: RequestTag,
     ):
         if self.request.tag == tag:
             return
-        self.request.tag = tag
         self.updated_fields.append(
             UpdatedField(
                 name="tag",
@@ -435,10 +462,11 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             )
         )
 
-    async def _update_relations(
+    async def _get_updated_relations(
         self,
         relations: RelationsRequestDCUScheme,
-    ):
+    ) -> RelationsRS:
+        new_relations = self.request.relations.model_copy(deep=True)
         if self.request.relations.template_id != relations.template_id:
             if relations.template_id:
                 template = await RequestTemplate.find_one(
@@ -470,11 +498,11 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         value_display="Не выбран",
                     )
                 )
-            self.request.relations.template_id = relations.template_id
+            new_relations.template_id = relations.template_id
         new = {r.id for r in relations.requests if r.id != self.request.id}
         old = {r.id for r in self.request.relations.requests}
         if new == old:
-            return
+            return new_relations
         add_request_ids = new - old
         delete_request_ids = old - new
         if delete_request_ids:
@@ -496,7 +524,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     {"$push": {"relations.requests": {"_id": self.request.id, "number": self.request.number, "status": self.request.status}}},
                 )
                 new_request_list.append(r)
-            self.request.relations.requests = new_request_list
+            new_relations.requests = new_request_list
         if add_request_ids:
             query = {
                 "_id": {"$in": add_request_ids},
@@ -520,7 +548,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         value_display=related_request.number,
                     )
                 )
-                self.request.relations.requests.append(related_request)
+                new_relations.requests.append(related_request)
             await RequestModel.find({"_id": {"$in": add_request_ids}}).update_many(
                 {
                     "$push": {
@@ -542,14 +570,14 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     }
                 },
             )
+        return new_relations
 
-    async def _update_add_params(
+    async def _update_add_params_history(
         self,
         administrative_supervision: bool,
         housing_supervision: bool,
     ):
         if self.request.administrative_supervision != administrative_supervision:
-            self.request.administrative_supervision = administrative_supervision
             self.updated_fields.append(
                 UpdatedField(
                     name="administrative_supervision",
@@ -559,7 +587,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if self.request.housing_supervision != housing_supervision:
-            self.request.housing_supervision = housing_supervision
             self.updated_fields.append(
                 UpdatedField(
                     name="housing_supervision",
@@ -569,13 +596,12 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
 
-    async def _update_is_public(
+    async def _update_is_public_history(
         self,
         is_public: bool,
     ):
         if self.request.is_public == is_public:
             return
-        self.request.is_public = is_public
         self.updated_fields.append(
             UpdatedField(
                 name="is_public",
@@ -585,30 +611,14 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             )
         )
 
-    async def _update_category_subcategory_work_area(
+    async def _update_category_subcategory_work_area_actions_in_history(
         self,
         category: RequestCategory,
         subcategory: RequestSubcategory | None,
         work_area: RequestWorkArea | None,
         actions: list[ActionRS | LiftShutdownActionRS | StandpipeShutdownActionRS],
     ):
-        if category == self.request.category and work_area == self.request.work_area and subcategory == self.request.subcategory and not self.request.actions and not actions:
-            return
-        house = await HouseS300.get(self.request.house.id)
-        if not house:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Дом не найден",
-            )
-        await self._check_categories_tree(
-            house=house,
-            category=category,
-            subcategory=subcategory,
-            work_area=work_area,
-            actions=actions,
-        )
         if category != self.request.category:
-            self.request.category = category
             self.updated_fields.append(
                 UpdatedField(
                     name="category",
@@ -618,7 +628,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if subcategory != self.request.subcategory:
-            self.request.subcategory = subcategory
             self.updated_fields.append(
                 UpdatedField(
                     name="subcategory",
@@ -628,7 +637,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if work_area != self.request.work_area:
-            self.request.work_area = work_area
             self.updated_fields.append(
                 UpdatedField(
                     name="work_area",
@@ -638,7 +646,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if self.request.actions or actions:
-            actions = list({a.id: a for a in actions}.values())
             existing_actions = {a.id: a for a in self.request.actions}
             for action in actions:
                 if action.id not in existing_actions:
@@ -701,9 +708,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         value_display=f"{ACTION_TYPE_EN_RU[action.type]}{start_at}{end_at}",
                     )
                 )
-            self.request.actions = actions
 
-    async def _update_desired_execution_times(
+    async def _update_desired_execution_times_in_history(
         self,
         execution_desired_start_at: datetime | None,
         execution_desired_end_at: datetime | None,
@@ -714,7 +720,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 detail="ExecutionRS desired_start_at can't be after desired_end_at",
             )
         if self.request.execution.desired_start_at != execution_desired_start_at:
-            self.request.execution.desired_start_at = execution_desired_start_at
             self.updated_fields.append(
                 UpdatedField(
                     name="execution.desired_start_at",
@@ -724,7 +729,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 )
             )
         if self.request.execution.desired_end_at != execution_desired_end_at:
-            self.request.execution.desired_end_at = execution_desired_end_at
             self.updated_fields.append(
                 UpdatedField(
                     name="execution.desired_end_at",
@@ -750,11 +754,12 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             )
         )
 
-    async def _update_resources(
+    async def _get_updated_resources(
         self,
         resources: ResourcesRequestDStatusUScheme,
     ):
-        if self.request.resources.materials or resources.materials:
+        new_resourses = self.request.resources.model_copy(deep=True)
+        if resources.materials is not None and (self.request.resources.materials or resources.materials):
             resources.materials = list({m.name: m for m in resources.materials}.values())
             existing_materials = {m.name: m for m in self.request.resources.materials}
             for material in resources.materials:
@@ -796,8 +801,8 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         value_display=f"{name}, кол-во - {m.quantity}, {round(m.price/100, 2)} р. за ед.",
                     )
                 )
-            self.request.resources.materials = resources.materials
-        if self.request.resources.services or resources.services:
+            new_resourses.materials = resources.materials
+        if resources.services is not None and (self.request.resources.services or resources.services):
             resources.services = list({s.name: s for s in resources.services}.values())
             existing_services = {s.name: s for s in self.request.resources.services}
             for service in resources.services:
@@ -839,92 +844,90 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         value_display=f"{name}, кол-во - {s.quantity}, {round(s.price/100, 2)} р. за ед.",
                     )
                 )
-            self.request.resources.services = resources.services
-        if not resources.warehouses and not self.request.resources.warehouses:
-            return
-
-        existing_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in self.request.resources.warehouses}
-        new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
-        item_names_map: dict[str, str] = {str(i.id): i.name for w in self.request.resources.warehouses for i in w.items}
-        warehouse_names_map: dict[str, str] = {str(w.id): w.name for w in self.request.resources.warehouses}
-        if existing_warehouses == new_warehouses:
-            return
-        warehouses = await S300API.upsert_storage_docs_out(
-            employee=self.employee,
-            request_id=self.request.id,
-            warehouses=new_warehouses,
-        )
-        self.add_rollback(
-            S300API.upsert_storage_docs_out,
-            request_id=self.request.id,
-            provider_id=self.employee.provider.id,
-            is_rollback=True,
-        )
-        for warehouse_index, warehouse in enumerate(warehouses):
-            w = existing_warehouses.pop(str(warehouse.id), None)
-            if not w:
-                for item in warehouse.items:
-                    self.updated_fields.append(
-                        UpdatedField(
-                            name=f"resources.warehouses.{warehouse_index}.items",
-                            value=item,
-                            name_display=f"Новый материал со склада {warehouse.name}",
-                            value_display=f"{item.name}, кол-во - {item.quantity}, {round(item.price/100, 2)} р. за ед.",
+            new_resourses.services = resources.services
+        if resources.warehouses is not None and (not resources.warehouses and not self.request.resources.warehouses):
+            existing_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in self.request.resources.warehouses}
+            new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
+            item_names_map: dict[str, str] = {str(i.id): i.name for w in self.request.resources.warehouses for i in w.items}
+            warehouse_names_map: dict[str, str] = {str(w.id): w.name for w in self.request.resources.warehouses}
+            if existing_warehouses == new_warehouses:
+                return
+            warehouses = await S300API.upsert_storage_docs_out(
+                employee=self.employee,
+                request_id=self.request.id,
+                warehouses=new_warehouses,
+            )
+            self.add_rollback(
+                S300API.upsert_storage_docs_out,
+                request_id=self.request.id,
+                provider_id=self.employee.provider.id,
+                is_rollback=True,
+            )
+            for warehouse_index, warehouse in enumerate(warehouses):
+                w = existing_warehouses.pop(str(warehouse.id), None)
+                if not w:
+                    for item in warehouse.items:
+                        self.updated_fields.append(
+                            UpdatedField(
+                                name=f"resources.warehouses.{warehouse_index}.items",
+                                value=item,
+                                name_display=f"Новый материал со склада {warehouse.name}",
+                                value_display=f"{item.name}, кол-во - {item.quantity}, {round(item.price/100, 2)} р. за ед.",
+                            )
                         )
-                    )
-                continue
-            for item in warehouse.items:
-                i_quantity = w.pop(str(item.id), None)
-                if not i_quantity:
-                    self.updated_fields.append(
-                        UpdatedField(
-                            name=f"resources.warehouses.{warehouse_index}.items",
-                            value=item,
-                            name_display=f"Новый материал со склада {warehouse.name}",
-                            value_display=f"{item.name}, кол-во - {item.quantity}, {round(item.price/100, 2)} р. за ед.",
-                        )
-                    )
                     continue
-                if item.quantity != i_quantity:
+                for item in warehouse.items:
+                    i_quantity = w.pop(str(item.id), None)
+                    if not i_quantity:
+                        self.updated_fields.append(
+                            UpdatedField(
+                                name=f"resources.warehouses.{warehouse_index}.items",
+                                value=item,
+                                name_display=f"Новый материал со склада {warehouse.name}",
+                                value_display=f"{item.name}, кол-во - {item.quantity}, {round(item.price/100, 2)} р. за ед.",
+                            )
+                        )
+                        continue
+                    if item.quantity != i_quantity:
+                        self.updated_fields.append(
+                            UpdatedField(
+                                name=f"resources.warehouses.{warehouse_index}.items",
+                                value=item.quantity,
+                                name_display=f"Кол-во материал со склада {warehouse.name}",
+                                value_display=str(item.quantity),
+                            )
+                        )
+                for i_id, i_quantity in w.items():
+                    item_name = item_names_map.get(i_id, "Неизвестный материал")
                     self.updated_fields.append(
                         UpdatedField(
                             name=f"resources.warehouses.{warehouse_index}.items",
-                            value=item.quantity,
-                            name_display=f"Кол-во материал со склада {warehouse.name}",
-                            value_display=str(item.quantity),
+                            value=None,
+                            name_display=f"Удален материал со склада {warehouse.name}",
+                            value_display=f"{item_name}, кол-во - {i_quantity}",
                         )
                     )
-            for i_id, i_quantity in w.items():
-                item_name = item_names_map.get(i_id, "Неизвестный материал")
-                self.updated_fields.append(
-                    UpdatedField(
-                        name=f"resources.warehouses.{warehouse_index}.items",
-                        value=None,
-                        name_display=f"Удален материал со склада {warehouse.name}",
-                        value_display=f"{item_name}, кол-во - {i_quantity}",
+            for w_id, items in existing_warehouses.items():
+                warehouse_name = warehouse_names_map.get(w_id, "Неизвестный склад")
+                for i_id, i_quantity in items.items():
+                    item_name = item_names_map.get(i_id, "Неизвестный материал")
+                    self.updated_fields.append(
+                        UpdatedField(
+                            name="resources.warehouses",
+                            value=None,
+                            name_display=f"Удален материал со склада {warehouse_name}",
+                            value_display=f"{item_name}, кол-во - {i_quantity}",
+                        )
                     )
-                )
-        for w_id, items in existing_warehouses.items():
-            warehouse_name = warehouse_names_map.get(w_id, "Неизвестный склад")
-            for i_id, i_quantity in items.items():
-                item_name = item_names_map.get(i_id, "Неизвестный материал")
-                self.updated_fields.append(
-                    UpdatedField(
-                        name="resources.warehouses",
-                        value=None,
-                        name_display=f"Удален материал со склада {warehouse_name}",
-                        value_display=f"{item_name}, кол-во - {i_quantity}",
-                    )
-                )
-        self.request.resources.warehouses = warehouses
+            new_resourses.warehouses = warehouses
+        return new_resourses
 
-    async def _update_execution_is_partially(
+    async def _update_execution_is_partially_in_history(
         self,
         is_partially: bool,
     ):
         if self.request.execution.is_partially == is_partially:
             return
-        self.request.execution.is_partially = is_partially
         self.updated_fields.append(
             UpdatedField(
                 name="execution.is_partially",
@@ -934,46 +937,45 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             )
         )
 
-    async def _update_execution_description(
+    async def _update_execution_description_in_history(
         self,
-        execution_description: str,
+        execution_description: str | None,
     ):
         if self.request.execution.description and self.request.execution.description == execution_description:
             return
-        self.request.execution.description = execution_description
         self.updated_fields.append(
             UpdatedField(
                 name="execution.description",
                 value=execution_description,
                 name_display="Описание работ/причины отмены/отсрочки/отказа",
-                value_display=execution_description,
+                value_display=execution_description if execution_description else "Не задано",
             )
         )
 
-    async def _update_execution_delayed_until(
+    async def _update_execution_delayed_until_in_history(
         self,
-        delayed_until: datetime,
+        delayed_until: datetime | None,
     ):
-        if self.request.execution.delayed_until and self.request.execution.delayed_until == delayed_until:
+        if self.request.execution.delayed_until == delayed_until:
             return
-        self.request.execution.delayed_until = delayed_until
         self.updated_fields.append(
             UpdatedField(
                 name="execution.delayed_until",
                 value=delayed_until,
                 name_display="Время отсрочки работ",
-                value_display=delayed_until.strftime("%H:%M %d.%m.%Y"),
+                value_display=delayed_until.strftime("%H:%M %d.%m.%Y") if delayed_until else "Не задано",
             )
         )
 
-    async def _update_execution_employees(
+    async def _get_updated_execution_employees(
         self,
         execution_employees: list[OnlyIdScheme],
-    ):
+    ) -> list[EmployeeRS]:
         new = {e.id for e in execution_employees}
         old = {e.id for e in self.request.execution.employees}
         if new == old:
-            return
+            return self.request.execution.employees
+        new_execution_employees = self.request.execution.employees.copy()
         add_employee_ids = new - old
         deleted_employee_ids = old - new
         if deleted_employee_ids:
@@ -990,7 +992,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     )
                     continue
                 new_employee_list.append(e)
-            self.request.execution.employees = new_employee_list
+            new_execution_employees = new_employee_list
         if add_employee_ids:
             for employee_id in add_employee_ids:
                 employee = await EmployeeS300.get(employee_id)
@@ -1013,43 +1015,42 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     )
                 )
                 employee_rs = EmployeeRS(**employee.model_dump(by_alias=True))
-                self.request.execution.employees.append(employee_rs)
+                new_execution_employees.append(employee_rs)
+        return new_execution_employees
 
-    async def _update_execution_times(
+    async def _update_execution_times_in_history(
         self,
-        execution_start_at: datetime,
-        execution_end_at: datetime,
+        execution_start_at: datetime | None,
+        execution_end_at: datetime | None,
     ):
-        if execution_start_at > execution_end_at:
+        if execution_start_at and execution_end_at and execution_start_at > execution_end_at:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="ExecutionRS start_at can`t be after end_at",
             )
         if self.request.execution.start_at and self.request.execution.end_at and self.request.execution.start_at == execution_start_at and self.request.execution.end_at == execution_end_at:
             return
-        self.request.execution.start_at = execution_start_at
         self.updated_fields.append(
             UpdatedField(
                 name="execution.start_at",
                 value=execution_start_at,
                 name_display="Время начала работ",
-                value_display=execution_start_at.strftime("%H:%M %d.%m.%Y"),
+                value_display=execution_start_at.strftime("%H:%M %d.%m.%Y") if execution_start_at else "Не задано",
             )
         )
-        self.request.execution.end_at = execution_end_at
         self.updated_fields.append(
             UpdatedField(
                 name="execution.end_at",
                 value=execution_end_at,
                 name_display="Время окончания работ",
-                value_display=execution_end_at.strftime("%H:%M %d.%m.%Y"),
+                value_display=execution_end_at.strftime("%H:%M %d.%m.%Y") if execution_end_at else "Не задано",
             )
         )
 
-    async def _update_execution_provider(
+    async def _get_updated_execution_provider_and_binds(
         self,
         execution_provider_id: PydanticObjectId,
-    ):
+    ) -> tuple[ProviderRS, ProviderHouseGroupBinds]:
         execution_provider = await ProviderS300.get(execution_provider_id)
         if not execution_provider:
             raise HTTPException(
@@ -1072,8 +1073,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             _id=execution_provider.id,
             name=execution_provider.name,
         )
-        self.request.execution.provider = execution_provider_rs
-        self.request.binds = binds
         self.updated_fields.append(
             UpdatedField(
                 name="execution.provider",
@@ -1082,11 +1081,13 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                 value_display=execution_provider_rs.name,
             )
         )
+        return execution_provider_rs, binds
 
-    async def _update_requester_attachment(
+    async def _get_upd_requester_attachment(
         self,
         requester_attachment: Attachment,
-    ):
+    ) -> Attachment:
+        new_execution_attachment = self.request.requester_attachment.model_copy(deep=True)
         file_ids = {f.id for f in requester_attachment.files}
         existing_file_ids = {f.id for f in self.request.requester_attachment.files}
         deleted_file_ids = existing_file_ids - file_ids
@@ -1105,7 +1106,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     )
                     continue
                 requester_attachment_files.append(f)
-            self.request.requester_attachment.files = requester_attachment_files
+            new_execution_attachment.files = requester_attachment_files
         if requester_attachment.comment != self.request.requester_attachment.comment:
             self.updated_fields.append(
                 UpdatedField(
@@ -1115,12 +1116,14 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     value_display=requester_attachment.comment,
                 )
             )
-            self.request.requester_attachment.comment = requester_attachment.comment
+            new_execution_attachment.comment = requester_attachment.comment
+        return new_execution_attachment
 
-    async def _update_execution_attachment(
+    async def _get_updated_execution_attachment(
         self,
         execution_attachment: Attachment,
-    ):
+    ) -> Attachment:
+        new_execution_attachment = self.request.execution.act.model_copy(deep=True)
         file_ids = {f.id for f in execution_attachment.files}
         existing_file_ids = {f.id for f in self.request.execution.attachment.files}
         deleted_file_ids = existing_file_ids - file_ids
@@ -1138,7 +1141,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         )
                     )
                 execution_attachment_files.append(f)
-            self.request.execution.attachment.files = execution_attachment_files
+            new_execution_attachment.files = execution_attachment_files
         if execution_attachment.comment != self.request.execution.attachment.comment:
             self.updated_fields.append(
                 UpdatedField(
@@ -1148,12 +1151,14 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     value_display=execution_attachment.comment,
                 )
             )
-            self.request.execution.attachment.comment = execution_attachment.comment
+            new_execution_attachment.comment = execution_attachment.comment
+        return new_execution_attachment
 
-    async def _update_execution_act(
+    async def _get_updated_execution_act(
         self,
         execution_act: Attachment,
-    ):
+    ) -> Attachment:
+        new_execution_act = self.request.execution.act.model_copy(deep=True)
         file_ids = {f.id for f in execution_act.files}
         existing_file_ids = {f.id for f in self.request.execution.act.files}
         deleted_file_ids = existing_file_ids - file_ids
@@ -1171,7 +1176,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                         )
                     )
                 execution_act_files.append(f)
-            self.request.execution.act.files = execution_act_files
+            new_execution_act.files = execution_act_files
         if execution_act.comment != self.request.execution.act.comment:
             self.updated_fields.append(
                 UpdatedField(
@@ -1181,4 +1186,5 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     value_display=execution_act.comment,
                 )
             )
-            self.request.execution.act.comment = execution_act.comment
+            new_execution_act.comment = execution_act.comment
+        return new_execution_act

@@ -137,15 +137,19 @@ class ExecutionRequestDUScheme(BaseModel):
     """
 
     desired_start_at: datetime | None = Field(
+        default=None,
         title="Желаемое время начала выполнения заявки работником",
     )
     desired_end_at: datetime | None = Field(
+        default=None,
         title="Желаемое время окончания выполнения заявки работником",
     )
-    act: Attachment = Field(
+    act: Attachment | None = Field(
+        default=None,
         title="Акт выполненных работ",
     )
-    attachment: Attachment = Field(
+    attachment: Attachment | None = Field(
+        default=None,
         title="Вложение о выполненных работ",
     )
 
@@ -155,42 +159,54 @@ class RequestDUScheme(BaseModel):
     Класс схемы заявки для ее обновления работником
     """
 
-    description: str = Field(
+    description: str | None = Field(
+        default=None,
         title="Описание заявки работником",
     )
-    category: RequestCategory = Field(
+    category: RequestCategory | None = Field(
+        default=None,
         title="Категория заявки работником",
     )
     subcategory: RequestSubcategory | None = Field(
+        default=None,
         title="Подкатегория заявки работником",
     )
     work_area: RequestWorkArea | None = Field(
+        default=None,
         title="Область работ по заявке",
     )
-    actions: list[ActionRS | LiftShutdownActionRS | StandpipeShutdownActionRS] = Field(
+    actions: list[ActionRS | LiftShutdownActionRS | StandpipeShutdownActionRS] | None = Field(
+        default=None,
         title="Действия по заявке",
         description="Если необходимы какие-то отключения, например отключение электроснабжения или стояка",
     )
-    administrative_supervision: bool = Field(
+    administrative_supervision: bool | None = Field(
+        default=None,
         title="Осуществляется ли административный надзор за заявкой",
     )
-    housing_supervision: bool = Field(
+    housing_supervision: bool | None = Field(
+        default=None,
         title="Осуществляется ли жилищный надзор (служба 004) за заявкой",
     )
-    tag: RequestTag = Field(
+    tag: RequestTag | None = Field(
+        default=None,
         title="Тег заявки работником",
     )
-    is_public: bool = Field(
+    is_public: bool | None = Field(
+        default=None,
         title="Публичная ли заявка",
         description="Если публичная ее могут видеть все жители дома",
     )
-    relations: RelationsRequestDCUScheme = Field(
+    relations: RelationsRequestDCUScheme | None = Field(
+        default=None,
         title="Связи заявки",
     )
-    execution: ExecutionRequestDUScheme = Field(
+    execution: ExecutionRequestDUScheme | None = Field(
+        default=None,
         title="Выполнение заявки",
     )
-    requester_attachment: Attachment = Field(
+    requester_attachment: Attachment | None = Field(
+        default=None,
         title="Вложение заявителя",
     )
 

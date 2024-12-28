@@ -20,10 +20,7 @@ from models.request.archived_request import ArchivedRequestModel, ArchiverType
 from models.request.categories_tree import RequestCategory
 from models.request.constants import RequestSource, RequestStatus, RequestType
 from models.request.embs.area import AreaRS
-from models.request.embs.employee import (
-    DispatcherRS,
-    ProviderRS,
-)
+from models.request.embs.employee import DispatcherRS, ProviderRS
 from models.request.embs.execution import ExecutionRS
 from models.request.embs.house import HouseRS
 from models.request.embs.relations import RelationsRS, RequestRelationsRS
@@ -220,6 +217,8 @@ class DispatcherRequestService(RequestService, Rollbacker):
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="House not found",
                 )
+            if scheme.actions:
+                scheme.actions = list({a.id: a for a in scheme.actions}.values())
             await self._check_categories_tree(
                 house=house,
                 category=scheme.category,
