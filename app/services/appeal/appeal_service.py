@@ -2,10 +2,9 @@ from datetime import datetime
 
 from beanie import PydanticObjectId
 from fastapi import HTTPException
-from starlette import status
-
 from models.appeal.appeal import Appeal
 from models.appeal_category.appeal_category import AppealCategory
+from starlette import status
 
 
 class AppealService:
@@ -18,7 +17,8 @@ class AppealService:
                 detail="Some categories not found",
             )
 
-    async def _generate_number(self, provider_id: PydanticObjectId, current_time: datetime) -> str:
+    @staticmethod
+    async def _generate_number(provider_id: PydanticObjectId, current_time: datetime) -> str:
         start_of_year = current_time.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
         start_of_next_year = start_of_year.replace(year=start_of_year.year + 1)
 
@@ -32,4 +32,9 @@ class AppealService:
 
     @staticmethod
     async def get_filetag_for_answer(appeal_id: PydanticObjectId) -> str:
-        return f"appeal answer {str(appeal_id)}"
+        return f"appeal answer {appeal_id}"
+
+    @staticmethod
+    async def get_filetag_for_appealer_files(appeal_id: PydanticObjectId) -> str:
+        
+        return f"appeal appealer_files {appeal_id}"

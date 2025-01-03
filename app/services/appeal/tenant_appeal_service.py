@@ -6,13 +6,13 @@ from typing import Any
 
 from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
-from fastapi import HTTPException
-from starlette import status
-
 from client.s300.models.tenant import TenantS300
+from fastapi import HTTPException, UploadFile
+from file_manager import File
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealStatus
 from services.appeal.appeal_service import AppealService
+from starlette import status
 
 
 class TenantAppealService(AppealService):
@@ -62,3 +62,29 @@ class TenantAppealService(AppealService):
             )
         appeal.rate = score
         return await appeal.save()
+
+    async def upload_appealer_files(
+        self,
+        appeal_id: PydanticObjectId,
+        files: list[UploadFile],
+    ) -> list[File]:
+        if not files:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Files is required",
+            )
+        appeal = await self.get_appeal(appeal_id)
+        try:
+            for file in files:
+                f = await File.create(
+                    file_content=await file.read(),
+                    filename=file.filename if file.filename else "Unknown",
+                    tag=await self.get_filetag_for_appealer_files(appeal.id),
+                )
+                appeal.appealer_files.append(f)
+        except:
+            for f in appeal.appealer_files:
+                await f.delete()
+            raise
+        await appeal.save()
+        return appeal.appealer_files

@@ -1,18 +1,20 @@
 from datetime import datetime, timedelta
 
 import jsony
-from file_manager import File
-from httpx import AsyncClient
-from starlette import status
-
+import pytest
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.tenant import TenantS300
+from file_manager import File
+from httpx import AsyncClient
 from models.request.request import RequestModel
+from starlette import status
 
 
 class TestDispatcherRequestRouter:
 
+    @pytest.mark.usefixtures("houses", "areas", "mock_s300_api_get_house_group_ids")
     async def test_create_request(self, api_employee_client: AsyncClient, auth_tenant: TenantS300, requests: list[RequestModel]):
+
         data = {
             "_type": "area",
             "area": {"_id": str(auth_tenant.area.id)},
@@ -169,6 +171,7 @@ class TestDispatcherRequestRouter:
         assert warehouse_item.quantity == mock_s300_api_upsert_storage_docs_out.test_quantity
         assert warehouse_item.price == mock_s300_api_upsert_storage_docs_out.test_price
 
+    @pytest.mark.usefixtures("mock_s300_api_get_allowed_worker_ids")
     async def test_get_request_history(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, requests: list[RequestModel]):
         request = requests[0]
         request.created_at = datetime.now() - timedelta(days=1)  # Заявка если только создана не создает историю а просто перезаписывает поля

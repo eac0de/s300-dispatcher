@@ -7,12 +7,12 @@ from typing import Any
 from beanie import PydanticObjectId
 from beanie.exceptions import RevisionIdWasChanged
 from beanie.odm.queries.find import FindMany
-from fastapi import HTTPException
-from starlette import status
-
 from client.s300.models.employee import EmployeeS300
+from fastapi import HTTPException
+from models.appeal.appeal import Appeal
 from models.appeal_category.appeal_category import AppealCategory
 from schemes.appeal_category import AppealCategoryCUScheme
+from starlette import status
 
 
 class AppealCategoryService:
@@ -107,6 +107,11 @@ class AppealCategoryService:
             HTTPException: При неудовлетворительном запросе
         """
         appeal_category = await self._get_appeal_category(appeal_category_id)
+        if await Appeal.find({"category_ids": appeal_category.id}).exists():
+            raise HTTPException(
+                detail="Категория используется в обращениях",
+                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            )
         await appeal_category.delete()
 
     async def get_appeal_categories(

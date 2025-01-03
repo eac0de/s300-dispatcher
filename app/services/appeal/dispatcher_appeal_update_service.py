@@ -5,11 +5,10 @@
 import asyncio
 
 from beanie import PydanticObjectId
-from fastapi import HTTPException, UploadFile, status
-from file_manager import File
-
 from client.s300.models.department import DepartmentS300
 from client.s300.models.employee import EmployeeS300
+from fastapi import HTTPException, UploadFile, status
+from file_manager import File
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealStatus
 from models.appeal.embs.answer import AnswerAS, EmployeeAnswerAS
@@ -41,16 +40,14 @@ class DispatcherAppealUpdateService(AppealService):
         if self.appeal.executor and self.appeal.executor.id != self.employee.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You are not executor of this request",
+                detail="You are not executor of this appeal",
             )
         if scheme.executor and scheme.executor.id != self.employee.id:
             await self._update_executor(scheme.executor.id)
             return await self.appeal.save()
-
         updated_appeal = self.appeal.model_copy(
             deep=True,
             update=scheme.model_dump(
-                by_alias=True,
                 exclude_unset=True,
                 exclude={"observers", "executor"},
             ),
@@ -138,7 +135,7 @@ class DispatcherAppealUpdateService(AppealService):
                 f = await File.create(
                     file_content=await file.read(),
                     filename=file.filename,
-                    tag=await self.get_filetag_for_answer(self.appeal.id),
+                    tag=await self.get_filetag_for_appealer_files(self.appeal.id),
                 )
                 rollbacker.add_rollback(f.delete)
                 new_files.append(f)
@@ -150,7 +147,7 @@ class DispatcherAppealUpdateService(AppealService):
         return self.appeal.appealer_files
 
     async def accept_appeal(self) -> Appeal:
-        if self.appeal.status != AppealStatus.ACCEPTED:
+        if self.appeal.status != AppealStatus.NEW:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="To be accepted, the appeal must be in an 'accepted' status",
@@ -160,15 +157,10 @@ class DispatcherAppealUpdateService(AppealService):
         return await self.appeal.save()
 
     async def answer_appeal(self, scheme: AnswerAppealDCScheme) -> Appeal:
-        if self.appeal.executor and self.appeal.executor.id != self.employee.id:
+        if not self.appeal.executor or self.appeal.executor.id != self.employee.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You are not executor of this request",
-            )
-        if self.appeal.executor and self.appeal.executor.id != self.employee.id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="You are not executor of this request",
+                detail="You are not executor of this appeal",
             )
         if self.appeal.answer and not self.appeal.answer.is_published or [a for a in self.appeal.add_answers if not a.is_published]:
             raise HTTPException(
@@ -240,16 +232,18 @@ class DispatcherAppealUpdateService(AppealService):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Can't update a published appeal",
             )
-        deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in scheme.files)
-        if deleted_file_ids:
-            new_answer_files = []
-            for file in answer.files:
-                if file.id in deleted_file_ids:
-                    asyncio.create_task(file.delete())
-                    continue
-                new_answer_files.append(file)
-            answer.files = new_answer_files
-        answer.text = scheme.text
+        if scheme.files is not None:
+            deleted_file_ids = set(f.id for f in answer.files) - set(f.id for f in scheme.files)
+            if deleted_file_ids:
+                new_answer_files = []
+                for file in answer.files:
+                    if file.id in deleted_file_ids:
+                        asyncio.create_task(file.delete())
+                        continue
+                    new_answer_files.append(file)
+                answer.files = new_answer_files
+        if scheme.text is not None:
+            answer.text = scheme.text
         return await self.appeal.save()
 
     async def _get_answer(self, answer_id: PydanticObjectId) -> AnswerAS:
@@ -305,16 +299,19 @@ class DispatcherAppealUpdateService(AppealService):
         scheme: AppealCommentDUScheme,
     ) -> AppealComment:
         comment = await self._get_comment(comment_id)
-        deleted_file_ids = set(f.id for f in comment.files) - set(f.id for f in scheme.files)
-        if not deleted_file_ids:
-            return comment
-        new_comment_files = []
-        for file in comment.files:
-            if file.id in deleted_file_ids:
-                asyncio.create_task(file.delete())
-                continue
-            new_comment_files.append(file)
-        comment.files = new_comment_files
+        if scheme.files is not None:
+            deleted_file_ids = set(f.id for f in comment.files) - set(f.id for f in scheme.files)
+            if not deleted_file_ids:
+                return comment
+            new_comment_files = []
+            for file in comment.files:
+                if file.id in deleted_file_ids:
+                    asyncio.create_task(file.delete())
+                    continue
+                new_comment_files.append(file)
+            comment.files = new_comment_files
+        if scheme.text is not None:
+            comment.text = scheme.text
         await comment.save()
         comment.read_by = {self.employee.id} if self.employee.id in comment.read_by else set()
         return comment
@@ -341,7 +338,7 @@ class DispatcherAppealUpdateService(AppealService):
                 )
                 rollbacker.add_rollback(f.delete)
                 new_files.append(f)
-            comment.extend(new_files)
+            comment.files.extend(new_files)
             await comment.save()
         except:
             await rollbacker.rollback()
@@ -365,7 +362,7 @@ class DispatcherAppealUpdateService(AppealService):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Comment not found",
             )
-        if comment.employee.id == self.employee.id:
+        if comment.employee.id != self.employee.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You are not creator of this comment",

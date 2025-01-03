@@ -1,11 +1,10 @@
 from datetime import datetime
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field
-
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealType
 from models.base.binds import DepartmentBinds
+from pydantic import BaseModel, Field
 from schemes.extra.only_id import OnlyIdScheme
 
 
@@ -29,6 +28,7 @@ class AppealDCScheme(BaseModel):
         title="Обращатор",
     )
     type: AppealType = Field(
+        alias="_type",
         title="Тип обращения",
     )
     observers: ObserversAppealDUCScheme = Field(
@@ -38,15 +38,18 @@ class AppealDCScheme(BaseModel):
         title="Идентификаторы категорий обращения",
     )
     incoming_number: str | None = Field(
+        default=None,
         title="Входящий номер",
     )
     incoming_at: datetime | None = Field(
+        default=None,
         title="Входящая дата",
     )
 
 
 class AppealUCScheme(BaseModel):
     type: AppealType | None = Field(
+        alias="_type",
         default=None,
         title="Тип обращения",
     )

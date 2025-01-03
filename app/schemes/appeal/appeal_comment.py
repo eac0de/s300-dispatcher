@@ -9,7 +9,10 @@ class AppealCommentDCScheme(BaseModel):
 
 
 class AppealCommentDUScheme(BaseModel):
-    files: list[File] = Field(
-        default_factory=list,
+    text: str | None = Field(
+        title="Текст комментария",
+    )
+    files: list[File] | None = Field(
+        default=None,
         title="Файлы вложения",
     )

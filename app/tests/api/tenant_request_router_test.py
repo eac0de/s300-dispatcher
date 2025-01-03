@@ -1,16 +1,17 @@
 import jsony
+import pytest
 from beanie import PydanticObjectId
-from httpx import AsyncClient
-from starlette import status
-
 from client.s300.models.tenant import TenantS300
+from httpx import AsyncClient
 from models.catalog_item.catalog_item import CatalogItem
 from models.request.constants import RequestStatus
 from models.request.request import RequestModel
+from starlette import status
 
 
 class TestTenantRequestRouter:
 
+    @pytest.mark.usefixtures("houses", "providers", "areas", "mock_s300_api_get_house_group_ids")
     async def test_create_request(self, api_tenant_client: AsyncClient):
         data = {
             "_type": "area",
@@ -22,6 +23,7 @@ class TestTenantRequestRouter:
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
 
+    @pytest.mark.usefixtures("houses", "providers", "areas", "mock_s300_api_get_house_group_ids")
     async def test_create_catalog_request(self, api_tenant_client: AsyncClient, catalog_items: list[CatalogItem]):
         catalog_item = catalog_items[0]
         data = {

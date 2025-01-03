@@ -20,15 +20,6 @@ from contextlib import asynccontextmanager
 
 import jsony
 import uvicorn
-from email_sender import config_email_sender
-from fastapi import FastAPI, Request
-from file_manager import config_file_manager
-from jsony_responses import JSONYResponse
-from starlette import status
-from starlette.middleware.gzip import GZipMiddleware
-from telegram_sender import TelegramSender, config_telegram_sender
-from template_renderer import config_template_renderer
-
 from api.middlewares.procces_time_middleware import ProcessTimeMiddleware
 from api.routers.appeal_category_router import appeal_category_router
 from api.routers.constants_router import constants_router
@@ -40,11 +31,20 @@ from api.routers.employee_schedule_router import employee_schedule_router
 from api.routers.gateway_request_router import gateway_request_router
 from api.routers.other_router import other_router
 from api.routers.request_template_router import request_template_router
+from api.routers.tenant_appeal_router import tenant_appeal_router
 from api.routers.tenant_catalog_item_router import tenant_catalog_item_router
 from api.routers.tenant_request_router import tenant_request_router
 from config import settings
 from database import init_db
+from email_sender import config_email_sender
 from errors import FailedDependencyError
+from fastapi import FastAPI, Request
+from file_manager import config_file_manager
+from jsony_responses import JSONYResponse
+from starlette import status
+from starlette.middleware.gzip import GZipMiddleware
+from telegram_sender import TelegramSender, config_telegram_sender
+from template_renderer import config_template_renderer
 
 
 @asynccontextmanager
@@ -185,6 +185,10 @@ app.include_router(
 app.include_router(
     router=dispatcher_appeal_router,
     prefix="/dispatcher/appeals",
+)
+app.include_router(
+    router=tenant_appeal_router,
+    prefix="/tenant/appeals",
 )
 app.include_router(
     router=appeal_category_router,

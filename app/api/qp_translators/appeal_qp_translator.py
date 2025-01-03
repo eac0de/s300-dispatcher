@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from beanie import PydanticObjectId
-from qp_translator import Filter, QPTranslator, str_parsers
-
 from models.appeal.constants import AppealSource, AppealStatus, AppealType
+from qp_translator import Filter, QPTranslator, str_parsers
 
 
 class DispatcherAppealsQPTranslator(QPTranslator):
@@ -94,6 +93,7 @@ class DispatcherAppealCommentsQPTranslator(QPTranslator):
     """
     Класс с фильтрами для обращений диспетчера
     """
+
 
 class TenantAppealsQPTranslator(QPTranslator):
     """

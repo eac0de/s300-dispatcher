@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from typing import Any
 
 import aiohttp
-
 from config import settings
 from errors import FailedDependencyError
 from utils.request.constants import RequestMethod
@@ -49,7 +48,7 @@ class ClientS300:
         Returns:
             tuple[int, str | dict[str, Any]]: Статус код и данные ответа
         """
-
+        print(path)
         attempt = 0
         if not headers:
             headers = {}

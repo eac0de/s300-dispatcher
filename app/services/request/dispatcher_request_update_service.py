@@ -5,14 +5,12 @@
 from datetime import datetime, timedelta
 
 from beanie import PydanticObjectId
-from fastapi import HTTPException, UploadFile
-from file_manager import File
-from starlette import status
-
 from client.s300.api import S300API
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.house import HouseS300
 from client.s300.models.provider import ProviderS300
+from fastapi import HTTPException, UploadFile
+from file_manager import File
 from models.base.binds import ProviderHouseGroupBinds
 from models.extra.attachment import Attachment
 from models.request.categories_tree import (
@@ -58,6 +56,7 @@ from schemes.request.request_status import (
     ResourcesRequestDStatusUScheme,
 )
 from services.request.request_service import RequestService
+from starlette import status
 from utils.rollbacker import Rollbacker
 
 
@@ -193,7 +192,6 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
             update = scheme.model_dump(by_alias=True, exclude_unset=True, exclude={"execution", "resources"})
             if scheme.resources:
                 update["resources"] = await self._get_updated_resources(scheme.resources)
-                print(update["resources"])
             if scheme.execution:
                 execution_update = scheme.execution.model_dump(by_alias=True, exclude_unset=True, exclude={"provider", "employees"})
                 update["execution"] = self.request.execution.model_copy(deep=True, update=execution_update)
@@ -845,7 +843,7 @@ class DispatcherRequestUpdateService(RequestService, Rollbacker):
                     )
                 )
             new_resourses.services = resources.services
-        if resources.warehouses is not None and (not resources.warehouses and not self.request.resources.warehouses):
+        if resources.warehouses is not None and (resources.warehouses or self.request.resources.warehouses):
             existing_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in self.request.resources.warehouses}
             new_warehouses = {str(w.id): {str(i.id): i.quantity for i in w.items} for w in resources.warehouses}
             item_names_map: dict[str, str] = {str(i.id): i.name for w in self.request.resources.warehouses for i in w.items}

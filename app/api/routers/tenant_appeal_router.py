@@ -2,11 +2,11 @@
 Модуль с роутером для работы с заявками для жителей
 """
 
-from beanie import PydanticObjectId
-from fastapi import APIRouter, Query, Request, status
-
 from api.dependencies.auth import TenantDep
 from api.qp_translators.appeal_qp_translator import TenantAppealsQPTranslator
+from beanie import PydanticObjectId
+from fastapi import APIRouter, Query, Request, UploadFile, status
+from file_manager import File
 from schemes.appeal.tenant_appeal import AppealTRLScheme
 from services.appeal.tenant_appeal_service import TenantAppealService
 
@@ -30,12 +30,13 @@ async def get_appeal_list(
 
     params = await TenantAppealsQPTranslator.parse(req.query_params)
     service = TenantAppealService(tenant)
-    return await service.get_appeal_list(
+    appeals = await service.get_appeal_list(
         query_list=params.query_list,
         offset=params.offset,
         limit=params.limit,
         sort=params.sort,
     )
+    return await appeals.to_list()
 
 
 @tenant_appeal_router.get(
@@ -69,4 +70,25 @@ async def rate_appeal(
     return await service.rate_appeal(
         appeal_id=appeal_id,
         score=score,
+    )
+
+
+@tenant_appeal_router.post(
+    path="/{appeal_id}/appealer_files/",
+    status_code=status.HTTP_200_OK,
+    response_model=list[File],
+)
+async def upload_appealer_files(
+    tenant: TenantDep,
+    appeal_id: PydanticObjectId,
+    files: list[UploadFile],
+):
+    """
+    Загрузка файлов вложения жителем
+    """
+
+    service = TenantAppealService(tenant)
+    return await service.upload_appealer_files(
+        appeal_id=appeal_id,
+        files=files,
     )

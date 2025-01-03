@@ -5,18 +5,36 @@ import jwt
 import pytest
 from asgi_lifespan import LifespanManager
 from beanie import PydanticObjectId
-from httpx import ASGITransport, AsyncClient
-from pydantic import BaseModel
-
 from client.s300.models.area import AreaS300
+from client.s300.models.department import DepartmentS300, SettingsDepartmentS300
 from client.s300.models.employee import EmployeeS300
-from client.s300.models.house import HouseS300
+from client.s300.models.house import (
+    HouseS300,
+    PorchHS300S,
+    ServiceBindHS300S,
+    SettingsHS300S,
+    StandpipeHS300S,
+)
 from client.s300.models.provider import ProviderS300
 from client.s300.models.tenant import TenantS300
 from config import settings
 from database import init_db
+from httpx import ASGITransport, AsyncClient
 from main import app
-from models.base.binds import ProviderBinds, ProviderHouseGroupBinds
+from models.appeal.appeal import Appeal
+from models.appeal.constants import AppealSource, AppealStatus, AppealType
+from models.appeal.embs.appealer import Appealer
+from models.appeal.embs.employee import (
+    DepartmentAS,
+    DispatcherAS,
+    EmployeeAS,
+    ProviderAS,
+)
+from models.appeal.embs.observers import ObserversAS
+from models.appeal.embs.relations import RelationsAS
+from models.appeal_category.appeal_category import AppealCategory
+from models.appeal_comment.appeal_comment import AppealComment, EmployeeAppealComment
+from models.base.binds import DepartmentBinds, ProviderBinds, ProviderHouseGroupBinds
 from models.catalog_item.catalog_item import CatalogItem, CatalogItemPrice
 from models.catalog_item.constants import CatalogItemGroup, CatalogMeasurementUnit
 from models.extra.attachment import Attachment
@@ -54,6 +72,9 @@ from models.request.request import RequestModel
 from models.request_history.request_history import RequestHistory
 from models.request_template.constants import RequestTemplateType
 from models.request_template.request_template import RequestTemplate
+from pydantic import BaseModel
+from pytest_mock import MockerFixture
+from services.appeal.appeal_service import AppealService
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -108,6 +129,8 @@ async def setup_db():
         OtherPerson,
         OtherEmployee,
         OtherProvider,
+        Appeal,
+        AppealCategory,
     ]
     for model in models:
         await model.get_motor_collection().drop()
@@ -248,30 +271,26 @@ async def mock_create_receipt_for_paid_request(mocker):
 
 
 @pytest.fixture()
-async def mock_house_get(mocker, auth_tenant: TenantS300, auth_employee: EmployeeS300):
-    mock_house = HouseS300.model_validate(
-        {
-            "_id": auth_tenant.house.id,
-            "address": "г Санкт-Петербург, ул Панфилова, д. 15 корп. 8 лит. А",
-            "service_binds": [
-                {
-                    "_id": PydanticObjectId("61b06ed7c950b1001a3a31db"),
-                    "provider": auth_employee.provider.id,
-                    "business_type": PydanticObjectId("5427dc2bf3b7d44b1ae89b0e"),
-                    "start_at": datetime(2000, 1, 1, 0, 0),
-                    "end_at": None,
-                    "is_public": True,
-                    "is_active": True,
-                    "group": None,
-                },
-            ],
-            "porches": [{"standpipes": [{"_id": PydanticObjectId("67442c4feb37cdbb3463ab5d")}], "lifts": []}],
-            "settings": {"requests_provider": auth_employee.provider.id},
-        }
-    )
-    await mock_house.save()
-    mocker.patch("client.s300.models.house.HouseS300.get", return_value=mock_house)
-    return mock_house
+async def mock_s300_api_get_house_group_ids(mocker) -> set[PydanticObjectId]:
+    hg_id = PydanticObjectId()
+    mocker.patch("client.s300.api.S300API.get_house_group_ids", return_value=set([hg_id]))
+    return set([hg_id])
+
+
+@pytest.fixture()
+async def mock_s300_api_get_allowed_worker_ids(mocker: MockerFixture):
+    def side_effect(**kwargs):
+        return set(kwargs["worker_ids"])
+
+    mocker.patch("client.s300.api.S300API.get_allowed_worker_ids", side_effect=side_effect)
+
+
+@pytest.fixture()
+async def mock_s300_api_get_allowed_house_ids(mocker: MockerFixture):
+    def side_effect(**kwargs):
+        return kwargs["house_ids"]
+
+    mocker.patch("client.s300.api.S300API.get_allowed_house_ids", side_effect=side_effect)
 
 
 # ------------------- Фикстуры с созданием моделей -------------------
@@ -483,15 +502,162 @@ async def other_employees(other_providers: list[OtherProvider]):
 
 
 @pytest.fixture()
-async def request_templates():
+async def request_templates(auth_employee: EmployeeS300) -> list[RequestTemplate]:
     return [
         await RequestTemplate(
             _id=PydanticObjectId("6746dce7472435f22496fa74"),
-            provider_id=PydanticObjectId("61b06a693b6d6e0019260942"),
+            provider_id=auth_employee.provider.id,
             name="test_name",
             category=RequestCategory.BUILDING_RENOVATION,
             subcategory=RequestSubcategory.GENERAL_PROPERTY,
             _type=RequestTemplateType.REQUEST,
             body="test_body",
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def houses(auth_tenant: TenantS300, auth_employee: EmployeeS300) -> list[HouseS300]:
+    return [
+        await HouseS300(
+            _id=auth_tenant.house.id,
+            address="г Санкт-Петербург, ул Панфилова, д. 15 корп. 8 лит. А",
+            service_binds=[
+                ServiceBindHS300S(
+                    _id=PydanticObjectId("61b06ed7c950b1001a3a31db"),
+                    provider=auth_employee.provider.id,
+                    business_type=PydanticObjectId("5427dc2bf3b7d44b1ae89b0e"),
+                    start_at=datetime(2000, 1, 1, 0, 0),
+                    end_at=None,
+                    is_public=True,
+                    is_active=True,
+                    group=None,
+                ),
+            ],
+            porches=[
+                PorchHS300S(
+                    standpipes=[StandpipeHS300S(_id=PydanticObjectId("67442c4feb37cdbb3463ab5d"))],
+                    lifts=[],
+                ),
+            ],
+            settings=SettingsHS300S(requests_provider=auth_employee.provider.id),
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def areas(auth_tenant: TenantS300) -> list[AreaS300]:
+    return [
+        await AreaS300(
+            _id=auth_tenant.area.id,
+            number=auth_tenant.area.number,
+            formatted_number=auth_tenant.area.formatted_number,
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def providers(auth_employee: EmployeeS300) -> list[ProviderS300]:
+    return [
+        await ProviderS300(
+            _id=auth_employee.provider.id,
+            name=auth_employee.provider.name,
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def departments(auth_employee: EmployeeS300) -> list[DepartmentS300]:
+    return [
+        await DepartmentS300(
+            _id=auth_employee.department.id,
+            name=auth_employee.department.name,
+            settings=SettingsDepartmentS300(is_accepting_appeals=True),
+            provider_id=auth_employee.provider.id,
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def appeal_categories(auth_employee: EmployeeS300) -> list[AppealCategory]:
+    return [
+        await AppealCategory(
+            _id=PydanticObjectId("6746dce7472435f22496fa74"),
+            provider_id=auth_employee.provider.id,
+            name="test_name",
+            description="test_description",
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def appeals(auth_employee: EmployeeS300, auth_tenant: TenantS300) -> list[Appeal]:
+    t = datetime.now()
+    auth_employee_dict = auth_employee.model_dump(by_alias=True)
+    return [
+        await Appeal(
+            _id=PydanticObjectId(),
+            provider=ProviderAS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
+            subject="test_subject_1",
+            description="test_description_1",
+            created_at=t,
+            dispatcher=DispatcherAS.model_validate(auth_employee_dict),
+            appealer=Appealer.model_validate(auth_tenant.model_dump(by_alias=True)),
+            executor=None,
+            relations=RelationsAS(),
+            status=AppealStatus.NEW,
+            _type=AppealType.ACKNOWLEDGEMENT,
+            observers=ObserversAS(departments=[DepartmentAS(_id=auth_employee.department.id, name=auth_employee.department.name)], employees=[]),
+            _binds=DepartmentBinds(dp={auth_employee.department.id}),
+            category_ids=set(),
+            number=await AppealService._generate_number(auth_employee.provider.id, t),
+            source=AppealSource.DISPATCHER,
+            deadline_at=t + timedelta(days=1),
+        ).save(),
+        await Appeal(
+            _id=PydanticObjectId(),
+            provider=ProviderAS.model_validate(auth_employee.provider.model_dump(by_alias=True)),
+            subject="test_subject_2",
+            description="test_description_2",
+            created_at=t,
+            dispatcher=DispatcherAS.model_validate(auth_employee_dict),
+            appealer=Appealer.model_validate(auth_tenant.model_dump(by_alias=True)),
+            executor=EmployeeAS.model_validate(auth_employee.model_dump(by_alias=True)),
+            relations=RelationsAS(),
+            status=AppealStatus.RUN,
+            _type=AppealType.CLAIM,
+            observers=ObserversAS(departments=[DepartmentAS(_id=auth_employee.department.id, name=auth_employee.department.name)], employees=[]),
+            _binds=DepartmentBinds(dp={auth_employee.department.id}),
+            category_ids=set(),
+            number=await AppealService._generate_number(auth_employee.provider.id, t),
+            source=AppealSource.DISPATCHER,
+            deadline_at=t + timedelta(days=1),
+        ).save(),
+    ]
+
+
+@pytest.fixture()
+async def appeal_comments(auth_employee: EmployeeS300, appeals: list[Appeal]) -> list[AppealComment]:
+    t = datetime.now()
+    auth_employee_dict = auth_employee.model_dump(by_alias=True)
+    auth_employee_dict["position_name"] = auth_employee.position.name
+    appeal = appeals[0]
+    return [
+        await AppealComment(
+            _id=PydanticObjectId(),
+            appeal_id=appeal.id,
+            created_at=t,
+            text="test_text_1",
+            employee=EmployeeAppealComment.model_validate(auth_employee_dict),
+            files=[],
+            read_by={auth_employee.id},
+        ).save(),
+        await AppealComment(
+            _id=PydanticObjectId(),
+            appeal_id=appeal.id,
+            created_at=t,
+            text="test_text_2",
+            employee=EmployeeAppealComment.model_validate(auth_employee_dict),
+            read_by={auth_employee.id},
         ).save(),
     ]

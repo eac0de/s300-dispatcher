@@ -3,13 +3,11 @@ from typing import Any
 
 from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
-from fastapi import HTTPException
-from file_manager import File
-from starlette import status
-
 from client.s300.models.department import DepartmentS300
 from client.s300.models.employee import AppealAccessLevel, EmployeeS300
 from client.s300.models.tenant import TenantS300
+from fastapi import HTTPException
+from file_manager import File
 from models.appeal.appeal import Appeal
 from models.appeal.constants import AppealSource, AppealStatus
 from models.appeal.embs.appealer import Appealer
@@ -20,6 +18,7 @@ from models.base.binds import DepartmentBinds
 from schemes.appeal.appeal_stats import AppealStats
 from schemes.appeal.dispatcher_appeal import AppealCommentStats, AppealDCScheme
 from services.appeal.appeal_service import AppealService
+from starlette import status
 
 
 class DispatcherAppealService(AppealService):
@@ -59,7 +58,7 @@ class DispatcherAppealService(AppealService):
             {
                 "$facet": {
                     "accepted": [
-                        {"$match": {"status": AppealStatus.ACCEPTED}},
+                        {"$match": {"status": AppealStatus.NEW}},
                         {"$count": "count"},
                     ],
                     "run": [
@@ -210,7 +209,7 @@ class DispatcherAppealService(AppealService):
             dispatcher=dispatcher,
             appealer=appealer,
             executor=executor,
-            status=AppealStatus.RUN if executor else AppealStatus.ACCEPTED,
+            status=AppealStatus.RUN if executor else AppealStatus.NEW,
             _type=scheme.type,
             observers=observers,
             category_ids=scheme.category_ids,
@@ -327,6 +326,7 @@ class DispatcherAppealService(AppealService):
                     {
                         "$or": [
                             {"_binds.dp": self.employee.department.id},
+                            {"observers.employees.id": self.employee.id},
                             {"dispatcher._id": self.employee.id},
                         ]
                     }
@@ -336,6 +336,7 @@ class DispatcherAppealService(AppealService):
                 {
                     "$or": [
                         {"observers.departments": [], "observers.employees": []},
+                        {"observers.employees.id": self.employee.id},
                         {"dispatcher._id": self.employee.id},
                     ]
                 }

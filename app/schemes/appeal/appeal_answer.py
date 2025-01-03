@@ -9,10 +9,11 @@ class AnswerAppealDCScheme(BaseModel):
 
 
 class AnswerAppealDUScheme(BaseModel):
-    text: str = Field(
+    text: str | None = Field(
+        default=None,
         title="Комментарий",
     )
-    files: list[File] = Field(
-        default_factory=list,
+    files: list[File] | None = Field(
+        default=None,
         title="Файлы вложения",
     )

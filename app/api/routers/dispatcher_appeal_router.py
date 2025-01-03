@@ -329,7 +329,7 @@ async def update_appeal_answer(
 
 
 @dispatcher_appeal_router.post(
-    path="/{appeal_id}/answers/{answer_id}/files",
+    path="/{appeal_id}/answers/{answer_id}/files/",
     status_code=status.HTTP_200_OK,
     response_model=AppealDRLScheme,
 )
@@ -404,7 +404,7 @@ async def comment_appeal(
     status_code=status.HTTP_200_OK,
     response_model=list[AppealComment],
 )
-async def get_appeal_comment_list(
+async def get_appeal_comments_list(
     employee: EmployeeDep,
     appeal_id: PydanticObjectId,
     req: Request,

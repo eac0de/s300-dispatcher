@@ -136,7 +136,6 @@ class TenantS300(DocumentCache):
                 description="The data transmitted from the S300 does not contain an «tenant» key",
             )
         try:
-            print(data)
             await cls(**data["tenant"]).save()
         except pydantic_core.ValidationError as e:
             raise FailedDependencyError(

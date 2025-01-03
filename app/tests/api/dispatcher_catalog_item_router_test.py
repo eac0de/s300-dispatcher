@@ -1,13 +1,13 @@
 from datetime import timedelta
 
 from beanie import PydanticObjectId
-from httpx import AsyncClient
-from starlette import status
-
+import pytest
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.tenant import TenantS300
 from config import settings
+from httpx import AsyncClient
 from models.catalog_item.catalog_item import CatalogItem
+from starlette import status
 
 TEST_FILEPATH = f"{settings.PROJECT_DIR}/tests/static/"
 TEST_FILENAME = "test_image.jpeg"
@@ -55,6 +55,7 @@ class TestDispatcherCatalogItemRouter:
         assert len(resp_json) == 1
         assert resp_json[0] == catalog_items[0].group.value
 
+    @pytest.mark.usefixtures("mock_s300_api_get_allowed_house_ids")
     async def test_create_catalog_item(self, api_employee_client: AsyncClient, auth_employee: EmployeeS300, auth_tenant: TenantS300):
         test_name = "test_name"
         test_code = "test_code"
@@ -70,7 +71,7 @@ class TestDispatcherCatalogItemRouter:
             "available_until": None,
             "group": "electrics",
             "prices": [{"start_at": "2024-11-07T14:48:58.768Z", "amount": 100}],
-            "house_ids": [str(tenant_house_id), str(PydanticObjectId())],
+            "house_ids": [str(tenant_house_id)],
             "house_group_ids": [],
             "fias": [],
         }

@@ -396,7 +396,7 @@ class TenantRequestService(RequestService):
         request.execution.average_rating = (sum(e.score for e in request.execution.rates) / len(request.execution.rates)) if request.execution.rates else 0
         return await request.save()
 
-    async def upload_requester_attachments(
+    async def upload_requester_attachment_files(
         self,
         request_id: PydanticObjectId,
         files: list[UploadFile],

@@ -7,15 +7,13 @@ from typing import Any
 
 from beanie import PydanticObjectId
 from beanie.odm.queries.find import FindMany
-from fastapi import HTTPException
-from file_manager import File
-from starlette import status
-
 from client.s300.api import S300API
 from client.s300.models.area import AreaS300
 from client.s300.models.employee import EmployeeS300
 from client.s300.models.house import HouseS300
 from client.s300.models.tenant import TenantS300
+from fastapi import HTTPException
+from file_manager import File
 from models.request.archived_request import ArchivedRequestModel, ArchiverType
 from models.request.categories_tree import RequestCategory
 from models.request.constants import RequestSource, RequestStatus, RequestType
@@ -35,6 +33,7 @@ from schemes.request_employee_schedule import (
     RequestEmployeeWeeklySchedule,
 )
 from services.request.request_service import RequestService
+from starlette import status
 from utils.rollbacker import Rollbacker
 
 

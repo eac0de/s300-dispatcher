@@ -15,3 +15,9 @@ class TestConstantsRouter:
         assert resp.status_code == status.HTTP_200_OK
         resp_json = resp.json()
         assert isinstance(resp_json, dict)
+
+    async def test_get_appeal_constants(self, api_employee_client: AsyncClient):
+        resp = await api_employee_client.get("/constants/appeals/")
+        assert resp.status_code == status.HTTP_200_OK
+        resp_json = resp.json()
+        assert isinstance(resp_json, dict)

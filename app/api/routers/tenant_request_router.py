@@ -2,12 +2,11 @@
 Модуль с роутером для работы с заявками для жителей
 """
 
+from api.dependencies.auth import TenantDep
+from api.qp_translators.request_qp_translator import TenantRequestQPTranslator
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Query, Request, UploadFile, status
 from file_manager import File
-
-from api.dependencies.auth import TenantDep
-from api.qp_translators.request_qp_translator import TenantRequestQPTranslator
 from schemes.request.tenant_request import (
     RequestTCatalogCScheme,
     RequestTCScheme,
@@ -123,7 +122,7 @@ async def rate_request(
     status_code=status.HTTP_200_OK,
     response_model=list[File],
 )
-async def upload_requester_attachments(
+async def upload_requester_attachment_files(
     tenant: TenantDep,
     request_id: PydanticObjectId,
     files: list[UploadFile],
@@ -133,7 +132,7 @@ async def upload_requester_attachments(
     """
 
     service = TenantRequestService(tenant)
-    return await service.upload_requester_attachments(
+    return await service.upload_requester_attachment_files(
         request_id=request_id,
         files=files,
     )

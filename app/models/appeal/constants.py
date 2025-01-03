@@ -25,14 +25,14 @@ APPEAL_TYPE_EN_RU = {
 
 
 class AppealStatus(str, Enum):
-    ACCEPTED = "accepted"
-    PERFORMED = "performed"
+    NEW = "new"
     RUN = "run"
+    PERFORMED = "performed"
     REVOKED = "revoked"
 
 
 APPEAL_STATUS_EN_RU = {
-    AppealStatus.ACCEPTED: "Принято",
+    AppealStatus.NEW: "Принято",
     AppealStatus.PERFORMED: "Исполнено",
     AppealStatus.RUN: "В работе",
     AppealStatus.REVOKED: "Отозвано",
